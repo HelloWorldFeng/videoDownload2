@@ -39,6 +39,7 @@ object FileManager {
         } else {
             scanForFiles()
         }
+
         scanFileResultState.addAll(list)
     }
 

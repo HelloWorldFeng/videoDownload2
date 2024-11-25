@@ -22,6 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,10 +60,10 @@ class MainActivity : BaseActivity() {
 
     }
 
-    override fun hasFocusAfter() {
-        super.hasFocusAfter()
+    override fun onStart() {
+        super.onStart()
         lifecycleScope.launch {
-            FileUtils.checkFilePermission(this@MainActivity){
+            FileUtils.requestFilePermission(this@MainActivity){
                 fetchPhoneVideo(this@MainActivity)
             }
         }
@@ -76,6 +78,11 @@ class HomeScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val context = LocalContext.current as BaseActivity
+        CoilImage(
+            modifier = Modifier.fillMaxWidth(), data = R.drawable.bg_home_top,
+            contentScale = ContentScale.FillWidth
+        )
         Column(modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
@@ -105,32 +112,42 @@ class HomeScreen : Screen {
             SearchBarView()
             Spacer(modifier = Modifier.height(22.dp))
             FoldView(){
+                if (FileUtils.checkFilePermission(context).not()) {
+                    FileUtils.requestFilePermission(context){
+                        fetchPhoneVideo(context)
+                    }
+                }
+
                 navigator.push(FolderScreen())
             }
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(Modifier.fillMaxWidth(0.9f), horizontalArrangement = Arrangement.SpaceAround) {
-                HomeItemView("Local Video",modifier = Modifier
-                    .weight(1f)
-                    .background(color = Color.White, shape = RoundedCornerShape(14.dp))
-                    .singClick {
-                        navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
+                HomeItemView("Local Video",
+                    R.drawable.icon_local_logo,
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(color = Color.White, shape = RoundedCornerShape(14.dp))
+                        .singClick {
+                            navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
 
-                    })
+                        })
                 Spacer(modifier = Modifier.width(17.dp))
-                HomeItemView("Hot Video",modifier = Modifier
-                    .weight(1f)
-                    .background(color = Color.White, shape = RoundedCornerShape(14.dp))
-                    .singClick {
+                HomeItemView("Hot Video",
+                    R.drawable.icon_hot,
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(color = Color.White, shape = RoundedCornerShape(14.dp))
+                        .singClick {
 
-                    })
+                        })
             }
 
         }
     }
 
     @Composable
-    private fun HomeItemView(text:String,modifier: Modifier) {
+    private fun HomeItemView(text:String,icon:Any,modifier: Modifier) {
         Column(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -139,7 +156,7 @@ class HomeScreen : Screen {
             CoilImage(
                 modifier = Modifier
                     .size(141.dp)
-                    .aspectRatio(1f), data = R.drawable.ic_launcher_background
+                    .aspectRatio(1f), data = icon
             )
             Spacer(modifier = Modifier.height(21.dp))
             TextTitle(text = text, fontSize = 22.sp)
@@ -162,7 +179,7 @@ class HomeScreen : Screen {
             Spacer(modifier = Modifier.width(35.dp))
             CoilImage(
                 modifier = Modifier.size(63.dp, 45.dp),
-                data = R.drawable.ic_launcher_background
+                data = R.drawable.icon_folder
             )
             Spacer(modifier = Modifier.weight(1f))
             TextTitle(text = "Folder", fontSize = 22.sp)

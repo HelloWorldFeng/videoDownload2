@@ -3,36 +3,17 @@ package com.app.videobox.utils
 import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.database.Cursor
 import android.media.MediaMetadataRetriever
-import android.net.Uri
-import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
-import android.provider.Settings
 import android.util.Log
 import com.app.videobox.manager.FileManager
 import com.blankj.utilcode.util.FileUtils
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
-import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 
 object FileUtils {
-    var launcherContinuation: CancellableContinuation<Unit>?= null
-
-
-
-    fun hasFilePermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
-        } else{
-            XXPermissions.isGranted(context,arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-        }
-    }
-
 
     fun getVideoFiles(activity: Context):  MutableList<FileManager.FileInfo> {
         val videoList = mutableListOf<FileManager.FileInfo>()
@@ -103,53 +84,29 @@ object FileUtils {
         }
     }
 
-    suspend fun checkFilePermission(context: Activity, hasPermission:()->Unit= {}) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager()) {
-                // 应用有外部存储管理权限，可以自由访问外部存储
-                hasPermission.invoke()
-            } else {
-                // 应用没有外部存储管理权限，需要请求权限
-                try {
-                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                    intent.data = Uri.parse("package:${context.packageName}")
-                    context.startActivityForResult(intent, 0)
-                } catch (e: Exception) {
-                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                    context.startActivityForResult(intent, 0)
-                }
-
-                suspendCancellableCoroutine {
-                    it.invokeOnCancellation {
-                        //取消时候处理
-                    }
-                    launcherContinuation = it
-                }
-                if (Environment.isExternalStorageManager()) {
+    fun requestFilePermission(context: Activity, hasPermission:()->Unit= {}) {
+        XXPermissions.with(context)
+            .permission(
+                arrayOf(Manifest.permission.READ_MEDIA_VIDEO,Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            ).request(object : OnPermissionCallback {
+                override fun onGranted(p0: MutableList<String>, p1: Boolean) {
                     hasPermission.invoke()
                 }
-            }
-        }
-        else{
-            XXPermissions.with(context)
-                .permission(
-                    arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
-                ).request(object : OnPermissionCallback {
-                    override fun onGranted(p0: MutableList<String>, p1: Boolean) {
-                        hasPermission.invoke()
-                    }
 
-                    override fun onDenied(
-                        permissions: MutableList<String>,
-                        doNotAskAgain: Boolean
-                    ) {
-                        if (doNotAskAgain) {
-                            // 如果是被永久拒绝就跳转到应用权限系统设置页面
-                            XXPermissions.startPermissionActivity(context, permissions);
-                        }
+                override fun onDenied(
+                    permissions: MutableList<String>,
+                    doNotAskAgain: Boolean
+                ) {
+                    if (doNotAskAgain) {
+                        // 如果是被永久拒绝就跳转到应用权限系统设置页面
+                        XXPermissions.startPermissionActivity(context, permissions);
                     }
-                })
-        }
+                }
+            })
+    }
+
+    fun checkFilePermission(context: Activity): Boolean {
+        return XXPermissions.isGranted(context,Manifest.permission.READ_MEDIA_VIDEO,Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 
     fun renameFile(newName: String, oldFile: FileManager.FileInfo) {
