@@ -133,7 +133,7 @@ object FileUtils {
         else{
             XXPermissions.with(context)
                 .permission(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
                 ).request(object : OnPermissionCallback {
                     override fun onGranted(p0: MutableList<String>, p1: Boolean) {
                         hasPermission.invoke()
