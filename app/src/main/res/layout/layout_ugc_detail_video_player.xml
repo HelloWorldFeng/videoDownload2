@@ -31,7 +31,9 @@
         android:id="@+id/all_widget"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#4D000000"
         app:layout_constraintBottom_toBottomOf="parent">
+
         <LinearLayout
             android:id="@+id/layout_bottom"
             android:layout_width="match_parent"
@@ -39,9 +41,8 @@
 
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            >
+            app:layout_constraintTop_toTopOf="parent">
 
 
             <TextView
@@ -76,6 +77,77 @@
                 android:textColor="#ffffff" />
         </LinearLayout>
 
+
+        <ImageView
+            android:id="@+id/lock_iv"
+            android:layout_width="20dp"
+            android:layout_height="24dp"
+            android:src="@drawable/icon_lock"
+            android:layout_marginStart="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/ratio_btn"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layout_bottom" />
+
+        <ImageView
+            android:id="@+id/ratio_btn"
+            android:layout_width="24dp"
+            android:layout_height="20dp"
+            android:layout_centerVertical="false"
+            android:src="@drawable/icon_ratio"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/full_btn"
+            app:layout_constraintStart_toEndOf="@id/lock_iv"
+            app:layout_constraintTop_toBottomOf="@id/layout_bottom" />
+
+        <ImageView
+            android:id="@+id/full_btn"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_centerVertical="false"
+            android:src="@drawable/icon_full_screen"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/speed_iv"
+            app:layout_constraintStart_toEndOf="@id/ratio_btn"
+            app:layout_constraintTop_toBottomOf="@id/layout_bottom" />
+
+        <TextView
+            android:id="@+id/speed_iv"
+            android:layout_marginEnd="24dp"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:gravity="center"
+            android:text="1X"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:paddingHorizontal="5dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/full_btn"
+            app:layout_constraintTop_toBottomOf="@id/layout_bottom" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/center_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/reduce_second"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:src="@drawable/icon_reduce_second"
+            android:layout_marginEnd="38dp"
+            />
         <moe.codeest.enviews.ENPlayView
             android:id="@+id/start"
             android:layout_width="60dp"
@@ -84,58 +156,15 @@
             app:layout_constraintTop_toBottomOf="@id/layout_bottom"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
-
         <ImageView
-            android:id="@+id/lock_screen"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/unlock"
-            android:visibility="visible"
-            app:layout_constraintTop_toBottomOf="@id/layout_bottom"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
-
-        <TextView
-            android:id="@+id/seek_ratio_iv"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:text="1X"
-            android:textSize="20sp"
-            android:gravity="center"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_bottom"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <TextView
             android:id="@+id/add_second"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:gravity="center"
-            android:text="+10"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_bottom"
-            app:layout_constraintEnd_toEndOf="@id/seek_ratio_iv"
-            app:layout_constraintStart_toEndOf="@id/start"/>
-
-        <TextView
-            android:id="@+id/reduce_second"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:gravity="center"
-            android:text="-10"
-            android:textColor="@color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_bottom"
-            app:layout_constraintEnd_toEndOf="@id/seek_ratio_iv"
-            app:layout_constraintStart_toEndOf="@id/lock_screen"
-            app:layout_constraintEnd_toStartOf="@id/start"
+            android:src="@drawable/icon_add_second"
+            android:layout_marginStart="38dp"
             />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_top"
@@ -175,16 +204,5 @@
         android:visibility="invisible" />
 
 
-    <ImageView
-        android:id="@+id/full_btn"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="false"
-        android:layout_marginRight="50dp"
-        android:scaleType="center"
-        android:src="@drawable/ic_launcher_background"
-        android:layout_marginTop="30dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layout_top"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

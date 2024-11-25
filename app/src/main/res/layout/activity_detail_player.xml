@@ -9,7 +9,7 @@
     android:background="@color/white">
 
 
-    <com.app.videobox.ui.video.UgcDetailVideoPlayer
+    <com.app.videobox.ui.pages.video.UgcDetailVideoPlayer
         android:id="@+id/detail_player"
         android:layout_width="match_parent"
         android:layout_height="0dp"

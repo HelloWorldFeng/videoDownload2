@@ -81,6 +81,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                                 VideoPlayActivity::class.java,
                                 args = Bundle().apply {
                                     putString("video_url", fileInfo.file.absolutePath)
+                                    putString("title",fileInfo.titleName)
                                 })
                         },
                         onClickMore = {

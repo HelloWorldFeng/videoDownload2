@@ -78,7 +78,7 @@ class FolderScreen:Screen {
                                 )
                         ) {
                             Spacer(modifier = Modifier.width(28.dp))
-                            CoilImage(modifier = Modifier.size(55.dp, 39.dp), data = R.drawable.ic_launcher_background)
+                            CoilImage(modifier = Modifier.size(55.dp, 39.dp), data = R.drawable.icon_folder)
                             Spacer(modifier = Modifier.width(15.dp))
                             Text(text = it.first, fontSize = 17.sp,color = Color.White)
                         }

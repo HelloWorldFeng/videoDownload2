@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -17,12 +18,18 @@ import com.shuyu.gsyvideoplayer.video.StandardGSYVideoPlayer
 
 class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
 
-    private var seekRatioIv:TextView?= findViewById(R.id.seek_ratio_iv)
+    private var speedIv:TextView?= findViewById(R.id.speed_iv)
     private var brightProgress:ProgressBar?=null
-    private var allWidget:ConstraintLayout = findViewById(R.id.all_widget)
-    private var addSecond:TextView = findViewById(R.id.add_second)
-    private var reduceSecond:TextView = findViewById(R.id.reduce_second)
-    private var fullBtn:ImageView = findViewById(R.id.full_btn)
+    private var bottomLayout:ConstraintLayout = findViewById(R.id.all_widget)
+    private var centerLayout:LinearLayout = findViewById(R.id.center_layout)
+    private var addSecond:ImageView = findViewById(R.id.add_second)
+    private var reduceSecond:ImageView = findViewById(R.id.reduce_second)
+    private var ratioBtn:ImageView = findViewById(R.id.ratio_btn)
+    private var currentSpeed:SpeedUnit = SpeedUnit.One
+
+    enum class SpeedUnit{
+        Half,One,OneHalf,Two,Three
+    }
 
 
     constructor(context: Context?) : super(context)
@@ -33,9 +40,9 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
     }
 
     init {
-        seekRatioIv?.setOnClickListener {
-            setSpeedPlaying(13f,true)
+        speedIv?.setOnClickListener {
 
+            changeSpeedPlay()
         }
         addSecond.setOnClickListener {
             val currentPosition = this.currentPositionWhenPlaying // 获取当前播放位置
@@ -47,6 +54,38 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
             val newPosition = currentPosition - 5 * 1000 // 计算新的播放位置
             this.seekTo(newPosition) // 设置新的播放位置
         }
+    }
+
+    private fun changeSpeedPlay() {
+
+        when (currentSpeed) {
+            SpeedUnit.Half -> {
+                setSpeedPlaying(1f,true)
+                currentSpeed = SpeedUnit.One
+                speedIv?.setText("1X")
+            }
+            SpeedUnit.One -> {
+                setSpeedPlaying(1.5f,true)
+                currentSpeed = SpeedUnit.OneHalf
+                speedIv?.setText("1.5X")
+            }
+            SpeedUnit.OneHalf -> {
+                setSpeedPlaying(2f,true)
+                currentSpeed = SpeedUnit.Two
+                speedIv?.setText("2X")
+            }
+            SpeedUnit.Two -> {
+                setSpeedPlaying(3f,true)
+                currentSpeed = SpeedUnit.Three
+                speedIv?.setText("3X")
+            }
+            SpeedUnit.Three -> {
+                setSpeedPlaying(0.5f,true)
+                currentSpeed = SpeedUnit.Half
+                speedIv?.setText("0.5X")
+            }
+        }
+
     }
 
     override fun updateStartImage() {
@@ -112,26 +151,40 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
 
 
     fun getFullButton(): ImageView {
-        return fullBtn
+        return ratioBtn
     }
 
-    override fun lockTouchLogic() {
-        super.lockTouchLogic()
-    }
+
 
     override fun hideAllWidget() {
         super.hideAllWidget()
-        allWidget.visibility = View.GONE
+        bottomLayout.visibility = View.GONE
+        centerLayout.visibility = View.GONE
     }
 
     override fun changeUiToPlayingClear() {
         super.changeUiToPlayingClear()
-        allWidget.visibility = View.GONE
+        bottomLayout.visibility = View.GONE
+        centerLayout.visibility = View.GONE
     }
 
     override fun changeUiToPlayingShow() {
         super.changeUiToPlayingShow()
-        allWidget.visibility = View.VISIBLE
+        bottomLayout.visibility = View.VISIBLE
+        centerLayout.visibility = View.VISIBLE
+    }
+
+    override fun changeUiToPauseShow() {
+        super.changeUiToPauseShow()
+        Log.d("TAG", "changeUiToPauseShow: ")
+        bottomLayout.visibility = View.VISIBLE
+        centerLayout.visibility = View.VISIBLE
+    }
+
+    override fun changeUiToPauseClear() {
+        super.changeUiToPauseClear()
+        bottomLayout.visibility = View.GONE
+        centerLayout.visibility = View.GONE
     }
 
 }

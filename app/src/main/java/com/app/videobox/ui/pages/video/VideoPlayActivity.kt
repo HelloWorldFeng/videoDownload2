@@ -41,6 +41,7 @@ class VideoPlayActivity : AppCompatActivity() {
 //        detailPlayer.fullscreenButton.visibility = View.VISIBLE
 
 
+        val title = intent.getStringExtra("title")
         val url = intent.getStringExtra("video_url")
 
         detailPlayer.setUp(url,true,"title")
@@ -55,7 +56,7 @@ class VideoPlayActivity : AppCompatActivity() {
             .setNeedLockFull(true)
             .setUrl(url)
             .setCacheWithPlay(false)
-            .setVideoTitle("测试视频") ///不需要旋转
+            .setVideoTitle(title) ///不需要旋转
             .setNeedOrientationUtils(false)
             .setSeekRatio(1f)
 
@@ -70,7 +71,6 @@ class VideoPlayActivity : AppCompatActivity() {
             }
             .build(detailPlayer)
 
-        detailPlayer.setSpeedPlaying(13f,true)
         detailPlayer.startPlayLogic()
 
         detailPlayer.backButton.setOnClickListener {
