@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">videoBox</string>
+    <string name="file_director">File Director</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">Ok</string>
+    <string name="no_content_at_the_moment">No content at the moment</string>
+    <string name="language">Language</string>
+    <string name="next">Next</string>
+</resources>
