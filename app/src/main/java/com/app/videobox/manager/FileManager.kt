@@ -3,11 +3,14 @@ package com.app.videobox.manager
 import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
-import cafe.adriel.voyager.core.model.ScreenModelStore.getOrPut
 import com.app.videobox.utils.FileUtils
+import com.blankj.utilcode.util.SPStaticUtils
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.Serializable
 
@@ -19,7 +22,7 @@ object FileManager {
         val creationTimestamp: Long, // 创建时间戳
         val parentDir: String,
         var titleName: String = "",
-        var playTime:Long,
+        var playTime:Long
     ):Serializable
 
     var scanFileResultState: MutableList<FileInfo> = mutableListOf()
@@ -40,7 +43,28 @@ object FileManager {
             scanForFiles()
         }
 
+        //不使用 所有文件访问权限为了过审 做伪逻辑操作
+        //伪删除
+        FileUtils.deleteSet.forEach { deleteName->
+            list.find { it.titleName.equals(deleteName,true) }?.let {
+                list.remove(it)
+            }
+        }
         scanFileResultState.addAll(list)
+
+        //伪重命名
+        val rename = SPStaticUtils.getString("rename")
+        if (rename.isNotEmpty()) {
+            FileUtils.renameSet.clear()
+            val type = object : TypeToken<List<FileUtils.RenameFile>>() {}.type
+            val list = Gson().fromJson<List<FileUtils.RenameFile>>(rename,type)
+            FileUtils.renameSet.addAll(list)
+
+            list.forEach {  fileInfo->
+                scanFileResultState.find { it.titleName == fileInfo.oldName }?.titleName = fileInfo.newName
+            }
+        }
+
     }
 
     fun scanForFiles():  MutableList<FileInfo> {
@@ -102,6 +126,10 @@ object FileManager {
         }
     }
 
+    fun searchVideoList(searchText: String): MutableList<FileInfo> {
+        val result = scanFileResultState.filter { it.titleName.contains(searchText,true) }.toMutableList()
+        return result
+    }
 
 
 }

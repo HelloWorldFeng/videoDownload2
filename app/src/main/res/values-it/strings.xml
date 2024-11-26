@@ -1,0 +1,22 @@
+<resources>
+    <string name="file_director">Direttore dell\'archivio</string>
+    <string name="cancel">Cancellare</string>
+    <string name="ok">OK</string>
+    <string name="no_content_at_the_moment">Nessun contenuto al momento</string>
+    <string name="language">Lingua</string>
+    <string name="next">Prossimo</string>
+    <string name="rate_us">Valutaci</string>
+    <string name="share_the_app">Condividi l\'app</string>
+    <string name="privacy_policy">Politica sulla riservatezza</string>
+    <string name="version_update">Aggiornamento della versione</string>
+    <string name="local_video">Video locale</string>
+    <string name="hot_video">Video popolari</string>
+    <string name="folder">Cartella</string>
+    <string name="no_related_files_found">Nessun file correlato trovato.</string>
+    <string name="new_playlist">Nuova playlist</string>
+    <string name="permission_required">Permesso richiesto</string>
+    <string name="delete">Elimina</string>
+    <string name="rename">Rinomina</string>
+    <string name="share">Condividi</string>
+    <string name="permission_needs_to_be_granted">È necessario concedere il permesso per accedere ai file video sul telefono</string>
+</resources>

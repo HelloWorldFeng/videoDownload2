@@ -2,6 +2,9 @@ package com.app.videobox.ui
 
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,49 +42,57 @@ import com.app.videobox.R
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
+import com.app.videobox.ui.dialogs.PermissionDialog
 import com.app.videobox.ui.pages.FolderScreen
 import com.app.videobox.ui.pages.LocalVideoScreen
 import com.app.videobox.ui.pages.SettingScreen
+import com.app.videobox.ui.theme.gradientColor
 import com.app.videobox.ui.widgets.CoilImage
+import com.app.videobox.ui.widgets.SearchBar
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.FileUtils
+import com.blankj.utilcode.util.ToastUtils
+import com.hjq.permissions.XXPermissions
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity() {
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setContent {
-            BackHandler {}
-            Navigator(HomeScreen())
-        }
-
-
-    }
-
-    override fun onStart() {
-        super.onStart()
         lifecycleScope.launch {
+            if (FileUtils.checkFilePermission(this@MainActivity)) {
+                return@launch
+            }
             FileUtils.requestFilePermission(this@MainActivity){
                 fetchPhoneVideo(this@MainActivity)
             }
         }
+        setContent {
+            BackHandler {}
+            Navigator(HomeScreen())
+        }
     }
 
-
-
+    override fun hasFocusAfter() {
+        super.hasFocusAfter()
+        lifecycleScope.launch {
+            fetchPhoneVideo(this@MainActivity)
+        }
+    }
 }
 
 class HomeScreen : Screen {
+
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current as BaseActivity
+        val showPermissionState = remember {
+            mutableStateOf(value = false)
+        }
+
         CoilImage(
             modifier = Modifier.fillMaxWidth(), data = R.drawable.bg_home_top,
             contentScale = ContentScale.FillWidth
@@ -113,27 +127,48 @@ class HomeScreen : Screen {
             Spacer(modifier = Modifier.height(22.dp))
             FoldView(){
                 if (FileUtils.checkFilePermission(context).not()) {
-                    FileUtils.requestFilePermission(context){
-                        fetchPhoneVideo(context)
-                    }
+                    FileUtils.requestFilePermission(context,
+                        doNotAsk = {
+                            showPermissionState.value = true
+                        },
+                        hasPermission = {
+                            fetchPhoneVideo(context)
+                        })
+                }else{
+                    navigator.push(FolderScreen())
                 }
-
-                navigator.push(FolderScreen())
             }
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(Modifier.fillMaxWidth(0.9f), horizontalArrangement = Arrangement.SpaceAround) {
-                HomeItemView("Local Video",
+                HomeItemView(
+                    stringResource(R.string.local_video),
                     R.drawable.icon_local_logo,
                     modifier = Modifier
                         .weight(1f)
                         .background(color = Color.White, shape = RoundedCornerShape(14.dp))
                         .singClick {
-                            navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
 
-                        })
+                            if (FileUtils
+                                    .checkFilePermission(context)
+                                    .not()
+                            ) {
+                                FileUtils.requestFilePermission(
+                                    context,
+                                    doNotAsk = {
+                                        showPermissionState.value = true
+                                    },
+                                    hasPermission = {
+                                        fetchPhoneVideo(context)
+                                    })
+                            } else {
+                                navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
+                            }
+                        },
+                )
                 Spacer(modifier = Modifier.width(17.dp))
-                HomeItemView("Hot Video",
+                HomeItemView(
+                    stringResource(R.string.hot_video),
                     R.drawable.icon_hot,
                     modifier = Modifier
                         .weight(1f)
@@ -144,6 +179,18 @@ class HomeScreen : Screen {
             }
 
         }
+
+        PermissionDialog(showPermissionState.value, onOK = {
+            FileUtils.requestFilePermission(
+                context,
+                doNotAsk = {
+                    XXPermissions.startPermissionActivity(context)
+                }, hasPermission = {
+                    fetchPhoneVideo(context)
+                })
+        }, onDismiss = {
+            showPermissionState.value = false
+        })
     }
 
     @Composable
@@ -182,20 +229,64 @@ class HomeScreen : Screen {
                 data = R.drawable.icon_folder
             )
             Spacer(modifier = Modifier.weight(1f))
-            TextTitle(text = "Folder", fontSize = 22.sp)
+            TextTitle(text = stringResource(R.string.folder), fontSize = 22.sp)
             Spacer(modifier = Modifier.width(50.dp))
         }
     }
 
     @Composable
     private fun SearchBarView() {
+        var searchText = remember { "" }
+        val context = LocalContext.current as BaseActivity
+        val navigator = LocalNavigator.currentOrThrow
         Box(
             Modifier
                 .fillMaxWidth(0.9f)
-                .background(color = Color.White, shape = RoundedCornerShape(20.dp))) {
-            CoilImage(modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(50.dp), data = R.drawable.icon_search)
+                .background(color = Color.White, shape = RoundedCornerShape(20.dp))
+        ) {
+
+            SearchBar(text = searchText,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                onValueChange = {
+                    searchText = it
+                },
+                onSearch = {
+                    searchText = it
+                    toSearchPage(searchText, context, navigator)
+                })
+
+            CoilImage(
+                modifier = Modifier
+                    .singClick {
+                        toSearchPage(searchText, context, navigator)
+                    }
+                    .align(Alignment.CenterEnd)
+                    .size(50.dp), data = R.drawable.icon_search
+            )
+        }
+    }
+
+
+
+    private fun toSearchPage(
+        searchText: String,
+        context: BaseActivity,
+        navigator: Navigator
+    ) {
+        if (FileUtils.checkFilePermission(context).not()) {
+            FileUtils.requestFilePermission(context){
+                fetchPhoneVideo(context)
+            }
+            return
+        }
+
+        val result = FileManager.searchVideoList(searchText)
+        if (result.isEmpty()) {
+            ToastUtils.showShort(context.getString(R.string.no_related_files_found))
+        } else {
+            navigator.push(LocalVideoScreen(result))
         }
     }
 }

@@ -3,17 +3,33 @@ package com.app.videobox.utils
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import com.app.videobox.manager.FileManager
 import com.blankj.utilcode.util.FileUtils
+import com.blankj.utilcode.util.SPStaticUtils
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 
 object FileUtils {
+
+    data class RenameFile(var oldName: String, var newName: String)
+
+
+    var deleteSet = SPStaticUtils.getStringSet("deleteSet").toMutableSet()
+    var renameSet = mutableListOf<RenameFile>()
 
     fun getVideoFiles(activity: Context):  MutableList<FileManager.FileInfo> {
         val videoList = mutableListOf<FileManager.FileInfo>()
@@ -27,7 +43,7 @@ object FileUtils {
             MediaStore.Video.Media.DATA
         )
 
-        // 选择条件：可以根据需要添加更多 MIME 类型
+        // 选择条件：可以根据需要添加更多 MIME 类型  "mp4", "mkv", "avi", "mov", "wmv"
         val selectionMimeType = "${MediaStore.Video.Media.MIME_TYPE} IN (?, ?)"
         val selectionArgs = arrayOf("video/mp4", "video/x-m4v") // 常见的视频 MIME 类型
 
@@ -49,7 +65,14 @@ object FileUtils {
                     val createTimeStamp = file.lastModified()
                     if (file.exists()) {
                         val playTime = getVideoDuration(file.absoluteFile)
-                        val fileInfo = FileManager.FileInfo(file,fileSize,createTimeStamp,dirName,fileName,playTime)
+                        val fileInfo = FileManager.FileInfo(
+                            file = file,
+                            sizeKB = fileSize,
+                            creationTimestamp = createTimeStamp,
+                            parentDir = dirName,
+                            titleName = fileName,
+                            playTime = playTime
+                        )
                         videoList.add(fileInfo)
                     }
                 } while (it.moveToNext())
@@ -84,7 +107,7 @@ object FileUtils {
         }
     }
 
-    fun requestFilePermission(context: Activity, hasPermission:()->Unit= {}) {
+    fun requestFilePermission(context: Activity, doNotAsk:()->Unit={}, hasPermission:()->Unit= {}) {
         XXPermissions.with(context)
             .permission(
                 arrayOf(Manifest.permission.READ_MEDIA_VIDEO,Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -97,10 +120,7 @@ object FileUtils {
                     permissions: MutableList<String>,
                     doNotAskAgain: Boolean
                 ) {
-                    if (doNotAskAgain) {
-                        // 如果是被永久拒绝就跳转到应用权限系统设置页面
-                        XXPermissions.startPermissionActivity(context, permissions);
-                    }
+                    doNotAsk.invoke()
                 }
             })
     }
@@ -111,15 +131,42 @@ object FileUtils {
 
     fun renameFile(newName: String, oldFile: FileManager.FileInfo) {
         val newNames = newName + ".${oldFile.file.name.split(".").last()}"
-        FileUtils.rename(oldFile.file,newNames)
-        FileManager.scanFileResultState.find { it == oldFile }?.let {
-            it.titleName = newNames
-            val newFile = File(it.file.parent + File.separator + newNames)
-            it.file= newFile
+
+        val result = FileUtils.rename(oldFile.file,newNames)
+        FileManager.scanFileResultState.find { it == oldFile }?.let {fileInfo->
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val re = RenameFile(oldName = fileInfo.titleName, newName = newNames)
+                val bean = renameSet.find { it.oldName == fileInfo.titleName }
+                if (bean == null) {
+                    renameSet.add(re)
+                }else{
+                    bean.newName = newNames
+                }
+                Gson().toJson(renameSet).let {
+                    SPStaticUtils.put("rename",it)
+                }
+                fileInfo.titleName = newNames
+                return
+            }
+
+            fileInfo.titleName = newNames
+            val newFile = File(fileInfo.file.parent + File.separator + newNames)
+            fileInfo.file= newFile
         }
 
-        Log.d("TAG", "renameFile: ")
+
+        Log.d("TAG", "renameFile:${result} ")
     }
+
+
+    fun deleteFile(context: Context, fileInfo: FileManager.FileInfo) {
+        fileInfo.file.delete()
+        FileManager.scanFileResultState.remove(fileInfo)
+        deleteSet.add(fileInfo.titleName)
+        SPStaticUtils.put("deleteSet", deleteSet)
+    }
+
 
     fun getVideoDuration(file: File): Long {
         val retriever = MediaMetadataRetriever()

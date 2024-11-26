@@ -1,5 +1,6 @@
 package com.app.videobox.ui.base
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,6 +19,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.app.videobox.R
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.SystemBarTheme
+import com.app.videobox.utils.LanguageUtils.getAttachBaseContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -41,6 +43,10 @@ abstract class BaseActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         focusChangeFlow.value = hasFocus
+    }
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(newBase?.let { getAttachBaseContext(it) })
     }
 
     protected fun setContent(

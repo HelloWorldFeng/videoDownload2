@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">videoBox</string>
+    <string name="app_name" translatable="false">videoBox</string>
     <string name="file_director">File Director</string>
     <string name="cancel">Cancel</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="no_content_at_the_moment">No content at the moment</string>
     <string name="language">Language</string>
     <string name="next">Next</string>
@@ -10,4 +10,14 @@
     <string name="share_the_app">Share the app</string>
     <string name="privacy_policy">Privacy policy</string>
     <string name="version_update">Version update</string>
+    <string name="local_video">Local Video</string>
+    <string name="hot_video">Hot Video</string>
+    <string name="folder">Folder</string>
+    <string name="no_related_files_found">No related files found.</string>
+    <string name="new_playlist">New Playlist</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="share">Share</string>
+    <string name="permission_needs_to_be_granted">Permission needs to be granted to access video files on the phone</string>
 </resources>

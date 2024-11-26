@@ -1,5 +1,6 @@
 package com.app.videobox.ui.pages
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,40 +19,88 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ext.safeStartActivity
+import com.app.videobox.ext.urlInBrowser
+import com.app.videobox.ui.LanguageActivity
+import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
+import com.app.videobox.ui.widgets.singClick
 
 class SettingScreen:Screen {
     @Composable
     override fun Content() {
+        val context = LocalContext.current as BaseActivity
+        val navigator = LocalNavigator.currentOrThrow
         Column(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            CoilImage(modifier = Modifier
-                .padding(11.dp)
-                .align(Alignment.Start)
-                .size(30.dp), data = R.drawable.icon_arrow)
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CoilImage(
+                modifier = Modifier
+                    .singClick {
+                        navigator.pop()
+                    }
+                    .padding(11.dp)
+                    .align(Alignment.Start)
+                    .size(30.dp), data = R.drawable.icon_arrow
+            )
             Spacer(modifier = Modifier.height(9.dp))
 
             CoilImage(modifier = Modifier.size(80.dp), data = R.drawable.ic_launcher_background)
             Spacer(modifier = Modifier.height(11.dp))
-            TextTitle(text = stringResource(id = R.string.app_name), fontSize = 22.sp,color = Color.White)
+            TextTitle(
+                text = stringResource(id = R.string.app_name),
+                fontSize = 22.sp,
+                color = Color.White
+            )
             Spacer(modifier = Modifier.height(35.dp))
 
 
-            ItemView(R.drawable.icon_small_language, stringResource(id = R.string.language), onClick = {})
-            ItemView(R.drawable.icon_small_rate, stringResource(R.string.rate_us), onClick = {})
-            ItemView(R.drawable.icon_small_share, stringResource(R.string.share_the_app), onClick = {})
-            ItemView(R.drawable.icon_small_privacy, stringResource(R.string.privacy_policy), onClick = {})
-            ItemView(R.drawable.icon_small_version, stringResource(R.string.version_update), onClick = {})
+            ItemView(
+                R.drawable.icon_small_language,
+                stringResource(id = R.string.language),
+                onClick = {
+                    context.safeStartActivity(LanguageActivity::class.java)
+                })
+            ItemView(R.drawable.icon_small_rate, stringResource(R.string.rate_us), onClick = {
+                context.urlInBrowser("https://play.google.com/store/apps/details?id=${context.packageName}")
+            })
+            ItemView(
+                R.drawable.icon_small_share,
+                stringResource(R.string.share_the_app),
+                onClick = {
+                    try {
+                        val intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "https://play.google.com/store/apps/details?id=${context.packageName}"
+                            )
+                            type = "text/plain"
+                        }
+                        context.startActivity(intent)
+                    } catch (_: Exception) { }
+                })
+            ItemView(
+                R.drawable.icon_small_privacy,
+                stringResource(R.string.privacy_policy),
+                onClick = {})
+            ItemView(
+                R.drawable.icon_small_version,
+                stringResource(R.string.version_update),
+                onClick = {})
         }
     }
 
@@ -59,6 +108,9 @@ class SettingScreen:Screen {
     fun ItemView(icon:Any,title:String,onClick:()->Unit) {
         Row(
             Modifier
+                .singClick {
+                    onClick.invoke()
+                }
                 .padding(bottom = 14.dp)
                 .fillMaxWidth(0.9f)
                 .height(62.dp)

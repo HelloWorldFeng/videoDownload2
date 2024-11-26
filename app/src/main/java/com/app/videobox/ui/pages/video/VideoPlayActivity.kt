@@ -11,6 +11,7 @@ import com.app.videobox.App
 import com.app.videobox.R
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder
 import com.shuyu.gsyvideoplayer.listener.GSYSampleCallBack
+import com.shuyu.gsyvideoplayer.utils.GSYVideoType
 import com.shuyu.gsyvideoplayer.utils.OrientationUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -42,9 +43,7 @@ class VideoPlayActivity : AppCompatActivity() {
 
 
         val title = intent.getStringExtra("title")
-        val url = intent.getStringExtra("video_url")
-
-        detailPlayer.setUp(url,true,"title")
+        val url =  intent.getStringExtra("video_url")
 
         val gsyVideoOption = GSYVideoOptionBuilder()
         gsyVideoOption
@@ -76,16 +75,13 @@ class VideoPlayActivity : AppCompatActivity() {
         detailPlayer.backButton.setOnClickListener {
             finish()
         }
+
         detailPlayer.getFullButton().setOnClickListener { //直接横屏
             if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 return@setOnClickListener
             }
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-//            orientationUtils.resolveByClick()
-
-            //第一个true是否需要隐藏actionbar，第二个true是否需要隐藏statusbar
-//            detailPlayer.startWindowFullscreen(this, true, true)
         }
     }
 

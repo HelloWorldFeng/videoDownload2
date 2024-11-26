@@ -1,6 +1,5 @@
 package com.app.videobox.ui.dialogs
 
-import android.text.format.Formatter.formatFileSize
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -14,7 +13,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,8 +23,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -41,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -49,7 +44,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.R
-import com.app.videobox.manager.FileManager
 import com.app.videobox.ui.theme.gradientColor
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
@@ -102,7 +96,7 @@ fun MoreDialog(
                         onDismiss.invoke()
                     }){
                     Text(
-                        text = "Delete", fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
+                        text = stringResource(R.string.delete), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
                     )
                 }
                 Box(modifier = Modifier
@@ -113,18 +107,18 @@ fun MoreDialog(
                         onDismiss.invoke()
                     }){
                     Text(
-                        text = "Rename", fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
+                        text = stringResource(R.string.rename), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
                     )
                 }
                 Box(modifier = Modifier
                     .fillMaxWidth()
                     .height(75.dp)
                     .singClick {
-                        onRename.invoke()
+                        onShare.invoke()
                         onDismiss.invoke()
                     }){
                     Text(
-                        text = "Share", fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
+                        text = stringResource(R.string.share), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
@@ -138,7 +132,7 @@ fun MoreDialog(
                         )
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = stringResource(id = R.string.cancel),
                         fontSize = 16.sp,
                         color = Color.White,
                         modifier = Modifier.align(Alignment.Center)
@@ -150,6 +144,84 @@ fun MoreDialog(
         }
     }
 
+}
+
+@Composable
+fun PermissionDialog(
+    isVisible: Boolean,
+    onOK: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AnimatedVisibility(visible = isVisible, enter = fadeIn(), exit = fadeOut()) {
+        Box(
+            Modifier
+                .singClick {
+                    onDismiss.invoke()
+                }
+                .fillMaxSize()
+                .background(color = Color(0x99000000))) {
+            Column(
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.9f)
+                    .background(color = Color(0xFF2E2F30), shape = RoundedCornerShape(24.dp))
+                    .padding(horizontal = 20.dp)
+                    .padding(vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextTitle(text = stringResource(R.string.permission_required), fontSize = 21.sp,color = Color.White)
+                Spacer(modifier = Modifier.height(25.dp))
+                Text(
+                    text = stringResource(R.string.permission_needs_to_be_granted),
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(25.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                    Box(
+                        modifier = Modifier
+                            .singClick {
+                                onDismiss.invoke()
+                            }
+                            .size(129.dp, 53.dp)
+                            .background(
+                                color = Color(0xFF515253),
+                                shape = RoundedCornerShape(28.dp)
+                            )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cancel),
+                            fontSize = 19.sp,
+                            color = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .singClick {
+                                onOK.invoke()
+                                onDismiss.invoke()
+                            }
+                            .size(129.dp, 53.dp)
+                            .background(
+                                brush = gradientColor,
+                                shape = RoundedCornerShape(28.dp)
+                            )
+                    ){
+                        Text(
+                            text = stringResource(R.string.ok),
+                            fontSize = 19.sp,
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                        )
+                    }
+
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -190,7 +262,7 @@ fun RenameDialog(
                     .padding(vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TextTitle(text = "New Playlist", fontSize = 21.sp,color = Color.White)
+                TextTitle(text = stringResource(R.string.new_playlist), fontSize = 21.sp,color = Color.White)
                 Spacer(modifier = Modifier.height(25.dp))
                 OutlinedTextField(
                     modifier = Modifier

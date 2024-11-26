@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.bsh.commands.dir
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)

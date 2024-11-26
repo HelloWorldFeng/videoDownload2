@@ -107,9 +107,10 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         MoreDialog(showDialog,
             onDelete = {
                 selectFileInfo?.let {
-                    it.file.delete()
+                    FileUtils.deleteFile(context,it)
                     dataList.remove(it)
                 }
+
             },
             onRename = {
                 showRename = true

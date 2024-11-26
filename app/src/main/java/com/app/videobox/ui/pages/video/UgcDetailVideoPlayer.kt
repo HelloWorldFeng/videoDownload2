@@ -3,9 +3,11 @@ package com.app.videobox.ui.pages.video
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.media.metrics.Event
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -14,18 +16,23 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.app.videobox.R
+import com.shuyu.gsyvideoplayer.utils.GSYVideoType
 import com.shuyu.gsyvideoplayer.video.StandardGSYVideoPlayer
 
 class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
 
-    private var speedIv:TextView?= findViewById(R.id.speed_iv)
     private var brightProgress:ProgressBar?=null
+    private var speedIv:TextView?= findViewById(R.id.speed_iv)
     private var bottomLayout:ConstraintLayout = findViewById(R.id.all_widget)
     private var centerLayout:LinearLayout = findViewById(R.id.center_layout)
     private var addSecond:ImageView = findViewById(R.id.add_second)
     private var reduceSecond:ImageView = findViewById(R.id.reduce_second)
     private var ratioBtn:ImageView = findViewById(R.id.ratio_btn)
+    private var fullBtn:ImageView = findViewById(R.id.full_btn)
+    private var lockBtn:ImageView = findViewById(R.id.lock_iv)
     private var currentSpeed:SpeedUnit = SpeedUnit.One
+    private var currentType:Int = 0
+    private var mLockCurIv:Boolean = false
 
     enum class SpeedUnit{
         Half,One,OneHalf,Two,Three
@@ -41,8 +48,21 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
 
     init {
         speedIv?.setOnClickListener {
-
             changeSpeedPlay()
+        }
+        lockBtn.setOnClickListener {
+            myLockTouchLogic()
+        }
+        fullBtn.setOnClickListener {
+            if (currentType == 0) {
+                currentType = 1
+                GSYVideoType.setShowType(GSYVideoType.SCREEN_MATCH_FULL)
+            }else if (currentType == 1) {
+                currentType = 0
+                GSYVideoType.setShowType(GSYVideoType.SCREEN_TYPE_DEFAULT)
+            }
+            changeTextureViewShowType()
+            fullBtn.requestLayout()
         }
         addSecond.setOnClickListener {
             val currentPosition = this.currentPositionWhenPlaying // 获取当前播放位置
@@ -185,6 +205,30 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
         super.changeUiToPauseClear()
         bottomLayout.visibility = View.GONE
         centerLayout.visibility = View.GONE
+    }
+
+    override fun changeUiToCompleteShow() {
+        super.changeUiToCompleteShow()
+        centerLayout.visibility = View.VISIBLE
+        bottomLayout.visibility = View.VISIBLE
+    }
+
+    private fun myLockTouchLogic() {
+        if (mLockCurIv) {
+            lockBtn.setImageResource(R.drawable.icon_unlock)
+            mLockCurIv = false
+        } else {
+            lockBtn.setImageResource(R.drawable.icon_lock)
+            mLockCurIv = true
+            hideAllWidget()
+        }
+    }
+
+    override fun onClickUiToggle(e:MotionEvent) {
+        if (mLockCurIv) {
+            return
+        }
+        super.onClickUiToggle(e)
     }
 
 }
