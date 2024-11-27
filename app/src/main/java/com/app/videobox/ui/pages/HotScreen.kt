@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,6 +64,7 @@ class HotScreen:Screen {
                 navigator.pop()
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(14.dp),
@@ -94,7 +97,10 @@ class HotScreen:Screen {
                                 .padding(6.dp)
                                 .align(Alignment.TopEnd)
                                 .wrapContentSize()
-                                .background(color = Color(0x52000000), shape = RoundedCornerShape(20.dp))
+                                .background(
+                                    color = Color(0x52000000),
+                                    shape = RoundedCornerShape(20.dp)
+                                )
                         ) {
                             val sizeKb = Formatter.formatFileSize(context, file.length())
                             Text(

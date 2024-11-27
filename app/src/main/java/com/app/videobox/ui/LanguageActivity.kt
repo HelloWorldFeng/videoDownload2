@@ -90,7 +90,7 @@ class LanguageActivity : BaseActivity() {
             Box(
                 modifier = Modifier
                     .singClick {
-                        SPStaticUtils.put("chooseLanguage",false)
+                        SPStaticUtils.put("chooseLanguage", false)
                         SPStaticUtils.put("selectLanguageIndex", selectLanguageIndex.value)
                         LanguageUtils.setAppLanguage(context)
                         reStartActivity(context)
@@ -108,9 +108,16 @@ class LanguageActivity : BaseActivity() {
         }
     }
 
-    fun reStartActivity(context: Activity) {
+    private fun reStartActivity(context: Activity) {
         val intent = Intent(context, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         context.startActivity(intent)
+    }
+
+    override fun onBackPressed() {
+        if (SPStaticUtils.getBoolean("chooseLanguage", true)) {
+            return
+        }
+        super.onBackPressed()
     }
 }

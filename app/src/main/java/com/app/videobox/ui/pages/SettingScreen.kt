@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
@@ -88,13 +89,13 @@ class SettingScreen:Screen {
                 R.drawable.icon_small_privacy,
                 stringResource(R.string.privacy_policy),
                 onClick = {
-
+                    context.urlInBrowser(BuildConfig.privacyUrl)
                 })
             ItemView(
                 R.drawable.icon_small_version,
                 stringResource(R.string.version_update),
                 onClick = {
-
+                    context.urlInBrowser(BuildConfig.termUrl)
                 })
         }
     }

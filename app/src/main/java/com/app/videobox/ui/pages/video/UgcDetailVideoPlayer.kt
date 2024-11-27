@@ -142,10 +142,6 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
         super.showVolumeDialog(deltaY, volumePercent)
     }
 
-    override fun getVolumeProgressId(): Int {
-        return super.getVolumeProgressId()
-    }
-
     @SuppressLint("WrongConstant")
     override fun showBrightnessDialog(percent: Float) {
         if (this.mBrightnessDialog == null) {
@@ -176,10 +172,11 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
             mBrightnessDialog.show()
         }
 
+        val progress = (percent * 100.0f).toInt()
         if (this.brightProgress != null) {
-            brightProgress?.setProgress((percent * 100.0f).toInt())
+            brightProgress?.setProgress(progress)
         }
-        Log.d("speed", "showBrightnessDialog:${speed} ")
+        Log.d("speed", "showBrightnessDialog:${progress} ,percent$${percent}")
     }
 
     override fun getBrightnessTextId(): Int {
