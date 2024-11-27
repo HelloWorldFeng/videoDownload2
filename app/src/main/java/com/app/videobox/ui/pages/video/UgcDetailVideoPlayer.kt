@@ -3,6 +3,7 @@ package com.app.videobox.ui.pages.video
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
+import android.content.res.Configuration
 import android.media.metrics.Event
 import android.util.AttributeSet
 import android.util.Log
@@ -30,6 +31,7 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
     private var ratioBtn:ImageView = findViewById(R.id.ratio_btn)
     private var fullBtn:ImageView = findViewById(R.id.full_btn)
     private var lockBtn:ImageView = findViewById(R.id.lock_iv)
+    private var startBtn:ImageView = findViewById(R.id.start_btn)
     private var currentSpeed:SpeedUnit = SpeedUnit.One
     private var currentType:Int = 0
     private var mLockCurIv:Boolean = false
@@ -66,13 +68,36 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
         }
         addSecond.setOnClickListener {
             val currentPosition = this.currentPositionWhenPlaying // 获取当前播放位置
-            val newPosition = currentPosition + 5 * 1000 // 计算新的播放位置
+            val newPosition = currentPosition + 10 * 1000 // 计算新的播放位置
             this.seekTo(newPosition) // 设置新的播放位置
         }
         reduceSecond.setOnClickListener {
             val currentPosition = this.currentPositionWhenPlaying // 获取当前播放位置
-            val newPosition = currentPosition - 5 * 1000 // 计算新的播放位置
+            val newPosition = currentPosition - 10 * 1000 // 计算新的播放位置
             this.seekTo(newPosition) // 设置新的播放位置
+        }
+        startBtn.setOnClickListener {
+            if (mCurrentState == CURRENT_STATE_PLAYING) {
+                onVideoPause()
+            }
+            else if (mCurrentState == CURRENT_STATE_AUTO_COMPLETE) {
+                onVideoReset()
+                startPlayLogic()
+            } else {
+                onVideoResume()
+            }
+        }
+    }
+
+    override fun updateStartImage() {
+        super.updateStartImage()
+
+        if (mCurrentState == CURRENT_STATE_PLAYING) {
+            startBtn.setImageResource(R.drawable.icon_pause)
+        } else if (mCurrentState == CURRENT_STATE_ERROR) {
+            startBtn.setImageResource(com.shuyu.gsyvideoplayer.R.drawable.video_click_error_selector)
+        } else {
+            startBtn.setImageResource(R.drawable.icon_start)
         }
     }
 
@@ -106,10 +131,6 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
             }
         }
 
-    }
-
-    override fun updateStartImage() {
-        super.updateStartImage()
     }
 
     override fun getVolumeLayoutId(): Int {
@@ -231,4 +252,8 @@ class UgcDetailVideoPlayer : StandardGSYVideoPlayer {
         super.onClickUiToggle(e)
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+
+    }
 }

@@ -59,7 +59,7 @@ class SettingScreen:Screen {
             )
             Spacer(modifier = Modifier.height(9.dp))
 
-            CoilImage(modifier = Modifier.size(80.dp), data = R.drawable.ic_launcher_background)
+            CoilImage(modifier = Modifier.size(80.dp), data = R.mipmap.icon_logo)
             Spacer(modifier = Modifier.height(11.dp))
             TextTitle(
                 text = stringResource(id = R.string.app_name),

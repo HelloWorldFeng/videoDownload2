@@ -3,30 +3,38 @@ package com.app.videobox.ui.pages
 import android.content.Context
 import android.content.res.AssetManager
 import android.os.Bundle
+import android.text.format.Formatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ui.pages.video.VideoPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
@@ -45,7 +53,11 @@ class HotScreen:Screen {
         val list = remember {
             getVideoFilesFromAssets(context)
         }
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()) {
             TitleBar(title = "Built-in video") {
                 navigator.pop()
             }
@@ -56,22 +68,44 @@ class HotScreen:Screen {
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(list){
-                    CoilImage(
+                items(list){file->
+                    Box(
                         modifier = Modifier
-                            .singClick {
-                                context.safeStartActivity(
-                                    VideoPlayActivity::class.java,
-                                    args = Bundle().apply {
-                                        putString("video_url", it.absolutePath)
-                                        putString("title",it.name)
-                                    })
-                            }
                             .size(109.dp, 162.dp)
-                            .clip(shape = RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.FillBounds,
-                        data = it.absolutePath,
-                    )
+                            .clip(shape = RoundedCornerShape(12.dp))
+                    ){
+                        CoilImage(
+                            modifier = Modifier
+                                .singClick {
+                                    context.safeStartActivity(
+                                        VideoPlayActivity::class.java,
+                                        args = Bundle().apply {
+                                            putString("video_url", file.absolutePath)
+                                            putString("title", file.name)
+                                        })
+                                }
+                                .fillMaxSize(),
+                            contentScale = ContentScale.FillBounds,
+                            data = file.absolutePath,
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .padding(6.dp)
+                                .align(Alignment.TopEnd)
+                                .wrapContentSize()
+                                .background(color = Color(0x52000000), shape = RoundedCornerShape(20.dp))
+                        ) {
+                            val sizeKb = Formatter.formatFileSize(context, file.length())
+                            Text(
+                                text = sizeKb,
+                                fontSize = 12.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(3.dp)
+                            )
+                        }
+                    }
+
                 }
             }
 

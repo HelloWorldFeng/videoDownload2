@@ -61,7 +61,7 @@ object FileUtils {
 
 
                     val file = File(filePath)
-                    val fileSize = file.length() / 1024
+                    val fileSize = file.length()
                     val createTimeStamp = file.lastModified()
                     if (file.exists()) {
                         val playTime = getVideoDuration(file.absoluteFile)

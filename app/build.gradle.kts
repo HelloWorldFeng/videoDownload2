@@ -29,6 +29,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String","privacyUrl","\"${prop.getProperty("privacyUrl")}\"")
+        buildConfigField("String","termUrl","\"${prop.getProperty("termUrl")}\"")
     }
 
     signingConfigs {
@@ -50,11 +53,12 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
