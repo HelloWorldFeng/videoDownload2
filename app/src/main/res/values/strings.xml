@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">videoBox</string>
+    <string name="app_name" translatable="false">StreamBox - Player</string>
     <string name="file_director">File Director</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>

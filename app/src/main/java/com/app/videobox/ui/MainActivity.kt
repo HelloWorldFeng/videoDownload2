@@ -44,6 +44,7 @@ import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
 import com.app.videobox.ui.dialogs.PermissionDialog
 import com.app.videobox.ui.pages.FolderScreen
+import com.app.videobox.ui.pages.HotScreen
 import com.app.videobox.ui.pages.LocalVideoScreen
 import com.app.videobox.ui.pages.SettingScreen
 import com.app.videobox.ui.theme.gradientColor
@@ -60,14 +61,14 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            if (FileUtils.checkFilePermission(this@MainActivity)) {
-                return@launch
-            }
-            FileUtils.requestFilePermission(this@MainActivity){
-                fetchPhoneVideo(this@MainActivity)
-            }
-        }
+//        lifecycleScope.launch {
+//            if (FileUtils.checkFilePermission(this@MainActivity)) {
+//                return@launch
+//            }
+//            FileUtils.requestFilePermission(this@MainActivity){
+//                fetchPhoneVideo(this@MainActivity)
+//            }
+//        }
         setContent {
             BackHandler {}
             Navigator(HomeScreen())
@@ -174,7 +175,7 @@ class HomeScreen : Screen {
                         .weight(1f)
                         .background(color = Color.White, shape = RoundedCornerShape(14.dp))
                         .singClick {
-
+                            navigator.push(HotScreen())
                         })
             }
 

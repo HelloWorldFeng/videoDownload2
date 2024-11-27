@@ -28,6 +28,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ext.safeStartActivity
+import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.urlInBrowser
 import com.app.videobox.ui.LanguageActivity
 import com.app.videobox.ui.base.BaseActivity
@@ -81,26 +82,20 @@ class SettingScreen:Screen {
                 R.drawable.icon_small_share,
                 stringResource(R.string.share_the_app),
                 onClick = {
-                    try {
-                        val intent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(
-                                Intent.EXTRA_TEXT,
-                                "https://play.google.com/store/apps/details?id=${context.packageName}"
-                            )
-                            type = "text/plain"
-                        }
-                        context.startActivity(intent)
-                    } catch (_: Exception) { }
+                    context.shareApp()
                 })
             ItemView(
                 R.drawable.icon_small_privacy,
                 stringResource(R.string.privacy_policy),
-                onClick = {})
+                onClick = {
+
+                })
             ItemView(
                 R.drawable.icon_small_version,
                 stringResource(R.string.version_update),
-                onClick = {})
+                onClick = {
+
+                })
         }
     }
 

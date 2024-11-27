@@ -125,7 +125,7 @@ object FileUtils {
             })
     }
 
-    fun checkFilePermission(context: Activity): Boolean {
+    fun checkFilePermission(context: Context): Boolean {
         return XXPermissions.isGranted(context,Manifest.permission.READ_MEDIA_VIDEO,Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 

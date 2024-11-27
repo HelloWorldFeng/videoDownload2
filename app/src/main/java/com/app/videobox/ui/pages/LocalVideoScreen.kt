@@ -40,6 +40,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
+import com.app.videobox.ext.shareApp
+import com.app.videobox.ext.shareVideo
 import com.app.videobox.manager.FileManager
 import com.app.videobox.ui.dialogs.MoreDialog
 import com.app.videobox.ui.dialogs.RenameDialog
@@ -115,7 +117,11 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
             onRename = {
                 showRename = true
             },
-            onShare = {},
+            onShare = {
+                selectFileInfo?.let {
+                    shareVideo(context,it.file)
+                }
+            },
             onDismiss = {
                 showDialog = false
             })

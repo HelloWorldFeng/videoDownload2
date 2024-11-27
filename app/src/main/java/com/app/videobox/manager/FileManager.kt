@@ -36,6 +36,9 @@ object FileManager {
     }
 
     fun fetchPhoneVideo(context: Context) {
+        if (FileUtils.checkFilePermission(context).not()) {
+            return
+        }
         scanFileResultState.clear()
         val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             FileUtils.getVideoFiles(context)

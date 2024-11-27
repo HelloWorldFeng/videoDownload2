@@ -1,16 +1,25 @@
 import org.gradle.internal.impldep.bsh.commands.dir
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
+
+val prop = Properties()
+val configDir = file("src/config/app.properties").inputStream()
+prop.load(configDir)
+
 
 android {
     namespace = "com.app.videobox"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.app.videobox"
+        applicationId = prop.getProperty("packageName")
         minSdk = 21
         targetSdk = 34
         versionCode = 1
@@ -22,8 +31,25 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release"){
+            storeFile = file("src/config/${prop["storeFile"]}")
+            storePassword =  prop.getProperty("storePassword")
+            keyAlias = prop.getProperty("keyAlias")
+            keyPassword = prop.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -40,6 +66,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -47,6 +74,12 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    flavorDimensions.add("config")
+    productFlavors {
+        create("config") {
+            dimension = "config"
         }
     }
 }
@@ -91,6 +124,10 @@ dependencies {
     implementation("com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v10.0.0")
     implementation("com.github.getActivity:XXPermissions:20.0")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-config")
 
     val voyagerVersion = "1.1.0-beta02"
     // Navigator
