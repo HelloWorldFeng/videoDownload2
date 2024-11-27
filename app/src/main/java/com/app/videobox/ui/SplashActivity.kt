@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +55,13 @@ class SplashActivity : BaseActivity() {
                     data = R.drawable.bg_splash,
                     contentScale = ContentScale.FillWidth
                 )
+                Box(modifier = Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(brush = Brush.verticalGradient(listOf(
+                        Color(0x1A000000),
+                        Color(0xFF000000),
+                    ))))
             }
 
             if (showSplashState) {

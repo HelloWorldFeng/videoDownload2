@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -70,28 +71,41 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding()) {
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally) {
             TitleBar(title = "Local Video") {
                 navigator.pop()
             }
             Spacer(modifier = Modifier.height(10.dp))
-            LazyColumn(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                items(dataList){fileInfo->
-                    ListItemView(fileInfo,
-                        onClick = {
-                            context.safeStartActivity(
-                                VideoPlayActivity::class.java,
-                                args = Bundle().apply {
-                                    putString("video_url", fileInfo.file.absolutePath)
-                                    putString("title",fileInfo.titleName)
-                                })
-                        },
-                        onClickMore = {
-                            selectFileInfo = fileInfo
-                            showDialog = true
-                        })
+            if (dataList.isEmpty()) {
+                Spacer(modifier = Modifier.weight(1f))
+                CoilImage(
+                    modifier = Modifier.size(66.dp, 74.dp),
+                    data = R.drawable.icon_empty
+                )
+                Spacer(modifier = Modifier.height(28.dp))
+                Text(text = stringResource(R.string.no_content_at_the_moment), fontSize = 16.sp,color = Color.White)
+                Spacer(modifier = Modifier.weight(1f))
+            }else{
+                LazyColumn(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    items(dataList){fileInfo->
+                        ListItemView(fileInfo,
+                            onClick = {
+                                context.safeStartActivity(
+                                    VideoPlayActivity::class.java,
+                                    args = Bundle().apply {
+                                        putString("video_url", fileInfo.file.absolutePath)
+                                        putString("title",fileInfo.titleName)
+                                    })
+                            },
+                            onClickMore = {
+                                selectFileInfo = fileInfo
+                                showDialog = true
+                            })
+                    }
                 }
             }
+
         }
 
         if (showRename && selectFileInfo != null) {
