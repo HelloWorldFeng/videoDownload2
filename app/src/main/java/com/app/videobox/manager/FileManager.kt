@@ -7,10 +7,20 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.lifecycleScope
+import com.app.videobox.App
+import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.utils.FileUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.Serializable
 
@@ -26,60 +36,64 @@ object FileManager {
     ):Serializable
 
     var scanFileResultState: MutableList<FileInfo> = mutableListOf()
+    var scanFileState = mutableStateOf(value = false)
 
-    fun getScanFileDir(): MutableMap<String, MutableList<FileInfo>> {
-        val videoMap = mutableMapOf<String,MutableList<FileInfo>>()
-        scanFileResultState.forEach {
-            videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it) // 仅添加存在的文件
-        }
-        return videoMap
-    }
 
-    fun fetchPhoneVideo(context: Context) {
+    fun fetchPhoneVideo(context: BaseActivity) {
         if (FileUtils.checkFilePermission(context).not()) {
             return
         }
-        scanFileResultState.clear()
-        val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            FileUtils.getVideoFiles(context)
-        } else {
-            scanForFiles()
-        }
 
-        //不使用 所有文件访问权限为了过审 做伪逻辑操作
-        //伪删除
-        FileUtils.deleteSet.forEach { deleteName->
-            list.find { it.titleName.equals(deleteName,true) }?.let {
-                list.remove(it)
+        context.lifecycleScope.launch(Dispatchers.IO) {
+            val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                scanForFiles()
+//                FileUtils.getVideoFiles(context)
+            } else {
+                scanForFiles()
             }
-        }
-        scanFileResultState.addAll(list)
-
-        //伪重命名
-        val rename = SPStaticUtils.getString("rename")
-        if (rename.isNotEmpty()) {
-            FileUtils.renameSet.clear()
-            val type = object : TypeToken<List<FileUtils.RenameFile>>() {}.type
-            val list = Gson().fromJson<List<FileUtils.RenameFile>>(rename,type)
-            FileUtils.renameSet.addAll(list)
-
-            list.forEach {  fileInfo->
-                scanFileResultState.find { it.titleName == fileInfo.oldName }?.titleName = fileInfo.newName
+            scanFileResultState.clear()
+            //不使用 所有文件访问权限为了过审 做伪逻辑操作
+            //伪删除
+            FileUtils.deleteSet.forEach { deleteName->
+                list.find { it.titleName.equals(deleteName,true) }?.let {
+                    list.remove(it)
+                }
             }
+            scanFileResultState.addAll(list)
+
+            //伪重命名
+            val rename = SPStaticUtils.getString("rename")
+            if (rename.isNotEmpty()) {
+                FileUtils.renameSet.clear()
+                val type = object : TypeToken<List<FileUtils.RenameFile>>() {}.type
+                val list = Gson().fromJson<List<FileUtils.RenameFile>>(rename,type)
+                FileUtils.renameSet.addAll(list)
+
+                list.forEach {  fileInfo->
+                    scanFileResultState.find { it.titleName == fileInfo.oldName }?.titleName = fileInfo.newName
+                }
+            }
+
         }
 
     }
 
-    fun scanForFiles():  MutableList<FileInfo> {
+    suspend fun scanForFiles():  MutableList<FileInfo> = withContext(Dispatchers.IO){
         val list = mutableListOf<FileInfo>()
         if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
             val rootDir = Environment.getExternalStorageDirectory()
-            Log.d("TempLog", "开始扫描")
+            Log.d("TempLog", "开始扫描:${rootDir}")
+            scanFileState.value = true
             val startTime = System.currentTimeMillis()
-            scanDirectoryForFile(rootDir, list)
+            if (rootDir.isDirectory) {
+                rootDir.listFiles()?.map {
+                    async { scanDirectoryForFile(it, list) }
+                }?.awaitAll()
+            }
+            scanFileState.value = false
             Log.d("TempLog", "扫描结束: ${System.currentTimeMillis() - startTime} ms")
         }
-        return list
+        return@withContext list
     }
 
     private fun scanDirectoryForFile(

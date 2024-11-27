@@ -11,6 +11,9 @@ import com.app.videobox.utils.LanguageUtils.setAppLanguage
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
 import com.shuyu.gsyvideoplayer.utils.GSYVideoType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 class App : Application() {
 
@@ -20,7 +23,7 @@ class App : Application() {
 
     companion object{
          private lateinit var instance: App
-
+        val coroutineScope by lazy { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
         fun appContext(): Context {
             return instance.applicationContext
         }

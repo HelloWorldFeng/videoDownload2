@@ -1,6 +1,10 @@
 package com.app.videobox.ui.pages
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +19,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +38,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.manager.FileManager
+import com.app.videobox.ui.dialogs.LoadingDialog
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
@@ -38,9 +48,15 @@ class FolderScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val dataList = remember {
-            FileManager.getScanFileDir().toList()
+        val dataList = run {
+            val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
+            FileManager.scanFileResultState.forEach {
+                videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it) // 仅添加存在的文件
+            }
+            videoMap.toList()
         }
+
+
         Column(
             Modifier
                 .fillMaxSize()
@@ -87,5 +103,7 @@ class FolderScreen:Screen {
             }
 
         }
+
+        LoadingDialog(FileManager.scanFileState.value)
     }
 }

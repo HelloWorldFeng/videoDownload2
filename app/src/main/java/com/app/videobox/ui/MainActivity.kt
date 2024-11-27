@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,24 +62,17 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        lifecycleScope.launch {
-//            if (FileUtils.checkFilePermission(this@MainActivity)) {
-//                return@launch
-//            }
-//            FileUtils.requestFilePermission(this@MainActivity){
-//                fetchPhoneVideo(this@MainActivity)
-//            }
-//        }
+        lifecycleScope.launch {
+            if (FileUtils.checkFilePermission(this@MainActivity).not()) {
+                return@launch
+            }
+            FileUtils.requestFilePermission(this@MainActivity){
+                fetchPhoneVideo(this@MainActivity)
+            }
+        }
         setContent {
             BackHandler {}
             Navigator(HomeScreen())
-        }
-    }
-
-    override fun hasFocusAfter() {
-        super.hasFocusAfter()
-        lifecycleScope.launch {
-            fetchPhoneVideo(this@MainActivity)
         }
     }
 }
@@ -93,12 +87,15 @@ class HomeScreen : Screen {
         val showPermissionState = remember {
             mutableStateOf(value = false)
         }
-
+        val focusManager = LocalFocusManager.current
         CoilImage(
             modifier = Modifier.fillMaxWidth(), data = R.drawable.bg_home_top,
             contentScale = ContentScale.FillWidth
         )
         Column(modifier = Modifier
+            .singClick {
+                focusManager.clearFocus()
+            }
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding(),
@@ -124,7 +121,16 @@ class HomeScreen : Screen {
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))
-            SearchBarView()
+            SearchBarView{
+                focusManager.clearFocus()
+                if (FileUtils.checkFilePermission(context).not()) {
+                    FileUtils.requestFilePermission(context,
+                        doNotAsk = {
+                            showPermissionState.value = true
+                        },
+                        hasPermission = {})
+                }
+            }
             Spacer(modifier = Modifier.height(22.dp))
             FoldView(){
                 if (FileUtils.checkFilePermission(context).not()) {
@@ -236,7 +242,7 @@ class HomeScreen : Screen {
     }
 
     @Composable
-    private fun SearchBarView() {
+    private fun SearchBarView(onSearchAction:()->Unit) {
         var searchText = remember { "" }
         val context = LocalContext.current as BaseActivity
         val navigator = LocalNavigator.currentOrThrow
@@ -254,6 +260,7 @@ class HomeScreen : Screen {
                     searchText = it
                 },
                 onSearch = {
+                    onSearchAction.invoke()
                     searchText = it
                     toSearchPage(searchText, context, navigator)
                 })
@@ -261,6 +268,7 @@ class HomeScreen : Screen {
             CoilImage(
                 modifier = Modifier
                     .singClick {
+                        onSearchAction.invoke()
                         toSearchPage(searchText, context, navigator)
                     }
                     .align(Alignment.CenterEnd)
