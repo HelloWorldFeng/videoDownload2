@@ -46,8 +46,7 @@ object FileManager {
 
         context.lifecycleScope.launch(Dispatchers.IO) {
             val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                scanForFiles()
-//                FileUtils.getVideoFiles(context)
+                FileUtils.getVideoFiles(context)
             } else {
                 scanForFiles()
             }
