@@ -116,14 +116,14 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("io.coil-kt:coil-video:2.4.0")
 
-    implementation("com.airbnb.android:lottie:6.1.0")
-    implementation("com.airbnb.android:lottie-compose:6.1.0")
+//    implementation("com.airbnb.android:lottie:6.1.0")
+//    implementation("com.airbnb.android:lottie-compose:6.1.0")
     implementation("com.blankj:utilcodex:1.31.1")
 
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+//    implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+//    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
+//    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     implementation("com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v10.0.0")
     implementation("com.github.getActivity:XXPermissions:20.0")
@@ -138,18 +138,9 @@ dependencies {
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
     // Screen Model
     implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
-    // BottomSheetNavigator
-    implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
-    // TabNavigator
-    implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
-    // Transitions
-    implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+
     // Koin integration
     implementation("cafe.adriel.voyager:voyager-koin:$voyagerVersion")
-    // Android
-    // Hilt integration
-    implementation("cafe.adriel.voyager:voyager-hilt:$voyagerVersion")
-    // LiveData integration
-    implementation("cafe.adriel.voyager:voyager-livedata:$voyagerVersion")
+
 
 }
