@@ -90,6 +90,13 @@ android {
             dimension = "config"
         }
     }
+
+    configurations.all {
+        resolutionStrategy {
+            force("androidx.compose.ui:ui-android:1.7.2")
+        }
+    }
+
 }
 
 dependencies {
@@ -112,7 +119,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
@@ -120,14 +127,14 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
     implementation("io.coil-kt:coil-video:2.4.0")
 
-//    implementation("com.airbnb.android:lottie:6.1.0")
-//    implementation("com.airbnb.android:lottie-compose:6.1.0")
+    implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
     implementation("com.blankj:utilcodex:1.31.1")
 
-//    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-//    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
-//    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     implementation("com.github.CarGuo.GSYVideoPlayer:gsyvideoplayer:v10.0.0")
     implementation("com.github.getActivity:XXPermissions:20.0")
@@ -140,11 +147,6 @@ dependencies {
     val voyagerVersion = "1.1.0-beta02"
     // Navigator
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
-    // Screen Model
-    implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
-    // Koin integration
-    implementation("cafe.adriel.voyager:voyager-koin:$voyagerVersion")
-
 
     implementation("com.facebook.android:facebook-android-sdk:12.0.1")
 
