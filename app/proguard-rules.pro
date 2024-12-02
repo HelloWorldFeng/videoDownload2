@@ -138,8 +138,6 @@
 -dontwarn com.shuyu.gsyvideoplayer.player.**
 -keep class tv.danmaku.ijk.** { *; }
 -dontwarn tv.danmaku.ijk.**
--keep class androidx.media3.** {*;}
--keep interface androidx.media3.**
 
 -keep class com.shuyu.alipay.** {*;}
 -keep interface com.shuyu.alipay.**

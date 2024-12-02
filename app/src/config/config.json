@@ -1,0 +1,75 @@
+{
+
+  "launchTime": 10,
+  "adLoadingTime": 3,
+  "outerConfigs": [
+    {
+      "innerAdList": [
+        {
+          "ad_local": "cold_start",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },
+        {
+          "ad_local": "hot_start",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        }
+      ],
+
+      "adOpen": true,
+      "format": "open",
+      "adNumber": "ca-app-pub-3940256099942544/9257395921"
+    },
+
+    {
+      "innerAdList": [
+        {
+          "ad_local": "home_nav",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
+        },
+        {
+          "ad_local": "translate_nav",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
+        }
+      ],
+
+      "adOpen": true,
+      "format": "nav",
+      "adNumber": "ca-app-pub-3940256099942544/2247696110"
+    },
+
+    {
+      "innerAdList": [
+        {
+          "ad_local": "home_int",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },
+        {
+          "ad_local": "translate_int",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": false
+        },
+        {
+          "ad_local": "back_int",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": false
+        }
+      ],
+
+      "adOpen": true,
+      "format": "int",
+      "adNumber": "ca-app-pub-3940256099942544/1033173712"
+    }
+  ]
+}

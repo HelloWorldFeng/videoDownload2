@@ -45,6 +45,7 @@ class SplashActivity : BaseActivity() {
     private var showSplashState by mutableStateOf(
         value = SPStaticUtils.getBoolean("firstLaunch",false)
     )
+    private var launchTime = SPStaticUtils.getInt("launchTime",10)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,7 +87,8 @@ class SplashActivity : BaseActivity() {
             LinearProgress(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .height(5.dp)
+                    .height(5.dp),
+                launchTime = launchTime
             ) {
                 if (SPStaticUtils.getBoolean("chooseLanguage", true)) {
                     safeStartActivity(LanguageActivity::class.java)

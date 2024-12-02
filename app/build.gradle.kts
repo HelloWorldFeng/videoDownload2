@@ -22,8 +22,8 @@ android {
         applicationId = prop.getProperty("packageName")
         minSdk = 21
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -32,6 +32,10 @@ android {
 
         buildConfigField("String","privacyUrl","\"${prop.getProperty("privacyUrl")}\"")
         buildConfigField("String","termUrl","\"${prop.getProperty("termUrl")}\"")
+
+        resValue("string", "adMobId", prop.getProperty("admobId"))
+        resValue("string", "facebookId", prop.getProperty("facebookId"))
+        resValue("string", "facebookToken", prop.getProperty("facebookToken"))
     }
 
     signingConfigs {
@@ -138,9 +142,13 @@ dependencies {
     implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
     // Screen Model
     implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
-
     // Koin integration
     implementation("cafe.adriel.voyager:voyager-koin:$voyagerVersion")
 
 
+    implementation("com.facebook.android:facebook-android-sdk:12.0.1")
+
+    implementation("com.google.android.gms:play-services-ads:23.2.0")
+    implementation("com.google.android.ump:user-messaging-platform:3.0.0")
+    implementation("com.android.installreferrer:installreferrer:2.2")
 }
