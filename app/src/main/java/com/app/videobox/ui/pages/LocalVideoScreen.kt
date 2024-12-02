@@ -3,6 +3,7 @@ package com.app.videobox.ui.pages
 import android.content.Context
 import android.os.Bundle
 import android.text.format.Formatter
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,18 +34,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.NativeAdsView
+import com.app.videobox.ad.base.AdPlaceTag
+import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.shareVideo
 import com.app.videobox.manager.FileManager
+import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
 import com.app.videobox.ui.dialogs.RenameDialog
 import com.app.videobox.ui.pages.video.VideoPlayActivity
@@ -57,7 +68,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val context = LocalContext.current as Context
+        val context = LocalContext.current as BaseActivity
         var showDialog by remember {
             mutableStateOf(value = false)
         }
@@ -67,14 +78,30 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         var selectFileInfo by remember {
             mutableStateOf<FileManager.FileInfo?>(null)
         }
+
+        BackHandler {
+            AdmobManager.getFullAdFromPool(
+                context,
+                adType = "int",
+                adScene = "back_int",
+                closeAction = {
+                    navigator.pop()
+                })
+        }
         Column(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally) {
-            TitleBar(title = "Local Video") {
-                navigator.pop()
+            TitleBar(title = stringResource(id = R.string.local_video)) {
+                AdmobManager.getFullAdFromPool(
+                    context,
+                    adType = "int",
+                    adScene = "back_int",
+                    closeAction = {
+                        navigator.pop()
+                    })
             }
             Spacer(modifier = Modifier.height(10.dp))
             if (dataList.isEmpty()) {
@@ -91,12 +118,19 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     items(dataList){fileInfo->
                         ListItemView(fileInfo,
                             onClick = {
-                                context.safeStartActivity(
-                                    VideoPlayActivity::class.java,
-                                    args = Bundle().apply {
-                                        putString("video_url", fileInfo.file.absolutePath)
-                                        putString("title",fileInfo.titleName)
+                                AdmobManager.getFullAdFromPool(
+                                    context,
+                                    adType = "int",
+                                    adScene = "play_int",
+                                    closeAction = {
+                                        context.safeStartActivity(
+                                            VideoPlayActivity::class.java,
+                                            args = Bundle().apply {
+                                                putString("video_url", fileInfo.file.absolutePath)
+                                                putString("title",fileInfo.titleName)
+                                            })
                                     })
+
                             },
                             onClickMore = {
                                 selectFileInfo = fileInfo
@@ -104,6 +138,46 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                             })
                     }
                 }
+
+                var nativeState by remember {
+                    mutableStateOf<AdUnitWrapper?>(null)
+                }
+                val lifecycleOwner = LocalLifecycleOwner.current
+                DisposableEffect(key1 = lifecycleOwner) {
+                    val observer = object : LifecycleObserver {
+                        @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                        fun onStart() {
+                            AdmobManager.getSmallAdFromPool(
+                                AdPlaceTag.AD_Home,
+                                adType = "nav",
+                                adScene = "function_nav"
+                            ){
+                                nativeState = it
+                            }
+
+                        }
+
+                        @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+                        fun onStop() {
+                            nativeState = null
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
+
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.weight(1f))
+                NativeAdsView(
+                    adUnitWrapper = nativeState,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .fillMaxWidth(1f),
+                    bigStyle = false
+                )
             }
 
         }

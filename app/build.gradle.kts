@@ -151,4 +151,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:23.2.0")
     implementation("com.google.android.ump:user-messaging-platform:3.0.0")
     implementation("com.android.installreferrer:installreferrer:2.2")
+
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
 }

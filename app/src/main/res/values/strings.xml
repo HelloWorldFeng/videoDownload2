@@ -20,4 +20,5 @@
     <string name="rename">Rename</string>
     <string name="share">Share</string>
     <string name="permission_needs_to_be_granted">Permission needs to be granted to access video files on the phone</string>
+    <string name="built_in_video">Built-in video</string>
 </resources>

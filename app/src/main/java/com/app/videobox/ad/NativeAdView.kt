@@ -43,31 +43,27 @@ fun NativeAdsView(adUnitWrapper: AdUnitWrapper?, modifier: Modifier,bigStyle:Boo
     val recompose = currentRecomposeScope
     var isAdShown by remember { mutableStateOf(true) }
 
-    if (adUnitWrapper == null) {
-        NativeAdPlace()
-    }else{
-        Box(modifier = modifier) {
-            AndroidView(
-                factory = { FrameLayout(it) },
-                update = { frameLayout ->
-                    if (!isAdShown) {
-                        scope.launch {
-                            adUnitWrapper.showSmallAd(context, frameLayout,bigStyle)
-                            view.post { view.requestLayout() }
-                        }
-                    }else{
-                        isAdShown = false
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = { FrameLayout(it) },
+            update = { frameLayout ->
+                if (!isAdShown) {
+                    scope.launch {
+                        adUnitWrapper?.showSmallAd(context, frameLayout,bigStyle)
+                        view.post { view.requestLayout() }
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
-            )
-
-            LaunchedEffect(lifecycleOwner) {
-                lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    recompose.invalidate()
+                }else{
+                    isAdShown = false
                 }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center)
+        )
+
+        LaunchedEffect(lifecycleOwner) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                recompose.invalidate()
             }
         }
     }

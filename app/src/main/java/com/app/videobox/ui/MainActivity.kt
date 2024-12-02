@@ -20,26 +20,41 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.app.videobox.App
 import com.app.videobox.R
+import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.NativeAdsView
+import com.app.videobox.ad.base.AdPlaceTag
+import com.app.videobox.ad.base.AdUnitWrapper
+import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
@@ -96,6 +111,7 @@ class HomeScreen : Screen {
             .singClick {
                 focusManager.clearFocus()
             }
+            .verticalScroll(rememberScrollState())
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding(),
@@ -142,12 +158,22 @@ class HomeScreen : Screen {
                             fetchPhoneVideo(context)
                         })
                 }else{
-                    navigator.push(FolderScreen())
+                    AdmobManager.getFullAdFromPool(
+                        context,
+                        adType = "int",
+                        adScene = "home_int",
+                        closeAction = {
+                            navigator.push(FolderScreen())
+                        })
+
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(Modifier.fillMaxWidth(0.9f), horizontalArrangement = Arrangement.SpaceAround) {
+            Row(
+                Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
                 HomeItemView(
                     stringResource(R.string.local_video),
                     R.drawable.icon_local_logo,
@@ -169,7 +195,13 @@ class HomeScreen : Screen {
                                         fetchPhoneVideo(context)
                                     })
                             } else {
-                                navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
+                                AdmobManager.getFullAdFromPool(
+                                    context,
+                                    adType = "int",
+                                    adScene = "home_int",
+                                    closeAction = {
+                                        navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
+                                    })
                             }
                         },
                 )
@@ -181,10 +213,57 @@ class HomeScreen : Screen {
                         .weight(1f)
                         .background(color = Color.White, shape = RoundedCornerShape(14.dp))
                         .singClick {
-                            navigator.push(HotScreen())
+                            AdmobManager.getFullAdFromPool(
+                                context,
+                                adType = "int",
+                                adScene = "home_int",
+                                closeAction = {
+                                    navigator.push(HotScreen())
+                                })
                         })
             }
 
+
+            //原生广告
+            var nativeState by remember {
+                mutableStateOf<AdUnitWrapper?>(null)
+            }
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(key1 = lifecycleOwner) {
+                val observer = object : LifecycleObserver {
+                    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                    fun onStart() {
+                        AdmobManager.getSmallAdFromPool(
+                            AdPlaceTag.AD_Home,
+                            adType = "nav",
+                            adScene = "home_nav"
+                        ){
+                            nativeState = it
+                        }
+
+                    }
+
+                    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+                    fun onStop() {
+                        nativeState = null
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            NativeAdsView(
+                adUnitWrapper = nativeState,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .fillMaxWidth(0.9f),
+                bigStyle = true
+            )
         }
 
         PermissionDialog(showPermissionState.value, onOK = {

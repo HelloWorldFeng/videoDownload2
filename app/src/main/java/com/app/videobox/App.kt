@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import com.app.videobox.ext.safeStartActivity
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
 import com.blankj.utilcode.util.AppUtils
@@ -14,6 +15,7 @@ import com.shuyu.gsyvideoplayer.utils.GSYVideoType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class App : Application() {
 
@@ -30,6 +32,11 @@ class App : Application() {
     }
     override fun onCreate() {
         super.onCreate()
+
+        coroutineScope.launch {
+            RemoteConfigManager.fetchConfig()
+        }
+
         AppUtils.registerAppStatusChangedListener(object :OnAppStatusChangedListener{
             override fun onForeground(activity: Activity?) {
                 if (activity is SplashActivity) {

@@ -2,6 +2,7 @@ package com.app.videobox.ad
 
 import android.app.Activity
 import android.util.Log
+import com.app.videobox.BuildConfig
 import com.app.videobox.ad.AdConst.CLICK_COUNT
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
@@ -134,9 +135,61 @@ object AdmobManager {
         if (!contains(element)) add(element)
     }
 
+    fun getSmallAdFromPool(
+        adPlaceTag: AdPlaceTag,
+        adScene:String = "", //广告展示场景
+        adType:String = "", //从池里拿什么类型
+        block:(AdUnitWrapper)->Unit) {
+        if (!this::adConfigMap.isInitialized || !AppUtils.isAppForeground()) return
+
+        navGetCallback = block
+        nowShowAdScene = adScene
+
+        //检查这个场景 限制条件权限 true达到限制
+        val showBool = checkAdSceneShow(adScene,adType)
+        if (showBool) {
+            Log.d(TAG, "展示限制:${adScene}")
+            return
+        }
+        val clickBool = checkAdSceneClick(adScene, adType)
+        if (clickBool) {
+            Log.d(TAG, "点击限制:${adScene}")
+            return
+        }
+        //广告场景开关
+        val sceneBool = getAdConfigByScene(adScene,adType)?.showBtn ?: true
+        if (sceneBool.not()) {
+            return
+        }
+
+        if (smallAdPool.none { it.type == adType }) {
+            //广告池里 没有这个类型
+            adConfigMap[adType]?.let {
+                if (it.openBtn) {
+                    AdLoaderHelper.needFillNavAd = true
+                    loadAdmobInstance(adType)
+                } else {
+                    Log.d(TAG, "${adPlaceTag.getPlaceString()}广告位关闭，不请求")
+                }
+            }
+
+        }
+
+        smallAdPool.find { it.type == adType }?.let { adWrapper->
+            //找到配置中的广告位
+            adWrapper.innerAdList.find { it.ad_local == adScene }.let {
+                smallAdPool.remove(adWrapper)
+                navGetCallback?.invoke(adWrapper)
+                AdLoaderHelper.needFillNavAd = false
+            }
+            return
+        }
+
+    }
+
+
     fun getFullAdFromPool(
         activity: Activity,
-        adPlaceTag: AdPlaceTag,
         adScene:String = "", //广告展示场景
         adType:String = "", //从池里拿什么类型
         closeAction: () -> Unit,
@@ -153,11 +206,13 @@ object AdmobManager {
         //检查这个场景 限制条件权限 true达到限制
         val showBool = checkAdSceneShow(adScene,adType)
         if (showBool) {
+            Log.d(TAG, "展示限制:${adScene}")
             closeAction.invoke()
             return
         }
         val clickBool = checkAdSceneClick(adScene, adType)
         if (clickBool) {
+            Log.d(TAG, "点击限制:${adScene}")
             closeAction.invoke()
             return
         }
@@ -175,7 +230,7 @@ object AdmobManager {
                 if (it.openBtn) {
                     loadAdmobInstance(adType)
                 } else {
-                    Log.d(TAG, "${adPlaceTag.getPlaceString()}广告位关闭，不请求")
+                    Log.d(TAG, "${adType}广告位关闭，不请求")
                 }
             }
             if (emptyAction == null) {
@@ -221,54 +276,5 @@ object AdmobManager {
         return adConfigMap[adType]?.innerAdList?.find { it.ad_local == adScene }
     }
 
-    fun getSmallAdFromPool(
-        adPlaceTag: AdPlaceTag,
-        adScene:String = "", //广告展示场景
-        adType:String = "", //从池里拿什么类型
-        block:(AdUnitWrapper)->Unit) {
-        if (!this::adConfigMap.isInitialized || !AppUtils.isAppForeground()) return
-
-        navGetCallback = block
-        nowShowAdScene = adScene
-
-        //检查这个场景 限制条件权限 true达到限制
-        val showBool = checkAdSceneShow(adScene,adType)
-        if (showBool) {
-            return
-        }
-        val clickBool = checkAdSceneClick(adScene, adType)
-        if (clickBool) {
-            return
-        }
-        //广告场景开关
-        val sceneBool = getAdConfigByScene(adScene,adType)?.showBtn ?: true
-        if (sceneBool.not()) {
-            return
-        }
-
-        if (smallAdPool.none { it.type == adType }) {
-            //广告池里 没有这个类型
-            adConfigMap[adType]?.let {
-                if (it.openBtn) {
-                    AdLoaderHelper.needFillNavAd = true
-                    loadAdmobInstance(adType)
-                } else {
-                    Log.d(TAG, "${adPlaceTag.getPlaceString()}广告位关闭，不请求")
-                }
-            }
-
-        }
-
-        smallAdPool.find { it.type == adType }?.let { adWrapper->
-            //找到配置中的广告位
-            adWrapper.innerAdList.find { it.ad_local == adScene }.let {
-                smallAdPool.remove(adWrapper)
-                navGetCallback?.invoke(adWrapper)
-                AdLoaderHelper.needFillNavAd = false
-            }
-            return
-        }
-
-    }
 
 }

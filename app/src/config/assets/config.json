@@ -33,7 +33,7 @@
           "showBtn": true
         },
         {
-          "ad_local": "translate_nav",
+          "ad_local": "function_nav",
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
@@ -54,10 +54,10 @@
           "showBtn": true
         },
         {
-          "ad_local": "translate_int",
+          "ad_local": "play_int",
           "showCount": 10,
           "clickCount": 3,
-          "showBtn": false
+          "showBtn": true
         },
         {
           "ad_local": "back_int",

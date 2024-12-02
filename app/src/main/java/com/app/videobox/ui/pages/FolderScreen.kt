@@ -1,5 +1,7 @@
 package com.app.videobox.ui.pages
 
+import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,15 +33,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.NativeAdsView
+import com.app.videobox.ad.base.AdPlaceTag
+import com.app.videobox.ad.base.AdUnitWrapper
+import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.FileManager
+import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.LoadingDialog
+import com.app.videobox.ui.pages.video.VideoPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
@@ -48,6 +63,7 @@ class FolderScreen:Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val context = LocalContext.current as BaseActivity
         val dataList = run {
             val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
             FileManager.scanFileResultState.forEach {
@@ -56,6 +72,15 @@ class FolderScreen:Screen {
             videoMap.toList()
         }
 
+        BackHandler {
+            AdmobManager.getFullAdFromPool(
+                context,
+                adType = "int",
+                adScene = "back_int",
+                closeAction = {
+                    navigator.pop()
+                })
+        }
 
         Column(
             Modifier
@@ -64,7 +89,13 @@ class FolderScreen:Screen {
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally) {
             TitleBar(title = stringResource(R.string.file_director), onBack = {
-                navigator.pop()
+                AdmobManager.getFullAdFromPool(
+                    context,
+                    adType = "int",
+                    adScene = "back_int",
+                    closeAction = {
+                        navigator.pop()
+                    })
             })
             if (dataList.isEmpty()) {
                 Spacer(modifier = Modifier.weight(1f))
@@ -100,6 +131,46 @@ class FolderScreen:Screen {
                         }
                     }
                 }
+
+                var nativeState by remember {
+                    mutableStateOf<AdUnitWrapper?>(null)
+                }
+                val lifecycleOwner = LocalLifecycleOwner.current
+                DisposableEffect(key1 = lifecycleOwner) {
+                    val observer = object : LifecycleObserver {
+                        @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                        fun onStart() {
+                            AdmobManager.getSmallAdFromPool(
+                                AdPlaceTag.AD_Home,
+                                adType = "nav",
+                                adScene = "function_nav"
+                            ){
+                                nativeState = it
+                            }
+
+                        }
+
+                        @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+                        fun onStop() {
+                            nativeState = null
+                        }
+                    }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
+
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.weight(1f))
+                NativeAdsView(
+                    adUnitWrapper = nativeState,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .fillMaxWidth(1f),
+                    bigStyle = false
+                )
             }
 
         }

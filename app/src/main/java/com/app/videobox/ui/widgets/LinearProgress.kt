@@ -16,28 +16,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.app.videobox.ad.AdmobManager
 import kotlinx.coroutines.delay
 
 @Composable
 fun LinearProgress(
     modifier: Modifier,
-    launchTime: Int = 1,
+    launchTime: Int = 10,
+    startPlay:Boolean = true,
     bgColor: Color = Color.White,
     solidColor:Color = Color.Black,
     finishBlock: () -> Unit
 ) {
+    var mLaunchTime = remember {
+        launchTime
+    }
     var progressLinear by remember {
         mutableFloatStateOf(0.00f)
     }
-
-    LaunchedEffect(Unit) {
-        for (i in 0..99) {
-            progressLinear += 0.01f
-            delay(launchTime * 10L)
-
-        }
-        finishBlock.invoke()
+    var boolean = remember {
+        true
     }
+
+    if (startPlay) {
+        LaunchedEffect(Unit) {
+            for (i in 0..99) {
+                progressLinear += 0.01f
+                delay(mLaunchTime * 10L)
+                if (AdmobManager.canSpeedAnim() && boolean) {
+                    boolean = false
+                    mLaunchTime = 1
+                }
+            }
+            finishBlock.invoke()
+        }
+    }
+
 
     Box(
         modifier = Modifier
