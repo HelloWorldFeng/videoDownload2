@@ -52,7 +52,6 @@ import com.app.videobox.App
 import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.NativeAdsView
-import com.app.videobox.ad.base.AdPlaceTag
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ui.base.BaseActivity
@@ -224,7 +223,6 @@ class HomeScreen : Screen {
                     @OnLifecycleEvent(Lifecycle.Event.ON_START)
                     fun onStart() {
                         AdmobManager.getSmallAdFromPool(
-                            AdPlaceTag.AD_Home,
                             adType = "nav",
                             adScene = "home_nav"
                         ){

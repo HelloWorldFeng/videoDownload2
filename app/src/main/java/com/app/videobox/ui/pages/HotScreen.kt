@@ -52,7 +52,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.NativeAdsView
-import com.app.videobox.ad.base.AdPlaceTag
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
@@ -179,7 +178,6 @@ class HotScreen:Screen {
                     @OnLifecycleEvent(Lifecycle.Event.ON_START)
                     fun onStart() {
                         AdmobManager.getSmallAdFromPool(
-                            AdPlaceTag.AD_Home,
                             adType = "nav",
                             adScene = "function_nav"
                         ){

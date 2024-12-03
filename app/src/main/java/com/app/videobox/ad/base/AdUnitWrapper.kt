@@ -20,7 +20,6 @@ class AdUnitWrapper(
     var type: String ="",
     var adNumber:String,
 
-    var place: AdPlaceTag,
     var innerAdList: List<InnerAd>, //这条id用于的广告场景
     var adLoading: Boolean = false, //广告位上 广告加载状态
 

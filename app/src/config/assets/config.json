@@ -6,13 +6,13 @@
     {
       "innerAdList": [
         {
-          "ad_local": "cold_start",
+          "adScene": "cold_start",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
         },
         {
-          "ad_local": "hot_start",
+          "adScene": "hot_start",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": false
@@ -27,13 +27,13 @@
     {
       "innerAdList": [
         {
-          "ad_local": "home_nav",
+          "adScene": "home_nav",
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
         },
         {
-          "ad_local": "function_nav",
+          "adScene": "function_nav",
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
@@ -48,19 +48,19 @@
     {
       "innerAdList": [
         {
-          "ad_local": "home_int",
+          "adScene": "home_int",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
         },
         {
-          "ad_local": "play_int",
+          "adScene": "play_int",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
         },
         {
-          "ad_local": "back_int",
+          "adScene": "back_int",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": false

@@ -10,7 +10,7 @@ import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.appopen.AppOpenAd
 
 class OpenAd: BaseAd() {
-    override fun loadingAd(id: String,place: String,type:String) {
+    override fun loadingAd(id: String,type:String) {
         val request = AdManagerAdRequest.Builder().build()
         AppOpenAd.load(
             App.appContext(), id, request,

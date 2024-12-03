@@ -24,7 +24,7 @@ data class OuterConfig(
 )
 
 data class InnerAd(
-    val ad_local: String,
+    val adScene: String,
     val clickCount: Int,
     val showBtn: Boolean,
     val showCount: Int,

@@ -17,7 +17,7 @@ import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
 
 class NavAd : BaseAd() {
-    override fun loadingAd(id: String, place: String, type: String) {
+    override fun loadingAd(id: String,  type: String) {
         val loader = AdLoader.Builder(App.appContext(), id)
             .forNativeAd { nativeAd ->
                 getAdCallBackInstance().loadSuccess(nativeAd)
@@ -47,9 +47,9 @@ class NavAd : BaseAd() {
             val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
             val adView =
                 if (bigStyle) {
-                    inflater.inflate(R.layout.nav_big_layout, null) as NativeAdView
+                    inflater.inflate(R.layout.nav_layout_big, null) as NativeAdView
                 }else{
-                    inflater.inflate(R.layout.nav_small_layout, null) as NativeAdView
+                    inflater.inflate(R.layout.nav_layout_small, null) as NativeAdView
                 }
             val adTitle = adView.findViewById<TextView>(R.id.ad_title)
             val adContent = adView.findViewById<TextView>(R.id.ad_content)

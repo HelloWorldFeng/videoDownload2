@@ -2,9 +2,9 @@ package com.app.videobox.ad
 
 import android.util.Log
 import com.blankj.utilcode.util.SPStaticUtils
-import com.app.videobox.ad.AdConst.CAN_LOAD_NAV
-import com.app.videobox.ad.AdConst.CLICK_COUNT
-import com.app.videobox.ad.AdConst.CLICK_TIME
+import com.app.videobox.ad.base.AdConst.CAN_LOAD_NAV
+import com.app.videobox.ad.base.AdConst.CLICK_COUNT
+import com.app.videobox.ad.base.AdConst.CLICK_TIME
 
 import com.app.videobox.ad.adLoaders.IntAd
 import com.app.videobox.ad.adLoaders.NavAd
@@ -12,6 +12,7 @@ import com.app.videobox.ad.adLoaders.OpenAd
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ad.base.AD_TYPE_NAV
 import com.app.videobox.ad.base.AD_TYPE_START
+import com.app.videobox.ad.base.AdCallBack
 import com.app.videobox.ad.base.AdUnitWrapper
 
 class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
@@ -90,7 +91,7 @@ class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
             loadAdMobOpenAdInstance( adUnitWrapper)
         }
         else{
-            Log.d(TAG, "${adUnitWrapper.place} 类型:${adUnitWrapper.type} 错误")
+            Log.d(TAG, "${adUnitWrapper.getAdSourceId()} 类型:${adUnitWrapper.type} 错误")
             adUnitWrapper.adLoading = false
         }
 
@@ -132,7 +133,7 @@ class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
                     clickcallback.invoke(adUnitWrapper)
                 }
             })
-        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.place.getPlaceString(),adUnitWrapper.type)
+        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.type)
     }
 
     private fun loadAdMobOpenAdInstance(adUnitWrapper: AdUnitWrapper) {
@@ -161,7 +162,7 @@ class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
                     clickcallback.invoke(adUnitWrapper)
                 }
             })
-        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.place.getPlaceString(),adUnitWrapper.type)
+        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.type)
     }
 
     private fun loadAdMobNavAdInstance(adUnitWrapper: AdUnitWrapper) {
@@ -197,7 +198,7 @@ class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
 //                    clickCount()
                 }
             })
-        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.place.getPlaceString(),adUnitWrapper.type)
+        }.loadingAd(adUnitWrapper.getAdSourceId(),adUnitWrapper.type)
     }
 
 

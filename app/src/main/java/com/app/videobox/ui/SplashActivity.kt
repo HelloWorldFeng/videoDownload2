@@ -48,8 +48,6 @@ import com.blankj.utilcode.util.SPStaticUtils
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.app.videobox.ad.base.AdPlaceTag
-
 class SplashActivity : BaseActivity() {
 
     private var showSplashState by mutableStateOf(

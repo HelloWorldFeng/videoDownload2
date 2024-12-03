@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import com.app.videobox.App
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.ConfigBean
-import com.app.videobox.ad.base.AdPlaceTag
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.blankj.utilcode.util.SPStaticUtils
 import com.google.firebase.FirebaseApp
@@ -72,7 +71,6 @@ object RemoteConfigManager {
                 map[out.format] = AdUnitWrapper(
                     openBtn =  out.adOpen,
                     type = out.format,
-                    place = AdPlaceTag.AD_Open,
                     adNumber = out.adNumber,
                     innerAdList = out.innerAdList
                 )

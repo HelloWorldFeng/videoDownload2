@@ -2,12 +2,10 @@ package com.app.videobox.ad
 
 import android.app.Activity
 import android.util.Log
-import com.app.videobox.BuildConfig
-import com.app.videobox.ad.AdConst.CLICK_COUNT
+import com.app.videobox.ad.base.AdConst.CLICK_COUNT
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.app.videobox.ad.base.AD_TYPE_START
-import com.app.videobox.ad.base.AdPlaceTag
 import com.app.videobox.ad.base.AdUnitWrapper
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -39,7 +37,7 @@ object AdmobManager {
             //每个自然日重置限制
             adConfigMap.map {
                 it.value.innerAdList.forEach {
-                    SPStaticUtils.put("${it.ad_local}_show",0)
+                    SPStaticUtils.put("${it.adScene}_show",0)
                 }
             }
         }
@@ -69,7 +67,7 @@ object AdmobManager {
             successCallback = { adWrapper ->
                 Log.d(TAG, "${adWrapper.type} 请求成功 大广告池里数量:${fullAdPool.size} 小广告池里数量:${smallAdPool.size}, hashCode:${adWrapper.getAdInstance().hashCode()}")
                 if (adWrapper.type in listOf(AD_TYPE_START)) {
-                    skipTag.addIfAbsent(adWrapper.place.getPlaceString())
+                    skipTag.addIfAbsent(adWrapper.type)
                 }
             },
             failCallBack = { code, msg, adWrapper ->
@@ -136,7 +134,6 @@ object AdmobManager {
     }
 
     fun getSmallAdFromPool(
-        adPlaceTag: AdPlaceTag,
         adScene:String = "", //广告展示场景
         adType:String = "", //从池里拿什么类型
         block:(AdUnitWrapper)->Unit) {
@@ -169,7 +166,7 @@ object AdmobManager {
                     AdLoaderHelper.needFillNavAd = true
                     loadAdmobInstance(adType)
                 } else {
-                    Log.d(TAG, "${adPlaceTag.getPlaceString()}广告位关闭，不请求")
+                    Log.d(TAG, "${adScene}广告位关闭，不请求")
                 }
             }
 
@@ -177,7 +174,7 @@ object AdmobManager {
 
         smallAdPool.find { it.type == adType }?.let { adWrapper->
             //找到配置中的广告位
-            adWrapper.innerAdList.find { it.ad_local == adScene }.let {
+            adWrapper.innerAdList.find { it.adScene == adScene }.let {
                 smallAdPool.remove(adWrapper)
                 navGetCallback?.invoke(adWrapper)
                 AdLoaderHelper.needFillNavAd = false
@@ -247,7 +244,7 @@ object AdmobManager {
 
         fullAdPool.find { it.type == adType }?.let { adWrapper->
             //找到配置中的广告位
-            adWrapper.innerAdList.find { it.ad_local == adScene }.let {
+            adWrapper.innerAdList.find { it.adScene == adScene }.let {
                 fullAdPool.remove(adWrapper)
                 adWrapper.showFullAd(activity)
             }
@@ -275,7 +272,7 @@ object AdmobManager {
 
     //获取广告场景配置
     private fun getAdConfigByScene(adScene: String, adType: String): InnerAd? {
-        return adConfigMap[adType]?.innerAdList?.find { it.ad_local == adScene }
+        return adConfigMap[adType]?.innerAdList?.find { it.adScene == adScene }
     }
 
 

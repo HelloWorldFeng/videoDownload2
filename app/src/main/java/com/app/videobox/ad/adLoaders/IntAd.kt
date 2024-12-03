@@ -12,7 +12,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 
 class IntAd : BaseAd() {
 
-    override fun loadingAd(id: String, place: String, type: String) {
+    override fun loadingAd(id: String,  type: String) {
         val adRequest = AdRequest.Builder().build()
 
         InterstitialAd.load(App.appContext(),id, adRequest, object : InterstitialAdLoadCallback() {
