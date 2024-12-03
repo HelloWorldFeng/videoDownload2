@@ -235,6 +235,9 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         context: BaseActivity,
         navigator: Navigator
     ) {
+        if (context.isShowLoading()) {
+            return
+        }
         AdmobManager.getFullAdFromPool(
             context,
             adType = "int",

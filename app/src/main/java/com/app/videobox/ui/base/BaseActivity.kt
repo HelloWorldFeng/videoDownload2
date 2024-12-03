@@ -50,6 +50,9 @@ abstract class BaseActivity : ComponentActivity() {
     private val focusChangeFlow = MutableStateFlow(false)
     private var loadingDialogState = mutableStateOf(value = false)
 
+    fun isShowLoading(): Boolean {
+        return loadingDialogState.value
+    }
     fun showLoadingDialog() {
         loadingDialogState.value = true
     }

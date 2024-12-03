@@ -217,6 +217,9 @@ class HotScreen:Screen {
         context: BaseActivity,
         navigator: Navigator
     ) {
+        if (context.isShowLoading()) {
+            return
+        }
         AdmobManager.getFullAdFromPool(
             context,
             adType = "int",

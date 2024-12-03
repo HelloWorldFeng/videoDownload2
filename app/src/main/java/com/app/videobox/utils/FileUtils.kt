@@ -44,8 +44,20 @@ object FileUtils {
         )
 
         // 选择条件：可以根据需要添加更多 MIME 类型  "mp4", "mkv", "avi", "mov", "wmv"
-        val selectionMimeType = "${MediaStore.Video.Media.MIME_TYPE} IN (?, ?)"
-        val selectionArgs = arrayOf("video/mp4", "video/x-m4v") // 常见的视频 MIME 类型
+        val selectionMimeType = "${MediaStore.Video.Media.MIME_TYPE} IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        val selectionArgs = arrayOf(
+            "video/mp4",         // MP4
+            "audio/mp4",        // M4A
+            "video/x-msvideo",  // AVI
+            "video/x-matroska", // MKV
+            "video/x-flv",      // FLV
+            "video/x-ms-wmv",   // WMV
+            "video/quicktime",   // MOV
+            "video/3gpp",       // 3GP
+            "video/mp2t",       // TS
+            "video/webm",       // WEBM
+            "video/mpeg"        // MPG
+        )
 
         val cursor: Cursor? = cr.query(uri, columns, selectionMimeType, selectionArgs, null)
         cursor?.use {
