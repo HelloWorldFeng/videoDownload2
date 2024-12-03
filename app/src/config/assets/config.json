@@ -15,7 +15,7 @@
           "ad_local": "hot_start",
           "showCount": 10,
           "clickCount": 3,
-          "showBtn": true
+          "showBtn": false
         }
       ],
 

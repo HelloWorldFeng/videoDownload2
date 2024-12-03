@@ -58,6 +58,7 @@ import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.dialogs.PermissionDialog
 import com.app.videobox.ui.pages.FolderScreen
 import com.app.videobox.ui.pages.HotScreen
@@ -71,6 +72,7 @@ import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.FileUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.hjq.permissions.XXPermissions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity() {
@@ -88,6 +90,7 @@ class MainActivity : BaseActivity() {
         setContent {
             BackHandler {}
             Navigator(HomeScreen())
+            LoadingAdDialog()
         }
     }
 }
@@ -158,14 +161,9 @@ class HomeScreen : Screen {
                             fetchPhoneVideo(context)
                         })
                 }else{
-                    AdmobManager.getFullAdFromPool(
-                        context,
-                        adType = "int",
-                        adScene = "home_int",
-                        closeAction = {
-                            navigator.push(FolderScreen())
-                        })
-
+                    jumpNextStep(context, nextStep = {
+                        navigator.push(FolderScreen())
+                    })
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -195,13 +193,9 @@ class HomeScreen : Screen {
                                         fetchPhoneVideo(context)
                                     })
                             } else {
-                                AdmobManager.getFullAdFromPool(
-                                    context,
-                                    adType = "int",
-                                    adScene = "home_int",
-                                    closeAction = {
-                                        navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
-                                    })
+                                jumpNextStep(context, nextStep = {
+                                    navigator.push(LocalVideoScreen(FileManager.scanFileResultState))
+                                })
                             }
                         },
                 )
@@ -213,13 +207,9 @@ class HomeScreen : Screen {
                         .weight(1f)
                         .background(color = Color.White, shape = RoundedCornerShape(14.dp))
                         .singClick {
-                            AdmobManager.getFullAdFromPool(
-                                context,
-                                adType = "int",
-                                adScene = "home_int",
-                                closeAction = {
-                                    navigator.push(HotScreen())
-                                })
+                            jumpNextStep(context, nextStep = {
+                                navigator.push(HotScreen())
+                            })
                         })
             }
 
@@ -277,6 +267,37 @@ class HomeScreen : Screen {
         }, onDismiss = {
             showPermissionState.value = false
         })
+    }
+
+
+    private fun jumpNextStep(
+        context: BaseActivity,
+        nextStep:()->Unit
+    ) {
+        AdmobManager.getFullAdFromPool(
+            context,
+            adType = "int",
+            adScene = "home_int",
+            emptyAction = {
+                context.lifecycleScope.launch {
+                    context.showLoadingDialog()
+                    delay(RemoteConfigManager.adLoadingTime)
+                    AdmobManager.touchFinishBlock()
+                }
+            },
+            finishLoadAction = { hasAdInstance ->
+                context.hideLoadingDialog()
+                AdmobManager.getFullAdFromPool(
+                    context,
+                    adType = "int",
+                    adScene = "home_int",
+                    closeAction = {
+                        nextStep.invoke()
+                    })
+            },
+            closeAction = {
+                nextStep.invoke()
+            })
     }
 
     @Composable

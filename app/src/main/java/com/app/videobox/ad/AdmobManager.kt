@@ -231,6 +231,8 @@ object AdmobManager {
                     loadAdmobInstance(adType)
                 } else {
                     Log.d(TAG, "${adType}广告位关闭，不请求")
+                    closeAction.invoke()
+                    return
                 }
             }
             if (emptyAction == null) {

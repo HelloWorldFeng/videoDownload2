@@ -188,7 +188,6 @@ class SplashActivity : BaseActivity() {
                 })
 
         }else{
-
             AdmobManager.getFullAdFromPool(
                 this,
                 adType = "open",
@@ -215,14 +214,14 @@ class SplashActivity : BaseActivity() {
         Log.d("AppLog", "冷启动: ")
         UmpHelper.requestUmp(this) {
             startPlay.value = true
-            AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
+//            AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
         }
     }
 
     private fun initForWarmLaunch() {
         Log.d("AppLog", "热启动: ")
         startPlay.value = true
-        AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
+//        AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
     }
 
     override fun onDestroy() {

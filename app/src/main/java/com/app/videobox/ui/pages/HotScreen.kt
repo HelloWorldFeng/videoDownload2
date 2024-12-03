@@ -44,8 +44,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
@@ -54,11 +56,14 @@ import com.app.videobox.ad.base.AdPlaceTag
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.pages.video.VideoPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -75,13 +80,7 @@ class HotScreen:Screen {
 
 
         BackHandler {
-            AdmobManager.getFullAdFromPool(
-                context,
-                adType = "int",
-                adScene = "back_int",
-                closeAction = {
-                    navigator.pop()
-                })
+            backPopAd(context, navigator)
         }
         Column(
             Modifier
@@ -89,13 +88,7 @@ class HotScreen:Screen {
                 .statusBarsPadding()
                 .navigationBarsPadding()) {
             TitleBar(title = stringResource(R.string.built_in_video)) {
-                AdmobManager.getFullAdFromPool(
-                    context,
-                    adType = "int",
-                    adScene = "back_int",
-                    closeAction = {
-                        navigator.pop()
-                    })
+                backPopAd(context, navigator)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -118,6 +111,28 @@ class HotScreen:Screen {
                                         context,
                                         adType = "int",
                                         adScene = "play_int",
+                                        emptyAction = {
+                                            context.lifecycleScope.launch {
+                                                context.showLoadingDialog()
+                                                delay(RemoteConfigManager.adLoadingTime)
+                                                AdmobManager.touchFinishBlock()
+                                            }
+                                        },
+                                        finishLoadAction = { hasAdInstance ->
+                                            context.hideLoadingDialog()
+                                            AdmobManager.getFullAdFromPool(
+                                                context,
+                                                adType = "int",
+                                                adScene = "play_int",
+                                                closeAction = {
+                                                    context.safeStartActivity(
+                                                        VideoPlayActivity::class.java,
+                                                        args = Bundle().apply {
+                                                            putString("video_url", file.absolutePath)
+                                                            putString("title", file.name)
+                                                        })
+                                                })
+                                        },
                                         closeAction = {
                                             context.safeStartActivity(
                                                 VideoPlayActivity::class.java,
@@ -195,6 +210,20 @@ class HotScreen:Screen {
                 bigStyle = false
             )
         }
+    }
+
+
+    private fun backPopAd(
+        context: BaseActivity,
+        navigator: Navigator
+    ) {
+        AdmobManager.getFullAdFromPool(
+            context,
+            adType = "int",
+            adScene = "back_int",
+            closeAction = {
+                navigator.pop()
+            })
     }
 
     fun copyAssetToFile(context: Context, assetFileName: String): File? {

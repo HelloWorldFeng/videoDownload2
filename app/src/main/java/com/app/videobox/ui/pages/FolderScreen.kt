@@ -43,6 +43,7 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
@@ -73,13 +74,7 @@ class FolderScreen:Screen {
         }
 
         BackHandler {
-            AdmobManager.getFullAdFromPool(
-                context,
-                adType = "int",
-                adScene = "back_int",
-                closeAction = {
-                    navigator.pop()
-                })
+            backPopAd(context, navigator)
         }
 
         Column(
@@ -89,13 +84,7 @@ class FolderScreen:Screen {
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally) {
             TitleBar(title = stringResource(R.string.file_director), onBack = {
-                AdmobManager.getFullAdFromPool(
-                    context,
-                    adType = "int",
-                    adScene = "back_int",
-                    closeAction = {
-                        navigator.pop()
-                    })
+                backPopAd(context, navigator)
             })
             if (dataList.isEmpty()) {
                 Spacer(modifier = Modifier.weight(1f))
@@ -176,5 +165,18 @@ class FolderScreen:Screen {
         }
 
         LoadingDialog(FileManager.scanFileState.value)
+    }
+
+    private fun backPopAd(
+        context: BaseActivity,
+        navigator: Navigator
+    ) {
+        AdmobManager.getFullAdFromPool(
+            context,
+            adType = "int",
+            adScene = "back_int",
+            closeAction = {
+                navigator.pop()
+            })
     }
 }

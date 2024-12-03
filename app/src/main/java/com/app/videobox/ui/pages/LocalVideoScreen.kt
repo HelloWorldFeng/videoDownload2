@@ -41,8 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
@@ -54,6 +56,7 @@ import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.shareVideo
 import com.app.videobox.manager.FileManager
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
 import com.app.videobox.ui.dialogs.RenameDialog
@@ -63,6 +66,8 @@ import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.FileUtils
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Screen{
     @Composable
@@ -80,13 +85,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         }
 
         BackHandler {
-            AdmobManager.getFullAdFromPool(
-                context,
-                adType = "int",
-                adScene = "back_int",
-                closeAction = {
-                    navigator.pop()
-                })
+            backPopAd(context, navigator)
         }
         Column(
             Modifier
@@ -95,13 +94,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally) {
             TitleBar(title = stringResource(id = R.string.local_video)) {
-                AdmobManager.getFullAdFromPool(
-                    context,
-                    adType = "int",
-                    adScene = "back_int",
-                    closeAction = {
-                        navigator.pop()
-                    })
+                backPopAd(context, navigator)
             }
             Spacer(modifier = Modifier.height(10.dp))
             if (dataList.isEmpty()) {
@@ -122,6 +115,28 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                                     context,
                                     adType = "int",
                                     adScene = "play_int",
+                                    emptyAction = {
+                                        context.lifecycleScope.launch {
+                                            context.showLoadingDialog()
+                                            delay(RemoteConfigManager.adLoadingTime)
+                                            AdmobManager.touchFinishBlock()
+                                        }
+                                    },
+                                    finishLoadAction = { hasAdInstance ->
+                                        context.hideLoadingDialog()
+                                        AdmobManager.getFullAdFromPool(
+                                            context,
+                                            adType = "int",
+                                            adScene = "play_int",
+                                            closeAction = {
+                                                context.safeStartActivity(
+                                                    VideoPlayActivity::class.java,
+                                                    args = Bundle().apply {
+                                                        putString("video_url", fileInfo.file.absolutePath)
+                                                        putString("title",fileInfo.titleName)
+                                                    })
+                                            })
+                                    },
                                     closeAction = {
                                         context.safeStartActivity(
                                             VideoPlayActivity::class.java,
@@ -212,6 +227,20 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
             },
             onDismiss = {
                 showDialog = false
+            })
+    }
+
+
+    private fun backPopAd(
+        context: BaseActivity,
+        navigator: Navigator
+    ) {
+        AdmobManager.getFullAdFromPool(
+            context,
+            adType = "int",
+            adScene = "back_int",
+            closeAction = {
+                navigator.pop()
             })
     }
 }
