@@ -174,3 +174,7 @@
     boolean isLimitAdTrackingEnabled();
 }
 -keep public class com.android.installreferrer.** { *; }
+
+-keep class com.appsflyer.internal.** { *; }
+-keep class kotlin.jvm.internal.** { *; }
+-keep class com.collect.CollectManager { *; }

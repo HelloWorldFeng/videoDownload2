@@ -22,8 +22,8 @@ android {
         applicationId = prop.getProperty("packageName")
         minSdk = 21
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -32,6 +32,7 @@ android {
 
         buildConfigField("String","privacyUrl","\"${prop.getProperty("privacyUrl")}\"")
         buildConfigField("String","termUrl","\"${prop.getProperty("termUrl")}\"")
+        buildConfigField("String","afKey","\"${prop.getProperty("afKey")}\"")
 
         resValue("string", "adMobId", prop.getProperty("admobId"))
         resValue("string", "facebookId", prop.getProperty("facebookId"))
@@ -155,4 +156,8 @@ dependencies {
     implementation("com.android.installreferrer:installreferrer:2.2")
 
     implementation("androidx.lifecycle:lifecycle-process:2.8.7")
+
+    implementation("com.appsflyer:af-android-sdk:6.16.1")
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+
 }

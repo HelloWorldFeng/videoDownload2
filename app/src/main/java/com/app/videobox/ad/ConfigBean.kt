@@ -14,6 +14,8 @@ data class ConfigBean(
 
     val openFinish:Boolean,
     val connectInt:Boolean,
+
+    val initSdk:Int
 )
 
 data class OuterConfig(

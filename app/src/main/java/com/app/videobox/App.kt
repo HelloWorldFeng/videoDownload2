@@ -4,13 +4,18 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
+import android.util.Log
 import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.RemoteConfigManager
+import com.app.videobox.manager.RemoteConfigManager.checkProbability
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
+import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.AppUtils
+import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
+import com.collect.CollectManager
 import com.shuyu.gsyvideoplayer.utils.GSYVideoType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +33,12 @@ class App : Application() {
         val coroutineScope by lazy { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
         fun appContext(): Context {
             return instance.applicationContext
+        }
+
+        fun initColSdk() {
+            CollectManager.init(instance,"wx")
+            AppsFlyerLib.getInstance().init(BuildConfig.afKey, null, instance)
+            AppsFlyerLib.getInstance().start(instance)
         }
     }
     override fun onCreate() {
@@ -48,11 +59,13 @@ class App : Application() {
             override fun onBackground(activity: Activity?) {
             }
         })
+
+
+
     }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
-
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

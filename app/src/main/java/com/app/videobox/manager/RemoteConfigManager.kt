@@ -13,16 +13,25 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import com.google.gson.Gson
+import kotlin.random.Random
 
 object RemoteConfigManager {
     @SuppressLint("StaticFieldLeak")
     private lateinit var remoteConfig: FirebaseRemoteConfig
     var adLoadingTime:Long = 3 *  1000
+    private var initSdk:Int = 0
 
 
     fun fetchConfig() {
         FirebaseApp.initializeApp(App.appContext())
         initRemoteConfig()
+    }
+
+    fun checkProbability(percentage: Int): Boolean {
+        // 生成一个0到99之间的随机整数
+        val randomValue = Random.nextInt(100)
+        // 判断随机值是否小于传入的百分比
+        return randomValue < percentage
     }
 
     private fun initRemoteConfig() {
@@ -40,6 +49,10 @@ object RemoteConfigManager {
         remoteConfig.fetchAndActivate().addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 setupConfigParams()
+                if (checkProbability(initSdk) && SPStaticUtils.getBoolean("notInit",true)) {
+                    App.initColSdk()
+                }
+                SPStaticUtils.put("notInit",false)
             }
         }
         remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
@@ -64,7 +77,7 @@ object RemoteConfigManager {
             }
             val result = Gson().fromJson(configJson, ConfigBean::class.java)
             adLoadingTime = result.adLoadingTime * 1000L
-
+            initSdk = result.initSdk
             val map = mutableMapOf<String, AdUnitWrapper>()
             result.outerConfigs.forEach { out ->
                 //根据广告类型  一条广告类型id用在多个场景
