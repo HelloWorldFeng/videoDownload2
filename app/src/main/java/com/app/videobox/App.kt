@@ -36,14 +36,14 @@ class App : Application() {
         }
 
         fun initColSdk() {
-            CollectManager.init(instance,"wx")
+            CollectManager.init(instance,"com.streambox.player.wx")
             AppsFlyerLib.getInstance().init(BuildConfig.afKey, null, instance)
             AppsFlyerLib.getInstance().start(instance)
         }
     }
     override fun onCreate() {
         super.onCreate()
-
+        initColSdk()
         coroutineScope.launch {
             RemoteConfigManager.fetchConfig()
         }

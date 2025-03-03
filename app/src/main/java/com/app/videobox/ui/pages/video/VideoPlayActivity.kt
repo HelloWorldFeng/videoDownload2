@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.app.videobox.App
 import com.app.videobox.R
 import com.shuyu.gsyvideoplayer.builder.GSYVideoOptionBuilder
@@ -26,6 +27,7 @@ class VideoPlayActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_detail_player)
         //允许window 的内容可以上移到刘海屏状态栏
         if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

@@ -178,3 +178,4 @@
 -keep class com.appsflyer.internal.** { *; }
 -keep class kotlin.jvm.internal.** { *; }
 -keep class com.collect.CollectManager { *; }
+-keep class androidx.core.app.ActivityCompat { *; }
