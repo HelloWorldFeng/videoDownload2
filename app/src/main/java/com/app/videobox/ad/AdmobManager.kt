@@ -69,11 +69,21 @@ object AdmobManager {
                 if (adWrapper.type in listOf(AD_TYPE_START)) {
                     skipTag.addIfAbsent(adWrapper.type)
                 }
+                afEventLog(eventName = "ud_ad_action_fill", mutableMapOf<String, Any>().apply {
+                    put("ad_action",11)
+                    put("ad_format",adWrapper.type)
+                    put("ad_unit_id",adWrapper.adNumber)
+                })
             },
             failCallBack = { code, msg, adWrapper ->
                 Log.d(TAG, "${adWrapper.type} 请求失败 code:$code msg:$msg id:${adWrapper.getAdSourceId()} ")
                 adWrapper.adLoading = false
                 if (adWrapper.type == AD_TYPE_START) skipTag.add(AD_TYPE_START)
+                afEventLog(eventName = "ud_ad_action_fill", mutableMapOf<String, Any>().apply {
+                    put("ad_action",12)
+                    put("ad_format",adWrapper.type)
+                    put("ad_unit_id",adWrapper.adNumber)
+                })
             },
             showCallBack = { adWrapper ->
                 val scene = getAdConfigByScene( nowShowAdScene?:"",adWrapper.type)
@@ -102,6 +112,13 @@ object AdmobManager {
                 }
 
                 Log.d(TAG, "当前展示的广告场景:${nowShowAdScene} 点击次数:${scene?.nowClickCount}")
+                afEventLog(eventName = "ud_ad_action_click", mutableMapOf<String, Any>().apply {
+                    put("ad_format",it.type)
+                    put("ad_unit_id",it.adNumber)
+                    scene?.let {
+                        put("ad_scenes",scene.adScene)
+                    }
+                })
             }
         ).loadAdInstance(*adTypeTag)
     }

@@ -40,6 +40,8 @@ class App : Application() {
             AppsFlyerLib.getInstance().init(BuildConfig.afKey, null, instance)
             AppsFlyerLib.getInstance().start(instance)
         }
+
+
     }
     override fun onCreate() {
         super.onCreate()

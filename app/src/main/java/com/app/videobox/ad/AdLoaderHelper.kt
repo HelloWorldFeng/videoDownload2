@@ -1,6 +1,7 @@
 package com.app.videobox.ad
 
 import android.util.Log
+import com.app.videobox.App
 import com.blankj.utilcode.util.SPStaticUtils
 import com.app.videobox.ad.base.AdConst.CAN_LOAD_NAV
 import com.app.videobox.ad.base.AdConst.CLICK_COUNT
@@ -94,7 +95,10 @@ class AdLoaderHelper(private val adCfgMap: MutableMap<String, AdUnitWrapper>) {
             Log.d(TAG, "${adUnitWrapper.getAdSourceId()} 类型:${adUnitWrapper.type} 错误")
             adUnitWrapper.adLoading = false
         }
-
+        afEventLog(eventName = "ud_ad_action_request", mutableMapOf<String, Any>().apply {
+            put("ad_format",adUnitWrapper.type)
+            put("ad_unit_id",adUnitWrapper.adNumber)
+        })
     }
 
     private fun loadAdMobIntAdInstance(adUnitWrapper: AdUnitWrapper) {

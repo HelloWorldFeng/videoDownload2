@@ -7,6 +7,9 @@ import com.app.videobox.App
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.InnerAd
 import com.app.videobox.ad.adLoaders.NavAd
+import com.app.videobox.ad.afEventLog
+import com.appsflyer.AFInAppEventParameterName
+import com.appsflyer.AFInAppEventType
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
 import com.google.android.gms.ads.appopen.AppOpenAd
@@ -42,7 +45,9 @@ class AdUnitWrapper(
                         valueMicros = adValue.valueMicros,
                         id = adNumber,
                         type = type,
-                        scene = AdmobManager.nowShowAdScene
+                        scene = AdmobManager.nowShowAdScene,
+                        precision = adValue.precisionType,
+                        currency = adValue.currencyCode
                     )
                 }
             }
@@ -52,8 +57,10 @@ class AdUnitWrapper(
                     uploadAdjustAdValue(
                         valueMicros = adValue.valueMicros,
                         id = adNumber,
+                        scene = AdmobManager.nowShowAdScene,
                         type = type,
-                        scene = AdmobManager.nowShowAdScene
+                        precision = adValue.precisionType,
+                        currency = adValue.currencyCode
                     )
                 }
             }
@@ -63,8 +70,10 @@ class AdUnitWrapper(
                     uploadAdjustAdValue(
                         valueMicros = adValue.valueMicros,
                         id = adNumber,
+                        scene = AdmobManager.nowShowAdScene,
                         type = type,
-                        scene = AdmobManager.nowShowAdScene
+                        precision = adValue.precisionType,
+                        currency = adValue.currencyCode
                     )
                 }
             }
@@ -114,6 +123,8 @@ class AdUnitWrapper(
         id: String,
         scene: String? = null,
         type: String,
+        precision: Int,
+        currency: String,
     ) {
         //把原来的千分值转换成0.001
         val value = valueMicros.toBigDecimal().divide(BigDecimal("1000000.0")).toDouble()
@@ -136,6 +147,28 @@ class AdUnitWrapper(
             AppEventsConstants.EVENT_NAME_PURCHASED,
             value,
             params)
+
+        afEventLog(eventName = "ud_ad_action_impression", mutableMapOf<String, Any>().apply {
+            put("ad_action",31)
+            put("ad_format",type)
+            put("ad_unit_id",id)
+            scene?.let {
+                put("ad_scenes",scene)
+            }
+            put("value",value)
+            put("precision",precision)
+            put("currency",currency)
+        })
+
+        val param = mutableMapOf<String, Any>(
+            AFInAppEventParameterName.REVENUE to value,
+            AFInAppEventParameterName.CURRENCY to currency,
+            AFInAppEventParameterName.QUANTITY to 1,
+            AFInAppEventParameterName.CONTENT_TYPE to "IAA",
+            AFInAppEventParameterName.CONTENT_ID to id,
+        )
+        afEventLog(AFInAppEventType.PURCHASE, param)
+
 
     }
 }
