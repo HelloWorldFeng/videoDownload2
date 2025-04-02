@@ -160,6 +160,18 @@ class AdUnitWrapper(
             put("currency",currency)
         })
 
+        afEventLog(eventName = "ud_ad_impression", mutableMapOf<String, Any>().apply {
+            put("ad_format",type)
+            put("ad_unit_id",id)
+            scene?.let {
+                put("ad_scenes",scene)
+            }
+
+            put("value",value)
+            put("precision",precision)
+            put("currency",currency)
+        })
+
         val param = mutableMapOf<String, Any>(
             AFInAppEventParameterName.REVENUE to value,
             AFInAppEventParameterName.CURRENCY to currency,
