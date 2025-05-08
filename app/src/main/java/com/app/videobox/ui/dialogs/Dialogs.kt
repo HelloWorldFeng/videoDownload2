@@ -97,28 +97,28 @@ fun MoreDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(75.dp)
-                    .singClick {
-                        onDelete.invoke()
-                        onDismiss.invoke()
-                    }){
-                    Text(
-                        text = stringResource(R.string.delete), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(75.dp)
-                    .singClick {
-                        onRename.invoke()
-                        onDismiss.invoke()
-                    }){
-                    Text(
-                        text = stringResource(R.string.rename), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+//                Box(modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(75.dp)
+//                    .singClick {
+//                        onDelete.invoke()
+//                        onDismiss.invoke()
+//                    }){
+//                    Text(
+//                        text = stringResource(R.string.delete), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
+//                    )
+//                }
+//                Box(modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(75.dp)
+//                    .singClick {
+//                        onRename.invoke()
+//                        onDismiss.invoke()
+//                    }){
+//                    Text(
+//                        text = stringResource(R.string.rename), fontSize = 16.sp, color = Color.White, modifier = Modifier.align(Alignment.Center)
+//                    )
+//                }
                 Box(modifier = Modifier
                     .fillMaxWidth()
                     .height(75.dp)
