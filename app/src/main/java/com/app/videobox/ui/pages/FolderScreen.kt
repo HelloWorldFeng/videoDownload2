@@ -53,7 +53,7 @@ import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.FileManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.LoadingDialog
-import com.app.videobox.ui.pages.video.VideoPlayActivity
+
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick

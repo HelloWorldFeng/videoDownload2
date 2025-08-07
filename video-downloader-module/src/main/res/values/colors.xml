@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主题颜色 -->
+    <color name="primary">#2196F3</color>
+    <color name="primary_variant">#1976D2</color>
+    <color name="secondary">#FF9800</color>
+    <color name="secondary_variant">#F57C00</color>
+    
+    <!-- 背景颜色 -->
+    <color name="background">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#B00020</color>
+    <color name="error_background">#FFEBEE</color>
+    
+    <!-- 文本颜色 -->
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_secondary">#000000</color>
+    <color name="on_background">#000000</color>
+    <color name="on_surface">#000000</color>
+    <color name="on_error">#FFFFFF</color>
+    
+    <!-- 状态颜色 -->
+    <color name="status_downloading">#2196F3</color>
+    <color name="status_completed">#4CAF50</color>
+    <color name="status_paused">#FF9800</color>
+    <color name="status_error">#F44336</color>
+    <color name="status_queued">#9E9E9E</color>
+    <color name="status_cancelled">#757575</color>
+    <color name="status_icon_background">#80000000</color>
+    
+    <!-- 进度条颜色 -->
+    <color name="progress_background">#E0E0E0</color>
+    <color name="progress_downloading">#2196F3</color>
+    <color name="progress_paused">#FF9800</color>
+    <color name="progress_error">#F44336</color>
+    
+    <!-- 其他颜色 -->
+    <color name="divider">#E0E0E0</color>
+    <color name="ripple">#33000000</color>
+    <color name="scrim">#52000000</color>
+    <color name="overlay">#80000000</color>
+</resources>

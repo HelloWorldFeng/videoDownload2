@@ -59,7 +59,7 @@ import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
 import com.app.videobox.ui.dialogs.RenameDialog
-import com.app.videobox.ui.pages.video.VideoPlayActivity
+import com.app.videobox.ui.pages.video.VideoPlayerManager
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
@@ -128,21 +128,19 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                                             adType = "int",
                                             adScene = "play_int",
                                             closeAction = {
-                                                context.safeStartActivity(
-                                                    VideoPlayActivity::class.java,
-                                                    args = Bundle().apply {
-                                                        putString("video_url", fileInfo.file.absolutePath)
-                                                        putString("title",fileInfo.titleName)
-                                                    })
+                                                VideoPlayerManager.launchVideoPlayer(
+                                                    context,
+                                                    videoUrl = fileInfo.file.absolutePath,
+                                                    videoTitle = fileInfo.titleName
+                                                )
                                             })
                                     },
                                     closeAction = {
-                                        context.safeStartActivity(
-                                            VideoPlayActivity::class.java,
-                                            args = Bundle().apply {
-                                                putString("video_url", fileInfo.file.absolutePath)
-                                                putString("title",fileInfo.titleName)
-                                            })
+                                        VideoPlayerManager.launchVideoPlayer(
+                                            context,
+                                            videoUrl = fileInfo.file.absolutePath,
+                                            videoTitle = fileInfo.titleName
+                                        )
                                     })
 
                             },

@@ -23,4 +23,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "videoBox"
 include(":app")
+include(":video-downloader-module")
  

@@ -57,7 +57,7 @@ import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.ui.pages.video.VideoPlayActivity
+import com.app.videobox.ui.pages.video.VideoPlayerManager
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
@@ -124,21 +124,19 @@ class HotScreen:Screen {
                                                 adType = "int",
                                                 adScene = "play_int",
                                                 closeAction = {
-                                                    context.safeStartActivity(
-                                                        VideoPlayActivity::class.java,
-                                                        args = Bundle().apply {
-                                                            putString("video_url", file.absolutePath)
-                                                            putString("title", file.name)
-                                                        })
+                                                    VideoPlayerManager.launchVideoPlayer(
+                                                        context,
+                                                        videoUrl = file.absolutePath,
+                                                        videoTitle = file.name
+                                                    )
                                                 })
                                         },
                                         closeAction = {
-                                            context.safeStartActivity(
-                                                VideoPlayActivity::class.java,
-                                                args = Bundle().apply {
-                                                    putString("video_url", file.absolutePath)
-                                                    putString("title", file.name)
-                                                })
+                                            VideoPlayerManager.launchVideoPlayer(
+                                                context,
+                                                videoUrl = file.absolutePath,
+                                                videoTitle = file.name
+                                            )
                                         })
 
                                 }

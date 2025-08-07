@@ -2,6 +2,7 @@ package com.app.videobox.manager
 
 import android.annotation.SuppressLint
 import com.app.videobox.App
+import com.app.videobox.BuildConfig
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.ConfigBean
 import com.app.videobox.ad.base.AdUnitWrapper
@@ -91,6 +92,9 @@ object RemoteConfigManager {
 
             SPStaticUtils.put("launchTime",result.launchTime)
 
+            if (BuildConfig.DEBUG){
+                return
+            }
             AdmobManager.initAdMapConfig(map)
         }catch (e:Exception){
             e.printStackTrace()

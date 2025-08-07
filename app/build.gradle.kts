@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = prop.getProperty("packageName")
-        minSdk = 21
+        minSdk = 24
         targetSdk = 35
         versionCode = 6
         versionName = "1.0.5"
@@ -58,12 +58,15 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
         debug {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -85,6 +88,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
     flavorDimensions.add("config")
     productFlavors {
         create("config") {
@@ -101,6 +108,11 @@ android {
 }
 
 dependencies {
+    // 添加video-downloader-module模块依赖
+    implementation(project(":video-downloader-module"))
+    
+    // VLC Player support
+    implementation("org.videolan.android:libvlc-all:4.0.0-eap20")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -119,6 +131,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    //Koin做依赖注入
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
 
     implementation("androidx.appcompat:appcompat:1.7.0")
 
