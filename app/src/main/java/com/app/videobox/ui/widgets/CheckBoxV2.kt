@@ -1,0 +1,34 @@
+package com.app.videobox.ui.widgets
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import com.app.videobox.R
+
+@Composable
+fun CheckBoxV2(
+    modifier: Modifier,
+    checked: Boolean,
+){
+    //根据checked显示不同UI
+    Box(modifier = modifier) {
+        if (checked) {
+            AsyncImageImpl(
+                model = R.drawable.ic_launcher_background,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds
+            )
+        }else{
+            AsyncImageImpl(
+                model = R.drawable.icon_bright,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds
+            )
+        }
+    }
+
+}

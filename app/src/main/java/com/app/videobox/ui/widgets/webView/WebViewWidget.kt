@@ -17,7 +17,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import androidx.compose.ui.Modifier
 import androidx.core.net.toUri
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
-import com.app.videobox.ui.pages.webViewPage.detectVideoResource
 
 
 @Composable
@@ -25,9 +24,9 @@ fun WebViewWidget(
     webViewState: WebViewState,
     onUrlChanged: (String) -> Unit = {},
     onProgressChanged: (Int) -> Unit = {},
-    onResolverUrl: (String, String, String) -> Unit,
+    onResolverUrl: (String, String, String, String) -> Unit,
     onBack: () -> Unit = {},
-    onResetResolve: (url:String) -> Unit = {},
+    onResetResolve: () -> Unit = {},
     viewModel: WebViewModel
 ) {
     // 用于去重的Set
@@ -62,17 +61,12 @@ fun WebViewWidget(
                 view: WebView?,
                 request: WebResourceRequest?
             ): WebResourceResponse? {
-                request?.url?.toString()?.let { url ->
-                    // 使用检测，
-                    detectVideoResource(url)?.let { videoResource ->
-                        Log.d("WebViewScreen", "异步检测到视频资源: ${videoResource.type} - $url")
-                        Log.d("WebViewScreen", "视频资源详情: 描述=${videoResource.description}")
-                        //对资源进行解析
-                        viewModel.postAction(WebViewModel.Action.ResolveUrl(url = url,"title",""))
+                request?.let {
+                    if (viewModel.isVideoUrl(request.url.toString()) && !discoveredVideoUrls.contains(request.url.toString())){
+                        onResetResolve.invoke()
                     }
                 }
-                // 重要：始终返回null，让WebView完全自主处理所有请求
-                return null
+                return super.shouldInterceptRequest(view, request)
             }
 
             override fun onLoadResource(view: WebView, url: String?) {

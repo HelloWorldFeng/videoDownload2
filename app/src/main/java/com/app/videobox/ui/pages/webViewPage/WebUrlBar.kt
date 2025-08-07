@@ -46,7 +46,7 @@ fun WebUrlBar(
                 .singClick {
                     onBack.invoke()
                 },
-            model = R.drawable.ic_launcher_background,
+            model = R.drawable.icon_back_1,
             contentDescription = null
         )
 
@@ -69,9 +69,10 @@ fun WebUrlBar(
             onHome = {
                 onHome.invoke()
             },
-            onAd = {
-                onAd.invoke()
-            })
+            onRefresh = {
+                onRefresh.invoke()
+            }
+        )
 
         AsyncImageImpl(
             modifier = Modifier
@@ -79,9 +80,9 @@ fun WebUrlBar(
                 .size(34.dp)
                 .padding(horizontal = 9.dp)
                 .singClick {
-                    onRefresh.invoke()
+                    onAd.invoke()
                 },
-            model = R.drawable.ic_launcher_background,
+            model = R.drawable.icon_ad,
             contentDescription = null
         )
     }

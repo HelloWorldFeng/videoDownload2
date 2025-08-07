@@ -2,9 +2,9 @@ import org.gradle.internal.impldep.bsh.commands.dir
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsKotlinAndroid)
-
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
 }
@@ -16,7 +16,7 @@ prop.load(configDir)
 
 android {
     namespace = "com.app.videobox"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = prop.getProperty("packageName")
@@ -38,7 +38,12 @@ android {
         resValue("string", "facebookId", prop.getProperty("facebookId"))
         resValue("string", "facebookToken", prop.getProperty("facebookToken"))
     }
-
+    packaging {
+        jniLibs {
+            pickFirsts += listOf("**/libpython.zip.so", "**/libyoutube-dl.so", "**/libc++_shared.so")
+            jniLibs.useLegacyPackaging = true
+        }
+    }
     signingConfigs {
         create("release"){
             storeFile = file("src/config/${prop["storeFile"]}")
@@ -81,7 +86,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.1.1"
     }
     packaging {
         resources {
@@ -96,12 +101,6 @@ android {
     productFlavors {
         create("config") {
             dimension = "config"
-        }
-    }
-
-    configurations.all {
-        resolutionStrategy {
-            force("androidx.compose.ui:ui-android:1.7.2")
         }
     }
 
@@ -174,5 +173,8 @@ dependencies {
 
     implementation("com.appsflyer:af-android-sdk:6.16.1")
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+
+    //ffmpeg
+    implementation("com.arthenica:mobile-ffmpeg-full-gpl:4.4.LTS")
 
 }

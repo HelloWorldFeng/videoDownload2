@@ -199,6 +199,364 @@ VLC播放器在播放视频时出现黑屏问题，虽然播放器初始化成�
 - 在CI/CD流程中添加版本一致性检查
 - 使用Gradle的依赖版本管理功能统一管理版本
 
+### 下载进度实时更新问题修复 (2025-01-08)
+
+#### 问题描述
+用户反馈下载界面进度更新不及时，界面显示的进度与实际下载进度存在严重滞后：
+- **界面显示**: 进度停留在1%、4%等低数值
+- **实际下载**: 日志显示已达到10%、14%甚至更高
+- **具体表现**: 从1%到4%耗时10秒，而实际下载进度已达到14%
+
+#### 问题分析
+
+**1. mutableStateMapOf状态变化检测问题**
+- `mutableStateMapOf`只能检测**Map结构变化**（添加、删除、替换整个对象）
+- **无法检测对象内部属性变化**（如`task.progress`的直接修改）
+- 当`VideoDownloaderApi`中直接修改`task.progress`时，`snapshotFlow`无法感知变化
+
+**2. 进度计算精度问题**
+- 使用整数除法：`((totalBytesRead * 100) / contentLength).toInt()`
+- 小文件或下载初期，整数除法导致进度被截断为0
+- 例：97,685字节 / 44,312,633字节 * 100 = 0.22%，整数除法结果为0
+
+**3. 下载速度计算错误**
+- 初始阶段`elapsedSeconds`为0，导致除零错误
+- 速度计算不准确，始终显示0字节/秒
+
+**4. 性能问题**
+- 每次进度更新都保存任务到SharedPreferences
+- 频繁I/O操作影响下载性能和UI响应
+
+#### 核心修复方案
+
+**1. 修复mutableStateMapOf状态通知机制**
+```kotlin
+// 在所有状态更新位置添加：
+// 重新设置任务到 Map 中以触发状态变化通知
+downloadTasks[task.id] = task
+```
+
+**2. 优化ViewModel状态监听**
+```kotlin
+// 创建包含所有关键属性的快照，确保任何变化都能被检测到
+snapshotFlow { 
+    taskStateMap.values.map { task ->
+        Triple(
+            task.id,
+            task.status,
+            Triple(task.progress, task.downloadSpeed, task.retryCount)
+        )
+    }
+}
+```
+
+**3. 修复进度计算精度**
+```kotlin
+// 使用浮点数计算避免精度丢失
+val progress = if (contentLength > 0) {
+    ((totalBytesRead.toDouble() * 100.0) / contentLength.toDouble()).toInt()
+} else {
+    minOf((totalBytesRead / (1024 * 1024)).toInt(), 95)
+}
+```
+
+**4. 优化速度计算**
+```kotlin
+// 避免除零错误，使用毫秒计算更精确
+val elapsedMillis = System.currentTimeMillis() - startTime
+val downloadSpeed = if (elapsedMillis > 1000) {
+    (totalBytesRead * 1000) / elapsedMillis
+} else {
+    0L // 开始阶段速度为0
+}
+```
+
+**5. 性能优化策略**
+```kotlin
+// 优化保存策略：每5%进度或每5秒保存一次
+val shouldSave = (progress != lastProgressPercent && progress % 5 == 0) || 
+                (currentTime - lastSaveTime > 5000)
+```
+
+#### 修复文件清单
+
+**VideoDownloaderApi.kt**
+- 所有状态更新方法添加`downloadTasks[task.id] = task`重新设置逻辑
+- 修复进度计算使用浮点数运算
+- 优化速度计算避免除零错误
+- 改进保存策略减少频繁I/O操作
+- 增强日志记录便于调试
+
+**DownloadListViewModel.kt**
+- 优化`startTaskMonitoring`中的`snapshotFlow`监听逻辑
+- 创建包含所有关键属性的状态快照
+- 添加详细的状态变化日志记录
+
+#### 技术原理深度解析
+
+**1. Compose状态管理机制**
+- `mutableStateMapOf`是Compose的响应式状态容器
+- 只有当**Map的键值对发生变化**时才会触发重新组合
+- 直接修改对象属性不会触发变化通知
+- 必须通过**重新设置整个对象**到Map中来触发状态变化
+
+**2. snapshotFlow工作原理**
+- `snapshotFlow`监听Compose状态的变化
+- 需要访问状态的所有相关属性才能正确检测变化
+- 使用`distinctUntilChanged()`避免重复触发
+
+**3. 数值计算精度**
+- Kotlin整数除法会截断小数部分
+- 浮点数计算保持精度，最后转换为整数
+- 对于大文件下载，精度问题尤为重要
+
+#### 修复效果验证
+
+**预期改进**
+1. **实时进度更新**: 界面进度与实际下载进度保持同步
+2. **精确进度显示**: 小数进度正确显示，不再截断为0
+3. **准确速度计算**: 下载速度实时准确显示
+4. **性能优化**: 减少不必要的I/O操作，提升下载性能
+5. **流畅用户体验**: 进度条平滑更新，无延迟卡顿
+
+**构建验证结果**
+- **编译状态**: ✅ 成功
+- **警告处理**: 仅有3个Delicate API警告，不影响功能
+- **代码质量**: 通过静态检查，逻辑完整
+
+#### 技术积累与最佳实践
+
+**1. Compose状态管理**
+- 深入理解`mutableStateMapOf`的工作机制
+- 掌握`snapshotFlow`的正确使用方法
+- 学会处理复杂对象的状态变化通知
+
+**2. 数值计算优化**
+- 浮点数与整数运算的选择策略
+- 避免除零错误的防护措施
+- 精度保持与性能平衡
+
+**3. 性能优化策略**
+- I/O操作频率控制
+- 状态更新与持久化的平衡
+- 日志记录的合理粒度
+
+**4. 调试技巧**
+- 通过详细日志定位状态同步问题
+- 使用状态快照验证数据流
+- 性能监控与优化验证
+
+这次修复解决了一个典型的Compose响应式编程中的状态同步问题，为团队积累了宝贵的技术经验。
+
+## ViewModel架构模式标准 (2025-01-08)
+
+### 基于WebViewModel的标准MVI架构模式
+
+#### 架构设计原则
+基于 `WebViewModel.kt` 总结的标准ViewModel架构模式，遵循MVI（Model-View-Intent）设计模式，确保代码结构清晰、状态管理安全、业务逻辑可维护。
+
+#### 核心架构组件
+
+**1. 状态管理 (State Management)**
+```kotlin
+// 使用sealed interface定义UI状态，确保状态完整性和类型安全
+sealed interface ResolveVideoState {
+    data object Idle : ResolveVideoState                    // 空闲状态
+    data object Loading: ResolveVideoState                  // 加载状态
+    data class ResolveSuccess(val info: VideoInfo) : ResolveVideoState  // 成功状态
+}
+
+// 私有可变状态流，只能在ViewModel内部修改
+private val mResolveStateFlow: MutableStateFlow<ResolveVideoState> = 
+    MutableStateFlow(ResolveVideoState.Idle)
+
+// 公开只读状态流，供UI层订阅
+val resolveStateFlow = mResolveStateFlow.asStateFlow()
+```
+
+**2. 动作定义 (Action Definition)**
+```kotlin
+// 使用sealed interface定义UI动作，确保动作完整性和类型安全
+sealed interface Action {
+    data class ResolveUrl(val url: String, val title: String, val imgUrl: String): Action
+    data object ResetResolve: Action
+    data object ShowResolveDialog: Action
+    data object HideResolveDialog: Action
+}
+```
+
+**3. 动作分发 (Action Dispatch)**
+```kotlin
+// 统一的动作处理入口，提供错误处理和日志记录
+fun postAction(action: Action) {
+    when (action) {
+        is Action.ResolveUrl -> resolveUrl(action)
+        is Action.ResetResolve -> resetResolve()
+        is Action.ShowResolveDialog -> showResolveDialog()
+        is Action.HideResolveDialog -> hideResolveDialog()
+    }
+}
+```
+
+**4. 状态更新 (State Update)**
+```kotlin
+// 使用update方法进行线程安全的状态更新
+private fun updateResolveState(newState: ResolveVideoState) {
+    mResolveStateFlow.update { newState }
+}
+
+// 示例：在业务逻辑中更新状态
+private fun resolveUrl(action: Action.ResolveUrl) {
+    resolveVideoJob = viewModelScope.launch(Dispatchers.IO) {
+        mResolveStateFlow.update { ResolveVideoState.Loading }
+        val result = VideoResolve.getVideoInfo(url, title, imgUrl)
+        result.onSuccess { videoInfo ->
+            withContext(Dispatchers.Main) {
+                mResolveStateFlow.update { ResolveVideoState.ResolveSuccess(videoInfo) }
+            }
+        }.onFailure { e ->
+            mResolveStateFlow.update { ResolveVideoState.Idle }
+            Log.d("WebViewWidget", "解析失败:${e.message}")
+        }
+    }
+}
+```
+
+**5. 协程作业管理 (Coroutine Job Management)**
+```kotlin
+// 声明协程作业变量，便于生命周期管理
+private var resolveJob: Job? = null
+private var resolveVideoJob: Job? = null
+
+// 在重置或清理时取消作业，防止内存泄漏
+private fun resetResolve() {
+    resolveJob?.cancel()
+    resolveVideoJob?.cancel()
+    mResolveStateFlow.update { ResolveVideoState.Idle }
+}
+```
+
+#### 标准实现模板
+
+**1. ViewModel类结构**
+```kotlin
+class XxxViewModel : ViewModel() {
+    
+    // === 状态定义区域 ===
+    sealed interface UiState { /* 状态定义 */ }
+    sealed interface Action { /* 动作定义 */ }
+    
+    // === 状态管理区域 ===
+    private val mUiStateFlow: MutableStateFlow<UiState> = MutableStateFlow(初始状态)
+    val uiStateFlow = mUiStateFlow.asStateFlow()
+    
+    // === 协程作业管理 ===
+    private var xxxJob: Job? = null
+    
+    // === 公开接口 ===
+    fun postAction(action: Action) { /* 动作分发逻辑 */ }
+    
+    // === 私有业务逻辑 ===
+    private fun handleXxxAction(action: Action.Xxx) { /* 具体业务实现 */ }
+    
+    // === 生命周期管理 ===
+    override fun onCleared() {
+        super.onCleared()
+        xxxJob?.cancel()
+    }
+}
+```
+
+**2. 多状态管理示例**
+```kotlin
+// 支持多个独立状态流
+private val mResolveStateFlow: MutableStateFlow<ResolveVideoState> = 
+    MutableStateFlow(ResolveVideoState.Idle)
+private val mResolveDialogStateFlow: MutableStateFlow<ResolveDialogState> = 
+    MutableStateFlow(ResolveDialogState.Hidden)
+
+val resolveStateFlow = mResolveStateFlow.asStateFlow()
+val resolveDialogStateFlow = mResolveDialogStateFlow.asStateFlow()
+```
+
+#### 最佳实践要点
+
+**1. 状态设计原则**
+- 使用`sealed interface`确保状态完整性
+- 状态应该是不可变的（使用`data class`或`data object`）
+- 避免在状态中包含可变对象
+- 为每个状态添加清晰的中文注释
+
+**2. 动作设计原则**
+- 动作应该表达用户意图，而非具体实现
+- 使用有意义的动作名称，避免技术术语
+- 动作参数应该是基础类型或不可变对象
+- 为复杂动作提供详细的参数说明
+
+**3. 协程使用规范**
+- 使用`viewModelScope`确保生命周期安全
+- 根据任务性质选择合适的`Dispatcher`（IO、Main、Default）
+- 使用`withContext`进行线程切换
+- 妥善管理长时间运行的协程作业
+
+**4. 错误处理标准**
+- 在动作处理中添加try-catch块
+- 使用`Result`类型处理可能失败的操作
+- 为错误状态提供用户友好的错误信息
+- 记录详细的错误日志便于调试
+
+**5. 日志记录规范**
+- 在关键业务节点添加日志记录
+- 使用统一的日志标签（通常为类名）
+- 记录状态变化、动作执行、错误信息
+- 避免在日志中暴露敏感信息
+
+#### 与UI层集成
+
+**1. Compose中的使用**
+```kotlin
+@Composable
+fun XxxScreen(viewModel: XxxViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiStateFlow.collectAsState()
+    
+    when (uiState) {
+        is UiState.Loading -> LoadingComponent()
+        is UiState.Success -> SuccessComponent(uiState.data)
+        is UiState.Error -> ErrorComponent(uiState.message)
+    }
+    
+    // 处理用户交互
+    Button(onClick = { viewModel.postAction(Action.LoadData) }) {
+        Text("加载数据")
+    }
+}
+```
+
+**2. 状态订阅最佳实践**
+- 使用`collectAsState()`在Compose中订阅状态
+- 避免在UI层直接访问MutableStateFlow
+- 使用`LaunchedEffect`处理一次性副作用
+- 合理使用`remember`缓存计算结果
+
+#### 架构优势
+
+1. **类型安全**: 使用sealed interface确保编译时类型检查
+2. **状态一致性**: 单一数据源原则，状态变化可预测
+3. **可测试性**: 纯函数式的状态转换，易于单元测试
+4. **可维护性**: 清晰的职责分离，业务逻辑集中管理
+5. **性能优化**: StateFlow的背压处理和状态去重机制
+6. **生命周期安全**: 自动处理协程生命周期，防止内存泄漏
+
+#### 注意事项
+
+1. **避免状态爆炸**: 合理设计状态粒度，避免过多细分状态
+2. **防止状态不一致**: 确保状态更新的原子性
+3. **内存管理**: 及时取消不需要的协程作业
+4. **线程安全**: 状态更新必须在正确的线程中进行
+5. **性能考虑**: 避免频繁的状态更新，合并相关状态变化
+
+此架构模式已在WebViewModel中验证，适用于所有需要状态管理的ViewModel实现。
+
 ### NoSuchMethodError setContent$default 深度解决 (2024-12-19)
 
 #### 问题复现

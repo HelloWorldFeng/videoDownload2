@@ -169,7 +169,7 @@ fun WebUrlInputWidget(
     onValueChange:(text:String)->Unit,
     onSearch:(text:String)->Unit,
     onHome:()-> Unit,
-    onAd:()-> Unit,
+    onRefresh:()-> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -210,12 +210,20 @@ fun WebUrlInputWidget(
         )
 
         Row(modifier = Modifier.wrapContentWidth(), horizontalArrangement = Arrangement.End) {
-            Spacer(Modifier.width(10.dp))
             AsyncImageImpl(
-                model = R.drawable.ic_launcher_background,
+                model = R.drawable.icon_home,
                 modifier = Modifier.size(22.dp).singClick{
                     adState.value = !adState.value
-                    onAd.invoke()
+                    onHome.invoke()
+                },
+                contentDescription = null
+            )
+            Spacer(Modifier.width(10.dp))
+            AsyncImageImpl(
+                model = R.drawable.icon_refresh,
+                modifier = Modifier.size(22.dp).singClick{
+                    adState.value = !adState.value
+                    onRefresh.invoke()
                 },
                 contentDescription = null
             )

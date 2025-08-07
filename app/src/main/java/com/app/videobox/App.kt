@@ -16,9 +16,8 @@ import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
-import com.collect.CollectManager
-import com.shuyu.gsyvideoplayer.utils.GSYVideoType
-import com.videodownloader.module.api.VideoDownloaderApi
+import com.videodownloader.module.download.DownloaderV2
+import com.videodownloader.module.download.DownloaderV2Impl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -53,12 +52,12 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         initColSdk()
-        initVideoDownloader()
         //依赖注入
         startKoin {
             androidContext(this@App)
             modules(
                 module {
+                    single<DownloaderV2> { DownloaderV2Impl(appContext()) }
                     viewModel { WebViewModel() }
                 }
             )
@@ -81,31 +80,6 @@ class App : Application() {
         })
     }
     
-    /**
-     * 初始化视频下载模块
-     */
-    private fun initVideoDownloader() {
-        try {
-            VideoDownloaderApi.initialize(this) {
-                // 设置下载路径到应用的外部文件目录
-                downloadPath = getExternalFilesDir("Downloads")?.absolutePath 
-                    ?: File(filesDir, "Downloads").absolutePath
-                // 设置最大并发下载数
-                maxConcurrentDownloads = 3
-                // 启用断点续传
-                enableResumeDownload = true
-                // 启用下载通知
-                enableDownloadNotification = true
-                // 设置网络超时
-                networkTimeoutMs = 30000
-                // 设置最大重试次数
-                maxRetryCount = 3
-            }
-            Log.d("App", "视频下载模块初始化成功")
-        } catch (e: Exception) {
-            Log.e("App", "视频下载模块初始化失败", e)
-        }
-    }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)

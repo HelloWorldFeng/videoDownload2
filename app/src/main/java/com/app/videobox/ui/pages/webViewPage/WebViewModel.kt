@@ -22,17 +22,14 @@ class WebViewModel : ViewModel() {
     private val mResolveStateFlow: MutableStateFlow<ResolveVideoState> = MutableStateFlow(ResolveVideoState.Idle)
     val resolveStateFlow = mResolveStateFlow.asStateFlow()
 
+
     //解析结果弹窗展示状态
-    private val mResolveDialogStateFlow:MutableStateFlow<ResolveVideoState> = MutableStateFlow(ResolveVideoState.Idle)
+    private val mResolveDialogStateFlow:MutableStateFlow<ResolveDialogState> = MutableStateFlow(ResolveDialogState.Hidden)
     val resolveDialogStateFlow = mResolveDialogStateFlow.asStateFlow()
 
-    //解析失败弹窗展示状态
-    private val mNotResolveDialogStateFlow:MutableStateFlow<NotResolveDialogState> = MutableStateFlow(NotResolveDialogState.Hidden)
-    val notResolveDialogStateFlow = mNotResolveDialogStateFlow.asStateFlow()
-
-    sealed interface NotResolveDialogState{
-        data object Hidden: NotResolveDialogState
-        data object Showing: NotResolveDialogState
+    sealed interface ResolveDialogState{
+        data object Hidden: ResolveDialogState
+        data object Showing: ResolveDialogState
     }
 
     sealed interface ResolveVideoState {
@@ -42,34 +39,34 @@ class WebViewModel : ViewModel() {
     }
 
     sealed interface Action{
-        data class ResolveUrl(val url: String,val title: String,val imgUrl: String): Action
+        data class ResolveUrl(
+            val url: String,
+            val title: String,
+            val imgUrl: String,
+            val ext: String, //视频资源类型 m3u8 or mp4
+        ): Action
         data object ResetResolve: Action
 
-        data class ShowResolveDialog(val info: VideoResolve.VideoInfo): Action
-        data object HideResolveDialog: Action
-
-        data object ShowNotResolveDialog: Action
-        data object HideNotResolveDialog:Action
+        data object ShowResolveDialog: Action
+        data object HideResolveDialog:Action
     }
 
     fun postAction(action: Action) {
         when (action) {
             is Action.ResolveUrl -> resolveUrl(action)
             is Action.ResetResolve -> resetResolve()
-            is Action.ShowResolveDialog -> showResolveDialog(action)
-            is Action.HideResolveDialog->hideResolveDialog()
-            is Action.ShowNotResolveDialog -> showNotResolveDialog()
-            is Action.HideNotResolveDialog -> hideNotResolveDialog()
+            is Action.ShowResolveDialog -> showResolveDialog()
+            is Action.HideResolveDialog -> hideResolveDialog()
         }
     }
 
-    private fun hideNotResolveDialog() {
-        mNotResolveDialogStateFlow.update { NotResolveDialogState.Hidden }
+    private fun hideResolveDialog() {
+        mResolveDialogStateFlow.update { ResolveDialogState.Hidden }
 
     }
 
-    private fun showNotResolveDialog() {
-        mNotResolveDialogStateFlow.update { NotResolveDialogState.Showing }
+    private fun showResolveDialog() {
+        mResolveDialogStateFlow.update { ResolveDialogState.Showing }
     }
 
     private fun resetResolve() {
@@ -82,10 +79,11 @@ class WebViewModel : ViewModel() {
         val url = action.url
         val title = action.title
         val imgUrl = action.imgUrl
+        val ext  = action.ext
         resolveVideoJob = viewModelScope.launch(Dispatchers.IO) {
             // 解析在线m3u8 or mp4 视频
             mResolveStateFlow.update { ResolveVideoState.Loading }
-            val result = VideoResolve.getVideoInfo(url,title,imgUrl)
+            val result = VideoResolve.getVideoInfo(url,title,imgUrl,ext)
             result.onSuccess { videoInfo ->
                 withContext(Dispatchers.Main) {
                     mResolveStateFlow.update { ResolveVideoState.ResolveSuccess(videoInfo) }
@@ -98,7 +96,7 @@ class WebViewModel : ViewModel() {
                 Log.d("WebViewWidget", "码率: ${VideoResolve.formatBitrate(videoInfo.bitrate)}")
                 Log.d("WebViewWidget", "编码: ${videoInfo.codec}")
                 Log.d("WebViewWidget", "帧率: ${videoInfo.frameRate}")
-
+                Log.d("WebViewWidget", "视频类型: ${videoInfo.ext}")
 //                launch {
 //                    DataRepository.reportSupported(url)
 //                }
@@ -112,28 +110,6 @@ class WebViewModel : ViewModel() {
 
 
 
-    private fun showResolveDialog(action: Action.ShowResolveDialog) {
-        val info = (action).info
-//        if (RemoteConfig.checkUrlInBlackUrl(searchText.value) && App.powerUser) {
-//            ToastUtils.showLong(App.context.getString(R.string.due_to_legal))
-//            return
-//        }
-
-        mResolveDialogStateFlow.update { ResolveVideoState.ResolveSuccess(info) }
-
-//        EventReportUtils.reportTDParams(
-//            "browser_download_click",
-//            mutableMapOf(
-//                "click_type" to "content"
-//            ),
-//            desc = "下载按钮点击->content")
-    }
-
-    private fun hideResolveDialog(){
-        mResolveDialogStateFlow.update { ResolveVideoState.Idle }
-    }
-
-
 
 
     private var resolveJob: Job?=null //解析页面 封面和标题
@@ -144,7 +120,7 @@ class WebViewModel : ViewModel() {
     fun checkVideoUrl(
         url: String,
         discoveredUrls: MutableSet<String>,
-        callback: (String, String, String) -> Unit,
+        callback: (String, String, String, String) -> Unit,
         view: WebView,
     ) {
         //pornhub不检查
@@ -159,13 +135,23 @@ class WebViewModel : ViewModel() {
 
         if (isVideoUrl(url) && !discoveredUrls.contains(url)) {
             discoveredUrls.add(url)
+            val ext = getUrlExt(url)
             // 使用协程获取标题
             resolveJob = CoroutineScope(Dispatchers.Main).launch {
                 val (title, image) = injectTitleDetectionScript(view)
                 //获取到标题后，将标题和视频的url一起callback出去
                 Log.d("WebViewWidget", "解析出现的视频资源----->${url} ")
-                callback(url, title,image)
+                callback(url, title,image,ext)
             }
+        }
+    }
+
+
+    fun getUrlExt(url: String): String{
+        if (url.contains("m3u8",true)){
+            return "m3u8"
+        }else{
+            return "mp4"
         }
     }
 
@@ -256,12 +242,12 @@ class WebViewModel : ViewModel() {
                         val title = match?.groups?.get(1)?.value ?: ""
                         val image = match?.groups?.get(2)?.value ?: ""
                         Log.d("WebViewWidget", "发现页面标题: $title, 图片: $image")
-                        continuation.resume(title to image) { }
+                        continuation.resume(title to image) { _: Throwable -> }
                     } catch (e: Exception) {
-                        continuation.resume("" to "") { }
+                        continuation.resume("" to "") { _: Throwable -> }
                     }
                 } else {
-                    continuation.resume("" to "") { }
+                    continuation.resume("" to "") { _: Throwable -> }
                 }
             }
         }

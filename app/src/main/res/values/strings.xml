@@ -303,4 +303,8 @@
     <string name="version_update">版本更新</string>
     <string name="built_in_video">内置视频</string>
 
+
+    <string name="filesize_mb">%.2f MB</string>
+    <string name="filesize_gb">%.2f GB</string>
+    <string name="thumbnail">Thumbnail</string>
 </resources>

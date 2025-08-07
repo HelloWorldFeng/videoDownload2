@@ -1,4 +1,4 @@
-package com.mvi.downloadvideomodel.ui.baseWidgets.webView
+package com.videodownloader.module.ui.baseWidgets.webView
 
 /*
  * Copyright 2021 The Android Open Source Project
@@ -46,8 +46,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import com.mvi.downloadvideomodel.ui.baseWidgets.webView.LoadingState.Finished
-import com.mvi.downloadvideomodel.ui.baseWidgets.webView.LoadingState.Loading
+import com.videodownloader.module.ui.baseWidgets.webView.LoadingState.Finished
+import com.videodownloader.module.ui.baseWidgets.webView.LoadingState.Loading
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow

@@ -83,7 +83,7 @@ class NewHomeScreen : Screen {
                             }
                             2 -> {
                                 // 跳转到下载测试页面
-                                navigator.push(DownloadTestScreenWrapper())
+//                                navigator.push(DownloadTestScreenWrapper())
                             }
                         }
                     }
@@ -442,132 +442,9 @@ private fun handleSearch(
         navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
     }
 
-//
-//    // 检查是否为视频URL（直接下载）
-//    if (isVideoUrl(searchText)) {
-//        // 处理视频URL下载
-//        handleVideoDownload(searchText, context, navigator)
-//        return
-//    }
-//
-//    // 检查是否为普通URL（WebView浏览）
-//    if (isValidUrl(searchText)) {
-//        // 使用WebView浏览URL并监听视频资源
-//        navigator.push(WebViewScreen(searchText))
-//        return
-//    }
-//
-//    // 如果不是URL，显示提示
-//    ToastUtils.showShort("请输入有效的URL链接")
 }
 
-/**
- * 检查输入文本是否为视频URL（直接下载）
- * 只有特定的视频流格式才进行直接下载，其他URL都通过WebView打开
- */
-private fun isVideoUrl(text: String): Boolean {
-    // 只有明确的视频流格式才直接下载
-    return text.contains(".m3u8") || 
-           text.contains(".mp4") || 
-           text.contains(".avi") || 
-           text.contains(".mkv") || 
-           text.contains(".mov") || 
-           text.contains(".wmv") || 
-           text.contains(".flv") || 
-           text.contains(".webm") ||
-           text.contains(".ts")
-}
 
-/**
- * 检查输入文本是否为有效URL
- */
-private fun isValidUrl(text: String): Boolean {
-    return text.startsWith("http://") || 
-           text.startsWith("https://") ||
-           text.startsWith("www.") ||
-           (text.contains(".") && !text.contains(" "))
-}
-
-/**
- * 处理视频URL下载
- */
-private fun handleVideoDownload(
-    url: String,
-    context: BaseActivity,
-    navigator: Navigator
-) {
-    context.lifecycleScope.launch {
-        try {
-            context.showLoadingDialog()
-            
-            // 获取视频下载API实例
-            val downloadApi = com.videodownloader.module.api.VideoDownloaderApi.getInstance()
-            
-            // 获取视频信息
-            val videoInfo = downloadApi.fetchVideoInfo(url)
-            
-            context.hideLoadingDialog()
-            
-            // 显示视频信息和格式选择对话框
-            showVideoDownloadDialog(
-                context = context,
-                videoInfo = videoInfo,
-                onDownloadStart = { selectedFormat ->
-                    startVideoDownload(videoInfo, selectedFormat, context, navigator)
-                }
-            )
-            
-        } catch (e: Exception) {
-            context.hideLoadingDialog()
-            ToastUtils.showShort("获取视频信息失败: ${e.message}")
-        }
-    }
-}
-
-/**
- * 显示视频下载对话框
- */
-private fun showVideoDownloadDialog(
-    context: BaseActivity,
-    videoInfo: com.videodownloader.module.api.VideoInfo,
-    onDownloadStart: (com.videodownloader.module.api.VideoFormat) -> Unit
-) {
-    // 这里可以显示一个对话框让用户选择视频格式
-    // 现在先选择最佳格式自动下载
-    val bestFormat = videoInfo.formats.firstOrNull { it.quality == "720p" } 
-        ?: videoInfo.formats.firstOrNull()
-    
-    if (bestFormat != null) {
-        onDownloadStart(bestFormat)
-    } else {
-        ToastUtils.showShort("没有可用的视频格式")
-    }
-}
-
-/**
- * 开始视频下载
- */
-private fun startVideoDownload(
-    videoInfo: com.videodownloader.module.api.VideoInfo,
-    format: com.videodownloader.module.api.VideoFormat,
-    context: BaseActivity,
-    navigator: Navigator
-) {
-    context.lifecycleScope.launch {
-        try {
-            val downloadApi = com.videodownloader.module.api.VideoDownloaderApi.getInstance()
-            val taskId = downloadApi.startDownload(videoInfo, format)
-            
-            ToastUtils.showShort("开始下载: ${videoInfo.title}")
-            
-            // 跳转到下载列表页面
-            navigator.push(DownloadListScreenWrapper())
-            
-        } catch (e: Exception) {
-            ToastUtils.showShort("下载失败: ${e.message}")
-        }
-    }
-}
 
 /**
  * 底部导航栏组件

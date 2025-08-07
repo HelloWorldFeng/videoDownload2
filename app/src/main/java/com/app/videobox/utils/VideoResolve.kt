@@ -2,6 +2,8 @@ package com.app.videobox.utils
 
 import android.util.Log
 import androidx.core.net.toUri
+import com.arthenica.mobileffmpeg.Config
+import com.arthenica.mobileffmpeg.FFprobe
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,7 +25,8 @@ object VideoResolve {
         val frameRate: String,         // 帧率
         var title: String,               //视频标题
         val thumbnail: String,           //视频封面
-        val originUrl: String           //视频资源链接
+        val originUrl: String,           //视频资源链接
+        val ext: String                 //视频类型
     )
     
     /**
@@ -34,7 +37,7 @@ object VideoResolve {
      * @param title 视频标题文案
      * @return VideoInfo 视频信息
      */
-    suspend fun getVideoInfo(videoUrl: String, title: String? = null, imgUrl: String): Result<VideoInfo> =
+    suspend fun getVideoInfo(videoUrl: String, title: String? = null, imgUrl: String, ext: String): Result<VideoInfo> =
         withContext(Dispatchers.IO) {
             try {
                 val command = mutableListOf<String>()
@@ -59,21 +62,20 @@ object VideoResolve {
                 // 视频URL
                 command.add(videoUrl)
                 
-//                val rc = FFprobe.execute(command.toTypedArray())
-//
-//                if (rc == 0) {
-//                    val output = Config.getLastCommandOutput()
-//                    if (output.isNotEmpty()) {
-//                        val videoInfo = parseVideoInfoFromJson(output,videoUrl,title,imgUrl)
-//                        Result.success(videoInfo)
-//                    } else {
-//                        Result.failure(Exception("FFprobe输出为空"))
-//                    }
-//                } else {
-//                    val errorOutput = Config.getLastCommandOutput()
-//                    Result.failure(Exception("FFprobe执行失败: $errorOutput"))
-//                }
-                Result.failure(Exception("FFprobe输出为空"))
+                val rc = FFprobe.execute(command.toTypedArray())
+
+                if (rc == 0) {
+                    val output = Config.getLastCommandOutput()
+                    if (output.isNotEmpty()) {
+                        val videoInfo = parseVideoInfoFromJson(output,videoUrl,title,imgUrl,ext)
+                        Result.success(videoInfo)
+                    } else {
+                        Result.failure(Exception("FFprobe输出为空"))
+                    }
+                } else {
+                    val errorOutput = Config.getLastCommandOutput()
+                    Result.failure(Exception("FFprobe执行失败: $errorOutput"))
+                }
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -167,7 +169,8 @@ object VideoResolve {
         jsonOutput: String,
         videoUrl: String,
         title: String?,
-        imgUrl: String
+        imgUrl: String,
+        ext: String
     ): VideoInfo {
         // 清理和验证JSON输出
         val cleanedJson = cleanJsonOutput(jsonOutput)
@@ -313,7 +316,8 @@ object VideoResolve {
             frameRate = frameRate,
             title = finalTitle,
             thumbnail = imgUrl,
-            originUrl = videoUrl
+            originUrl = videoUrl,
+            ext = ext,
         )
     }
     

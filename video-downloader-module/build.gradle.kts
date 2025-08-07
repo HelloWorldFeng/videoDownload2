@@ -1,17 +1,16 @@
 plugins {
-    id("com.android.library")
-    alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
     id("kotlin-parcelize")
 }
 
 android {
     namespace = "com.nexus.core.media.processor"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 24
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -67,14 +66,8 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    // implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.activity.compose)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
-    
-    // VLC Player support moved to main app module
-    
-    // 测试依赖
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation("com.blankj:utilcodex:1.31.1")
 }
