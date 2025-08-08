@@ -17,8 +17,7 @@ import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
-import com.videodownloader.module.download.DownloaderV2
-import com.videodownloader.module.download.DownloaderV2Impl
+import com.videodownloader.module.api.VideoDownloaderManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,12 +53,22 @@ class App : Application() {
         super.onCreate()
         initColSdk()
         initApi()
+        //初始化VideoDownloaderManager
+        VideoDownloaderManager.initialize(this)
+        
+        // 从备份恢复下载任务，确保应用重启后任务数据不丢失
+        try {
+            VideoDownloaderManager.restoreFromBackup()
+            Log.i("App", "下载任务恢复成功")
+        } catch (e: Exception) {
+            Log.e("App", "下载任务恢复失败", e)
+        }
+        
         //依赖注入
         startKoin {
             androidContext(this@App)
             modules(
                 module {
-                    single<DownloaderV2> { DownloaderV2Impl(appContext()) }
                     viewModel { WebViewModel() }
                 }
             )

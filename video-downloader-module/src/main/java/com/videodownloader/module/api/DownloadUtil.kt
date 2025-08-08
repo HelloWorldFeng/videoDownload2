@@ -1,6 +1,6 @@
 package com.videodownloader.module.api
 
-import VideoInfo
+import com.videodownloader.module.api.VideoInfo
 import android.content.ContentValues
 import android.content.Context
 import android.os.Build
@@ -10,6 +10,7 @@ import android.util.Log
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import java.io.File
+import java.io.FileInputStream
 import java.net.URI
 
 object DownloadUtil {
@@ -49,7 +50,7 @@ object DownloadUtil {
     
     /**
      * 内部下载实现方法
-     * 使用外部存储公共下载目录，用户可在文件管理器中直接访问
+     * 使用应用私有外部存储目录，兼容所有Android版本的存储权限
      */
     private suspend fun downloadVideoInternal(
         context: Context,
@@ -57,32 +58,31 @@ object DownloadUtil {
         taskId: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，在其下创建应用专属目录
-        val baseDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // 使用应用私有外部存储目录，无需存储权限且用户可访问
         val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
-        val publicDownloadDir = File(baseDownloadDir, appName)
+        val privateDownloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), appName)
         val url = videoInfo.url // 下载链接
         
         Log.d(TAG, "开始下载视频: taskId=$taskId, url=$url, title=${videoInfo.title}")
-        Log.d(TAG, "使用应用专属下载目录: ${publicDownloadDir.absolutePath}")
+        Log.d(TAG, "使用应用私有下载目录: ${privateDownloadDir.absolutePath}")
         
         // 生成安全的文件名，移除特殊字符，确保文件系统兼容性
         val safeFileName = videoInfo.title
             .replace("[^a-zA-Z0-9\u4e00-\u9fa5._-]".toRegex(), "_") // 保留中文、英文、数字、点、下划线、横线
             .take(100) // 限制文件名长度，避免文件系统限制
 
-        // 确保应用专属下载目录存在
-        if (!publicDownloadDir.exists()) {
-            val created = publicDownloadDir.mkdirs()
-            Log.d(TAG, "创建应用专属下载目录: path=${publicDownloadDir.absolutePath}, 创建结果=$created")
+        // 确保应用私有下载目录存在
+        if (!privateDownloadDir.exists()) {
+            val created = privateDownloadDir.mkdirs()
+            Log.d(TAG, "创建应用私有下载目录: path=${privateDownloadDir.absolutePath}, 创建结果=$created")
             if (!created) {
-                Log.e(TAG, "无法创建应用专属下载目录")
+                Log.e(TAG, "无法创建应用私有下载目录")
                 return Result.failure(Exception("无法创建下载目录"))
             }
         }
 
-        // 在公共下载目录中创建输出文件
-        val outputFile = File(publicDownloadDir, "${safeFileName}.mp4")
+        // 在私有下载目录中创建输出文件
+        val outputFile = File(privateDownloadDir, "${safeFileName}.mp4")
         Log.d(TAG, "输出文件路径: ${outputFile.absolutePath}")
         
 
@@ -193,7 +193,7 @@ object DownloadUtil {
     
     /**
      * M3U8下载内部实现方法
-     * 使用外部存储公共下载目录，用户可在文件管理器中直接访问
+     * 使用应用私有外部存储目录，兼容所有Android版本的存储权限
      */
     private suspend fun downloadM3U8VideoInternal(
         context: Context,
@@ -201,20 +201,19 @@ object DownloadUtil {
         title: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，在其下创建应用专属目录
-        val baseDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // 使用应用私有外部存储目录，无需存储权限且用户可访问
         val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
-        val publicDownloadDir = File(baseDownloadDir, appName)
-        if (!publicDownloadDir.exists()) {
-            publicDownloadDir.mkdirs()
-            Log.d(TAG, "创建应用下载目录: ${publicDownloadDir.absolutePath}")
+        val privateDownloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), appName)
+        if (!privateDownloadDir.exists()) {
+            privateDownloadDir.mkdirs()
+            Log.d(TAG, "创建应用私有下载目录: ${privateDownloadDir.absolutePath}")
         }
         
         // 生成安全的文件名
         val safeFileName = title
             .replace("[^a-zA-Z0-9\u4e00-\u9fa5._-]".toRegex(), "_")
             .take(100)
-        val outputFile = File(publicDownloadDir, "$safeFileName.mp4")
+        val outputFile = File(privateDownloadDir, "$safeFileName.mp4")
         
         Log.d(TAG, "M3U8下载开始: url=${videoInfo.url}, 输出文件=${outputFile.absolutePath}")
         
@@ -423,5 +422,62 @@ object DownloadUtil {
         }
     }
 
+    /**
+     * 将文件复制到公共媒体库（可选功能）
+     * 使用MediaStore API，兼容Android 10+的分区存储
+     * @param context 应用上下文
+     * @param sourceFile 源文件（应用私有目录中的文件）
+     * @param displayName 显示名称
+     * @return 是否成功复制到公共媒体库
+     */
+    fun copyToPublicMediaStore(
+        context: Context,
+        sourceFile: File,
+        displayName: String
+    ): Boolean {
+        return try {
+            if (!sourceFile.exists()) {
+                Log.e(TAG, "源文件不存在: ${sourceFile.absolutePath}")
+                return false
+            }
+
+            val contentResolver = context.contentResolver
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Video.Media.DISPLAY_NAME, displayName)
+                put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/VideoDownloader")
+                
+                // Android 10+ 需要设置IS_PENDING标志
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Video.Media.IS_PENDING, 1)
+                }
+            }
+
+            val uri = contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    FileInputStream(sourceFile).use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                // 完成写入，移除IS_PENDING标志
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    contentValues.clear()
+                    contentValues.put(MediaStore.Video.Media.IS_PENDING, 0)
+                    contentResolver.update(uri, contentValues, null, null)
+                }
+
+                Log.d(TAG, "文件成功复制到公共媒体库: $displayName")
+                true
+            } else {
+                Log.e(TAG, "无法在MediaStore中创建文件条目")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "复制文件到公共媒体库失败: ${e.message}", e)
+            false
+        }
+    }
 
 }

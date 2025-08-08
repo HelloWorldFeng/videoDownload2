@@ -24,13 +24,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <application>
-        <!-- 视频下载服务 -->
-        <service
-            android:name="com.nexus.core.media.processor.service.MediaProcessorService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-
+        <!-- 注意：如果需要前台服务，请在实际实现服务类后重新添加服务声明 -->
     </application>
 
 </manifest>

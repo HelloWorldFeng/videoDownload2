@@ -424,20 +424,32 @@ fun getConfigForNetworkType(context: Context): MediaProcessorConfig {
 
 ```kotlin
 class VideoDownloadHelper {
-    private val downloadApi = VideoDownloaderApi.getInstance()
+    private val downloadManager = VideoDownloaderManager
     
     suspend fun downloadVideo(url: String) {
         try {
-            // 1. 获取视频信息
-            val videoInfo = downloadApi.fetchVideoInfo(url)
-            
-            // 2. 选择格式
-            val format = selectBestFormat(videoInfo)
-            
-            // 3. 开始下载
-            val taskId = downloadApi.startDownload(videoInfo, format)
+            // 1. 判断视频类型并开始下载
+            val taskId = downloadManager.startDownload(url)
             
             Log.d("Download", "任务创建成功: $taskId")
+            
+            // 2. 监听下载状态
+            downloadManager.getTaskStateFlow(taskId).collect { task ->
+                when (task.downloadState) {
+                    is Task.DownloadState.Running -> {
+                        Log.d("Download", "下载进度: ${task.downloadState.progress}%")
+                    }
+                    is Task.DownloadState.Completed -> {
+                        Log.d("Download", "下载完成: ${task.downloadState.filePath}")
+                    }
+                    is Task.DownloadState.Error -> {
+                        Log.e("Download", "下载失败: ${task.downloadState.message}")
+                    }
+                    else -> {
+                        Log.d("Download", "任务状态: ${task.downloadState}")
+                    }
+                }
+            }
             
         } catch (e: Exception) {
             Log.e("Download", "下载失败", e)
@@ -445,12 +457,9 @@ class VideoDownloadHelper {
         }
     }
     
-    private fun selectBestFormat(videoInfo: VideoInfo): Format {
-        // 优先选择720p MP4格式
-        return videoInfo.getFormatsByQuality("720p")
-            .firstOrNull { it.ext == "mp4" }
-            ?: videoInfo.getBestVideoFormat()
-            ?: throw IllegalStateException("没有可用的视频格式")
+    // 根据URL自动判断视频类型
+    fun getVideoType(url: String): Task.VideoType {
+        return downloadManager.getVideoTypeFromUrl(url)
     }
 }
 ```
@@ -459,26 +468,37 @@ class VideoDownloadHelper {
 
 ```kotlin
 class DownloadTaskManager {
-    private val downloadApi = VideoDownloaderApi.getInstance()
+    private val downloadManager = VideoDownloaderManager
     
     // 获取所有任务
-    fun getAllTasks(): List<DownloadTask> {
-        return downloadApi.getAllDownloadTasks()
+    fun getAllTasks(): List<Task> {
+        return downloadManager.getAllTaskStates()
     }
     
-    // 暂停所有下载
-    suspend fun pauseAllDownloads() {
-        downloadApi.pauseAllDownloads()
+    // 取消所有下载
+    suspend fun cancelAllDownloads() {
+        val tasks = downloadManager.getAllTaskStates()
+        tasks.forEach { task ->
+            downloadManager.cancelTask(task.id)
+        }
     }
     
-    // 恢复所有下载
-    suspend fun resumeAllDownloads() {
-        downloadApi.resumeAllDownloads()
+    // 重启所有失败的下载
+    suspend fun restartFailedDownloads() {
+        val tasks = downloadManager.getAllTaskStates()
+        tasks.filter { it.downloadState is Task.DownloadState.Error }
+            .forEach { task ->
+                downloadManager.restartTask(task.id)
+            }
     }
     
-    // 清理已完成任务
-    suspend fun clearCompletedTasks() {
-        downloadApi.clearCompletedTasks()
+    // 移除已完成任务
+    suspend fun removeCompletedTasks() {
+        val tasks = downloadManager.getAllTaskStates()
+        tasks.filter { it.downloadState is Task.DownloadState.Completed }
+            .forEach { task ->
+                downloadManager.removeTask(task.id)
+            }
     }
 }
 ```
@@ -489,23 +509,38 @@ class DownloadTaskManager {
 
 ```kotlin
 try {
-    val videoInfo = downloadApi.fetchVideoInfo(url)
-    val taskId = downloadApi.startDownload(videoInfo, format)
-} catch (e: NetworkException) {
-    // 网络错误
-    showError("网络连接失败，请检查网络设置")
-} catch (e: StorageException) {
-    // 存储错误
-    showError("存储空间不足或无法写入文件")
-} catch (e: PermissionException) {
-    // 权限错误
-    requestPermissions()
-} catch (e: VideoFetchException) {
-    // 视频获取错误
-    showError("无法获取视频信息，请检查URL是否正确")
-} catch (e: UnsupportedVideoException) {
-    // 不支持的视频
-    showError("该视频平台暂不支持")
+    val taskId = VideoDownloaderManager.startDownload(url)
+    
+    // 监听任务状态处理错误
+    VideoDownloaderManager.getTaskStateFlow(taskId).collect { task ->
+        when (val state = task.downloadState) {
+            is Task.DownloadState.Error -> {
+                when {
+                    state.message.contains("网络") -> {
+                        showError("网络连接失败，请检查网络设置")
+                    }
+                    state.message.contains("存储") || state.message.contains("空间") -> {
+                        showError("存储空间不足或无法写入文件")
+                    }
+                    state.message.contains("权限") -> {
+                        requestPermissions()
+                    }
+                    state.message.contains("不支持") -> {
+                        showError("该视频平台暂不支持")
+                    }
+                    else -> {
+                        showError("下载失败: ${state.message}")
+                    }
+                }
+            }
+            is Task.DownloadState.Completed -> {
+                showSuccess("下载完成: ${state.filePath}")
+            }
+            is Task.DownloadState.Running -> {
+                updateProgress(state.progress)
+            }
+        }
+    }
 } catch (e: Exception) {
     // 其他错误
     showError("未知错误: ${e.message}")
@@ -517,19 +552,40 @@ try {
 ### 1. 内存优化
 
 ```kotlin
-// 及时清理回调
+// 及时释放资源
 override fun onDestroy() {
     super.onDestroy()
-    downloadApi.clearAllCallbacks()
+    // 取消所有正在进行的下载任务
+    lifecycleScope.launch {
+        VideoDownloaderManager.getAllTaskStates()
+            .filter { it.downloadState is Task.DownloadState.Running }
+            .forEach { task ->
+                VideoDownloaderManager.cancelTask(task.id)
+            }
+    }
+    // 释放下载管理器资源
+    VideoDownloaderManager.release()
 }
 
 // 使用弱引用持有Context
-class WeakDownloadCallback(activity: Activity) : SimpleDownloadCallback() {
+class WeakDownloadObserver(activity: Activity) {
     private val activityRef = WeakReference(activity)
     
-    override fun onDownloadCompleted(task: DownloadTask) {
+    fun observeDownloadTask(taskId: String) {
         activityRef.get()?.let { activity ->
-            // 更新UI
+            activity.lifecycleScope.launch {
+                VideoDownloaderManager.getTaskStateFlow(taskId).collect { task ->
+                    when (task.downloadState) {
+                        is Task.DownloadState.Completed -> {
+                            // 更新UI
+                            activity.runOnUiThread {
+                                // 更新完成状态
+                            }
+                        }
+                        // 其他状态处理...
+                    }
+                }
+            }
         }
     }
 }
@@ -538,31 +594,89 @@ class WeakDownloadCallback(activity: Activity) : SimpleDownloadCallback() {
 ### 2. 网络优化
 
 ```kotlin
-// 根据网络类型调整并发数
-downloadApi.registerDownloadCallback(object : DownloadCallback {
-    override fun onNetworkStatusChanged(isConnected: Boolean, networkType: String) {
-        when (networkType) {
-            "WIFI" -> {
-                // WiFi环境，可以增加并发数
-                downloadApi.setMaxConcurrentDownloads(5)
+// 根据网络类型调整下载策略
+class NetworkOptimizer(private val context: Context) {
+    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    
+    fun optimizeDownloadStrategy() {
+        val networkInfo = connectivityManager.activeNetworkInfo
+        when {
+            networkInfo?.type == ConnectivityManager.TYPE_WIFI -> {
+                // WiFi环境，可以同时下载多个任务
+                Log.d("NetworkOptimizer", "WiFi环境，启用高速下载模式")
             }
-            "MOBILE" -> {
-                // 移动网络，减少并发数
-                downloadApi.setMaxConcurrentDownloads(2)
+            networkInfo?.type == ConnectivityManager.TYPE_MOBILE -> {
+                // 移动网络，限制并发下载
+                Log.d("NetworkOptimizer", "移动网络，启用节省流量模式")
+                // 可以暂停部分下载任务
+                pauseNonPriorityTasks()
+            }
+            else -> {
+                // 无网络连接，暂停所有下载
+                pauseAllTasks()
             }
         }
     }
-})
+    
+    private suspend fun pauseNonPriorityTasks() {
+        VideoDownloaderManager.getAllTaskStates()
+            .filter { it.downloadState is Task.DownloadState.Running }
+            .drop(1) // 保留第一个任务继续下载
+            .forEach { task ->
+                VideoDownloaderManager.cancelTask(task.id)
+            }
+    }
+    
+    private suspend fun pauseAllTasks() {
+        VideoDownloaderManager.getAllTaskStates()
+            .filter { it.downloadState is Task.DownloadState.Running }
+            .forEach { task ->
+                VideoDownloaderManager.cancelTask(task.id)
+            }
+    }
+}
 ```
 
 ### 3. 存储优化
 
 ```kotlin
-// 定期清理临时文件
-lifecycleScope.launch {
-    while (isActive) {
-        delay(TimeUnit.HOURS.toMillis(1)) // 每小时检查一次
-        downloadApi.cleanupTempFiles()
+// 定期清理已完成的任务和临时文件
+class StorageOptimizer {
+    
+    fun startPeriodicCleanup(scope: CoroutineScope) {
+        scope.launch {
+            while (isActive) {
+                delay(TimeUnit.HOURS.toMillis(1)) // 每小时检查一次
+                cleanupCompletedTasks()
+                cleanupTempFiles()
+            }
+        }
+    }
+    
+    private suspend fun cleanupCompletedTasks() {
+        // 清理7天前完成的任务
+        val sevenDaysAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)
+        VideoDownloaderManager.getAllTaskStates()
+            .filter { task ->
+                task.downloadState is Task.DownloadState.Completed &&
+                task.id.substringAfter("_").toLongOrNull()?.let { it < sevenDaysAgo } == true
+            }
+            .forEach { task ->
+                VideoDownloaderManager.removeTask(task.id)
+            }
+    }
+    
+    private fun cleanupTempFiles() {
+        // 清理临时文件
+        val downloadDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "VideoBox")
+        downloadDir.listFiles()?.filter { file ->
+            file.name.endsWith(".tmp") || file.name.endsWith(".part")
+        }?.forEach { file ->
+            if (file.lastModified() < System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)) {
+                file.delete()
+                Log.d("StorageOptimizer", "删除临时文件: ${file.name}")
+            }
+        }
     }
 }
 ```
@@ -572,11 +686,18 @@ lifecycleScope.launch {
 ### 启用调试模式
 
 ```kotlin
-VideoDownloaderApi.initialize(context) {
-    if (BuildConfig.DEBUG) {
-        logLevel = LogLevel.DEBUG
-        enableDebugMode = true
-        enableNetworkLogging = true
+// 在Application中初始化
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        // 初始化视频下载管理器
+        VideoDownloaderManager.initialize(this)
+        
+        if (BuildConfig.DEBUG) {
+            // 启用详细日志
+            Log.d("VideoDownloader", "调试模式已启用")
+        }
     }
 }
 ```

@@ -48,11 +48,12 @@ import com.app.videobox.ui.widgets.ProgressLinear
 
 import com.app.videobox.ui.widgets.VideoCardV1
 import com.app.videobox.ui.widgets.singClick
-import com.videodownloader.module.download.DownloaderV2
+import com.videodownloader.module.api.VideoDownloaderManager
 import com.videodownloader.module.download.Task
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.koinInject
 import java.io.File
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * 视频下载列表页面
@@ -70,7 +71,6 @@ import java.io.File
 @Composable
 fun DownloadListScreen(
     modifier: Modifier = Modifier,
-    downloader: DownloaderV2 = koinInject(),
     viewModel: DownloadListViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -102,7 +102,7 @@ fun DownloadListScreen(
     }
     
     TaskListContent(
-        taskDownloadStateMap = downloader.getTaskStateMap(),
+        taskDownloadStateMap = VideoDownloaderManager.observeTaskStates().collectAsStateWithLifecycle().value,
         uiState = uiState,
         viewModel = viewModel,
         selectedCallback = { state ->
@@ -114,11 +114,11 @@ fun DownloadListScreen(
         },
         onActionPost = { task, action ->
             when (action) {
-                is DownloadListViewModel.TaskAction.Cancel -> downloader.cancel(task)
-                is DownloadListViewModel.TaskAction.Delete -> downloader.remove(task)
-                is DownloadListViewModel.TaskAction.Resume -> downloader.restart(task)
-                is DownloadListViewModel.TaskAction.Pause -> downloader.cancel(task) // 使用cancel代替pause
-                is DownloadListViewModel.TaskAction.Retry -> downloader.restart(task)
+                is DownloadListViewModel.TaskAction.Cancel -> VideoDownloaderManager.cancelDownload(task.id)
+                is DownloadListViewModel.TaskAction.Delete -> VideoDownloaderManager.removeTask(task.id)
+                is DownloadListViewModel.TaskAction.Resume -> VideoDownloaderManager.restartDownload(task.id)
+                is DownloadListViewModel.TaskAction.Pause -> VideoDownloaderManager.cancelDownload(task.id) // 使用cancel代替pause
+                is DownloadListViewModel.TaskAction.Retry -> VideoDownloaderManager.restartDownload(task.id)
                 is DownloadListViewModel.TaskAction.OpenFile -> {
                     if (action.filePath != null) {
                         viewModel.handleIntent(
@@ -150,7 +150,7 @@ fun DownloadListScreen(
  */
 @Composable
 private fun TaskListContent(
-    taskDownloadStateMap: SnapshotStateMap<Task, Task.State>,
+    taskDownloadStateMap: Map<String, Task.State>,
     uiState: DownloadListViewModel.UiState,
     viewModel: DownloadListViewModel,
     selectedCallback:(state: Boolean)-> Unit = {},
@@ -159,8 +159,16 @@ private fun TaskListContent(
     onBatchAction: (DownloadListViewModel.TaskAction) -> Unit = {},
 ) {
     // 缓存过滤后的任务映射，避免不必要的重组
+    // 将Map<String, Task.State>转换为Map<Task, Task.State>以便UI使用
     val filteredMap = remember(taskDownloadStateMap) {
-        taskDownloadStateMap
+        taskDownloadStateMap.mapKeys { (taskId, taskState) ->
+            // 从taskState中重建Task对象
+            Task(
+                id = taskId,
+                url = taskState.videoInfo.url,
+                type = if (taskState.videoInfo.ext == "m3u8") Task.VideoType.M3U8 else Task.VideoType.MP4
+            )
+        }
     }
     
     val scope = rememberCoroutineScope()
