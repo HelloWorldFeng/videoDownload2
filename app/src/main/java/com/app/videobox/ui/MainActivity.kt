@@ -1,5 +1,7 @@
 package com.app.videobox.ui
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.lifecycleScope
@@ -11,6 +13,14 @@ import com.app.videobox.utils.FileUtils
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity() {
+
+    companion object{
+        fun start(context: Context, extras: Bundle? = null) {
+            val intent = Intent(context, MainActivity::class.java)
+            extras?.let { intent.putExtras(it) }
+            context.startActivity(intent)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

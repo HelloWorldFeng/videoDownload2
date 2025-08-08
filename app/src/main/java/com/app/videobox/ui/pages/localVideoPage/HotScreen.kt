@@ -1,8 +1,7 @@
-package com.app.videobox.ui.pages
+package com.app.videobox.ui.pages.localVideoPage
 
 import android.content.Context
 import android.content.res.AssetManager
-import android.os.Bundle
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,10 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,11 +49,8 @@ import com.app.videobox.R
 import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AdUnitWrapper
-import com.app.videobox.ext.formatDuration
-import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.ui.pages.video.VideoPlayerManager
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
@@ -68,7 +61,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 
-class HotScreen:Screen {
+class HotScreen: Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -82,29 +75,30 @@ class HotScreen:Screen {
             backPopAd(context, navigator)
         }
         Column(
-            Modifier
+            Modifier.Companion
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding()) {
+                .navigationBarsPadding()
+        ) {
             TitleBar(title = stringResource(R.string.built_in_video)) {
                 backPopAd(context, navigator)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.Companion.height(20.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 contentPadding = PaddingValues(14.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(list){file->
+                items(list) { file ->
                     Box(
-                        modifier = Modifier
+                        modifier = Modifier.Companion
                             .size(109.dp, 162.dp)
                             .clip(shape = RoundedCornerShape(12.dp))
-                    ){
+                    ) {
                         CoilImage(
-                            modifier = Modifier
+                            modifier = Modifier.Companion
                                 .singClick {
                                     AdmobManager.getFullAdFromPool(
                                         context,
@@ -124,87 +118,45 @@ class HotScreen:Screen {
                                                 adType = "int",
                                                 adScene = "play_int",
                                                 closeAction = {
-                                                    VideoPlayerManager.launchVideoPlayer(
-                                                        context,
-                                                        videoUrl = file.absolutePath,
-                                                        videoTitle = file.name
-                                                    )
+
                                                 })
                                         },
                                         closeAction = {
-                                            VideoPlayerManager.launchVideoPlayer(
-                                                context,
-                                                videoUrl = file.absolutePath,
-                                                videoTitle = file.name
-                                            )
+
                                         })
 
                                 }
                                 .fillMaxSize(),
-                            contentScale = ContentScale.FillBounds,
+                            contentScale = ContentScale.Companion.FillBounds,
                             data = file.absolutePath,
                         )
 
                         Box(
-                            modifier = Modifier
+                            modifier = Modifier.Companion
                                 .padding(6.dp)
-                                .align(Alignment.TopEnd)
+                                .align(Alignment.Companion.TopEnd)
                                 .wrapContentSize()
                                 .background(
                                     color = Color(0x52000000),
-                                    shape = RoundedCornerShape(20.dp)
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
                                 )
                         ) {
                             val sizeKb = Formatter.formatFileSize(context, file.length())
                             Text(
                                 text = sizeKb,
                                 fontSize = 12.sp,
-                                color = Color.White,
-                                modifier = Modifier.padding(3.dp)
+                                color = Color.Companion.White,
+                                modifier = Modifier.Companion.padding(3.dp)
                             )
                         }
                     }
 
                 }
             }
-            var nativeState by remember {
-                mutableStateOf<AdUnitWrapper?>(null)
-            }
-            val lifecycleOwner = LocalLifecycleOwner.current
-            DisposableEffect(key1 = lifecycleOwner) {
-                val observer = object : LifecycleObserver {
-                    @OnLifecycleEvent(Lifecycle.Event.ON_START)
-                    fun onStart() {
-                        AdmobManager.getSmallAdFromPool(
-                            adType = "nav",
-                            adScene = "function_nav"
-                        ){
-                            nativeState = it
-                        }
 
-                    }
+            Spacer(modifier = Modifier.Companion.height(20.dp))
+            Spacer(modifier = Modifier.Companion.weight(1f))
 
-                    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
-                    fun onStop() {
-                        nativeState = null
-                    }
-                }
-                lifecycleOwner.lifecycle.addObserver(observer)
-                onDispose {
-                    lifecycleOwner.lifecycle.removeObserver(observer)
-                }
-
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            NativeAdsView(
-                adUnitWrapper = nativeState,
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .fillMaxWidth(1f),
-                bigStyle = false
-            )
         }
     }
 

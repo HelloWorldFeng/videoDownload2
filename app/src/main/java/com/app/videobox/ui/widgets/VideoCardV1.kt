@@ -220,9 +220,9 @@ fun ProgressLinear(
             )
         }
         else -> {
-            CustomCircularProgress(
-                progress = { 0.5f }
-            )
+//            CustomCircularProgress(
+//                progress = { 0.5f }
+//            )
         }
     }
 }

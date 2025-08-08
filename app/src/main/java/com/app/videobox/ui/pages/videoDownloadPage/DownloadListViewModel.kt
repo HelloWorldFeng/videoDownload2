@@ -77,6 +77,8 @@ class DownloadListViewModel : ViewModel() {
         data class ToggleTaskSelection(val task: Task) : Intent()  // 切换任务选择状态
         data class SelectTask(val task: Task) : Intent()           // 选择任务
         data class UnselectTask(val task: Task) : Intent()         // 取消选择任务
+        data class SelectAllTasks(val tasks: List<Task>) : Intent() // 全选任务
+        object ToggleSelectAll : Intent()                   // 切换全选状态
         
         // 任务操作
         data class ExecuteTaskAction(val task: Task, val action: TaskAction) : Intent()  // 执行任务操作
@@ -136,6 +138,8 @@ class DownloadListViewModel : ViewModel() {
                     is Intent.ToggleTaskSelection -> toggleTaskSelection(intent.task)
                     is Intent.SelectTask -> selectTask(intent.task)
                     is Intent.UnselectTask -> unselectTask(intent.task)
+                    is Intent.SelectAllTasks -> selectAllTasks(intent.tasks)
+                    is Intent.ToggleSelectAll -> toggleSelectAll()
                     
                     // 任务操作
                     is Intent.ExecuteTaskAction -> executeTaskAction(intent.task, intent.action)
@@ -169,6 +173,18 @@ class DownloadListViewModel : ViewModel() {
      */
     fun getSelectedTasks(): Set<Task> {
         return _uiState.value.selectedTasks
+    }
+    
+    /**
+     * 检查是否全选状态
+     * 
+     * @param totalTasks 总任务列表
+     * @return 是否全选
+     */
+    fun isAllSelected(totalTasks: List<Task>): Boolean {
+        val selectedTasks = _uiState.value.selectedTasks
+        return totalTasks.isNotEmpty() && selectedTasks.size == totalTasks.size && 
+               totalTasks.all { selectedTasks.contains(it) }
     }
     
     // ==================== 私有方法 ====================
@@ -248,6 +264,29 @@ class DownloadListViewModel : ViewModel() {
         updateState { 
             copy(selectedTasks = selectedTasks - task) 
         }
+    }
+    
+    /**
+     * 全选任务
+     * 
+     * @param tasks 要全选的任务列表
+     */
+    private suspend fun selectAllTasks(tasks: List<Task>) {
+        Log.d(TAG, "全选任务: 共${tasks.size}个任务")
+        updateState { 
+            copy(selectedTasks = tasks.toSet()) 
+        }
+    }
+    
+    /**
+     * 切换全选状态
+     * 需要从外部传入当前任务列表来判断全选状态
+     * 这个方法主要用于UI层直接调用，不需要传参
+     */
+    private suspend fun toggleSelectAll() {
+        Log.d(TAG, "切换全选状态")
+        // 这个方法需要配合UI层使用，UI层需要判断当前状态并调用相应的方法
+        clearSelection()
     }
     
     /**

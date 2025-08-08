@@ -40,7 +40,7 @@ android {
     }
     packaging {
         jniLibs {
-            pickFirsts += listOf("**/libpython.zip.so", "**/libyoutube-dl.so", "**/libc++_shared.so")
+            pickFirsts += listOf("**/libc++_shared.so")
             jniLibs.useLegacyPackaging = true
         }
     }
@@ -133,6 +133,8 @@ dependencies {
     //Koin做依赖注入
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    //图标库
+    implementation(libs.androidx.compose.material.iconsExtended)
 
     implementation("androidx.appcompat:appcompat:1.7.0")
 

@@ -3,16 +3,16 @@ package com.app.videobox.ui.pages.homePage
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.app.videobox.network.DataRepository
-import com.app.videobox.network.model.MeidaVideo
+import com.app.videobox.network.model.MediaVideo
 
 //获取视频分类
-class VideoClassPageSource : PagingSource<Int, MeidaVideo>() {
+class VideoClassPageSource(private val categoryId: Int) : PagingSource<Int, MediaVideo>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MeidaVideo> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MediaVideo> {
         return try {
             val page = params.key ?: 1
             val pageSize = params.loadSize.coerceAtMost(20)
-            val response = DataRepository.getVideoList(page, pageSize)
+            val response = DataRepository.getVideoList(page, pageSize, categoryId)
             if (response == null) {
                 return LoadResult.Error(Exception("Network error"))
             }
@@ -30,7 +30,7 @@ class VideoClassPageSource : PagingSource<Int, MeidaVideo>() {
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, MeidaVideo>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, MediaVideo>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)

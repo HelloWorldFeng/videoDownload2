@@ -21,10 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.R
 
-private val ContainColor : Color
-    @Composable get() = Color(0xFF474A57)
-private val BorderColor : Color
-    @Composable get() = Color(0xFF6C6F7C)
 
 
 @Composable
@@ -35,10 +31,9 @@ fun DeleteBarWidget(
 ){
     Row(
         modifier = modifier
-            .width(271.dp)
-            .height(57.dp)
-            .border(width = 1.dp, color = BorderColor, shape = RoundedCornerShape(26.dp))
-            .background(ContainColor, shape = RoundedCornerShape(26.dp))
+            .width(235.dp)
+            .height(73.dp)
+            .background(Color(0xFFFFFFFF), shape = RoundedCornerShape(36.dp))
             .padding(all = 5.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
@@ -47,21 +42,19 @@ fun DeleteBarWidget(
             onCancel.invoke()
         }, horizontalAlignment = Alignment.CenterHorizontally) {
             AsyncImageImpl(
-                modifier = Modifier.size(18.dp),
-                model = R.drawable.ic_launcher_background,
+                modifier = Modifier.size(44.dp),
+                model = R.drawable.icon_cancel,
                 contentDescription = null
             )
-            Text(text = stringResource(R.string.cancel), fontSize = 12.sp,color = Color.White)
         }
         Column(modifier = Modifier.weight(1f).singClick{
             onDelete.invoke()
         },horizontalAlignment = Alignment.CenterHorizontally) {
             AsyncImageImpl(
-                modifier = Modifier.size(18.dp),
-                model = R.drawable.ic_launcher_background,
+                modifier = Modifier.size(44.dp),
+                model = R.drawable.icon_delete,
                 contentDescription = null
             )
-            Text(text = stringResource(R.string.delete), fontSize = 12.sp,color = Color.White)
         }
     }
 }

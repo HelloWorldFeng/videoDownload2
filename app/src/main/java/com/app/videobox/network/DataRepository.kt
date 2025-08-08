@@ -3,11 +3,11 @@ package com.app.videobox.network
 import android.content.Context
 import android.util.Log
 import com.app.videobox.App
-import com.app.videobox.BuildConfig
 import com.google.gson.Gson
 import com.app.videobox.network.model.HomeUrlModel
-import com.app.videobox.network.model.MeidaVideo
+import com.app.videobox.network.model.MediaVideo
 import com.app.videobox.network.model.BaseResponse
+import com.app.videobox.network.model.MediaClass
 import com.app.videobox.utils.DeviceUtils
 import com.appsflyer.AppsFlyerLib
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -30,13 +29,20 @@ object DataRepository {
     private val _webUrlFlow = MutableStateFlow<HomeUrlModel?>(null)
     val webUrlFlow: StateFlow<HomeUrlModel?> = _webUrlFlow
 
-    suspend fun getVideoClass(): BaseResponse<List<MeidaVideo>>? {
+    private val _videoClassFlow = MutableStateFlow<List<MediaClass>>(emptyList())
+    val videoClassFlow: StateFlow<List<MediaClass>> = _videoClassFlow
+
+    suspend fun getVideoClass(): BaseResponse<List<MediaClass>>? {
         return try {
             val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams)
-            service.getMediaClass(params)
-            null
+            val response = service.getMediaClass(params)
+            response?.model?.let { classList ->
+                _videoClassFlow.value = classList
+                Log.d("DataRepository", "Video classes loaded: ${classList.size} categories")
+            }
+            response
         } catch (e: Exception) {
-            Log.e("DataRepository", "getVideoList error: ${e.message}")
+            Log.e("DataRepository", "getVideoClass error: ${e.message}")
             null
         }
     }
@@ -46,12 +52,12 @@ object DataRepository {
      * @param pageSize 每页大小
      * @return VisionResponse<List<MiniVideo>> 视频列表响应
      */
-    suspend fun getVideoList(page: Int, pageSize: Int): BaseResponse<List<MeidaVideo>>? {
+    suspend fun getVideoList(page: Int, pageSize: Int,categoryId:Int): BaseResponse<List<MediaVideo>>? {
         return try {
             val paramsMap = mutableMapOf(
                 "pageIndex" to page,
                 "pageSize" to pageSize,
-                "categoryId" to 1
+                "categoryId" to categoryId
             )
             val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams, paramsMap)
             service.getMediaList(params)

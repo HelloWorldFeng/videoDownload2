@@ -16,14 +16,14 @@ fun CustomCheckBox(
     Box(modifier = modifier) {
         if (checked) {
             AsyncImageImpl(
-                model = R.drawable.icon_check_not,
+                model = R.drawable.icon_check_ed,
                 modifier = Modifier.fillMaxSize(),
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds
             )
         }else{
             AsyncImageImpl(
-                model = R.drawable.icon_check_ed,
+                model = R.drawable.icon_check_not,
                 modifier = Modifier.fillMaxSize(),
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds

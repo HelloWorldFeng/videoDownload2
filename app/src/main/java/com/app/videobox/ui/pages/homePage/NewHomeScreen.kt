@@ -41,10 +41,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import com.app.videobox.R
 import com.app.videobox.network.DataRepository
+import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
-import com.app.videobox.ui.pages.FolderScreen
+import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.NavBarV2
@@ -52,44 +56,49 @@ import com.app.videobox.ui.widgets.NavBarV2
 /**
  * 新主页 - 基于Figma设计稿实现
  * 包含状态栏、搜索框、分类标签和视频网格
+ * 
+ * 注意：Screen接口需要支持序列化，因此不能在类级别声明Compose状态
  */
 class NewHomeScreen : Screen {
-    var mSelectIndex = mutableIntStateOf(value = 0)
-
-    private val SELECT_VIDEO = 0
-    private val SELECT_HOME = 1
-    private val SELECT_DOWNLOAD = 2
+    companion object {
+        private const val SELECT_VIDEO = 0
+        private const val SELECT_HOME = 1
+        private const val SELECT_DOWNLOAD = 2
+    }
 
     @Composable
     override fun Content() {
+        // 将状态管理移到Content方法内部，避免序列化问题
+        var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
+        
         BackHandler {  }
         Box(Modifier.fillMaxSize()) {
             HomeScreen()
 
-            if (mSelectIndex.intValue == SELECT_DOWNLOAD){
+            if (mSelectIndex == SELECT_DOWNLOAD){
                 DownloadListScreen()
             }
 
-            if (mSelectIndex.intValue == SELECT_VIDEO){
-
+            if (mSelectIndex == SELECT_VIDEO){
+                // TODO: 实现视频页面内容
+                FolderScreen()
             }
+            
             NavBarV2(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 30.dp),
                 defaultIndex = SELECT_HOME,
                 onClickHome = {
-                    mSelectIndex.intValue = SELECT_HOME
+                    mSelectIndex = SELECT_HOME
                 },
                 onClickDownload = {
-                    mSelectIndex.intValue = SELECT_DOWNLOAD
+                    mSelectIndex = SELECT_DOWNLOAD
                 },
                 onClickVideo = {
-                    mSelectIndex.intValue = SELECT_VIDEO
+                    mSelectIndex = SELECT_VIDEO
                 })
         }
-
-
     }
 
 
@@ -131,23 +140,192 @@ fun HomeScreen(){
 @Composable
 fun PopularVideoSection(navigator: Navigator) {
     // 获取分类数据
+    val videoClasses by DataRepository.videoClassFlow.collectAsStateWithLifecycle()
+    
+    // 只有当分类数据可用时才展示分类列表
+    if (videoClasses.isNotEmpty()) {
+        Column(
+            modifier = Modifier.padding(bottom = 90.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // 遍历所有分类，为每个分类创建独立的视频列表
+            videoClasses.forEach { category ->
+                CategoryVideoSection(
+                    category = category,
+                    navigator = navigator
+                )
+            }
+        }
+    } else {
+        // 显示加载状态
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Loading video categories...",
+                color = Color.White,
+                fontSize = 16.sp
+            )
+        }
+    }
+}
 
-    // 根据分类数据获取分类下的视频数据流
-    val pager = remember {
+/**
+ * 单个分类的视频展示组件
+ * 包含分类标题和水平滑动的视频列表
+ */
+@Composable
+private fun CategoryVideoSection(
+    category: MediaClass,
+    navigator: Navigator
+) {
+    // 为每个分类创建独立的分页器
+    val pager = remember(category.id) {
         Pager(
-            config = PagingConfig(pageSize = 10),
-            pagingSourceFactory = { VideoClassPageSource() }
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false,
+                prefetchDistance = 3
+            ),
+            pagingSourceFactory = { VideoClassPageSource(category.id) }
         )
     }
     val lazyPagingItems = pager.flow.collectAsLazyPagingItems()
+    
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // 分类标题和描述
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(
+                    Modifier
+                        .padding(end = 4.dp)
+                        .size(4.dp,14.dp)
+                        .background(color = Color(0xFFFF5C7F), shape = RoundedCornerShape(3.dp))
+                )
+                Text(
+                    text = category.categoryName.replaceFirstChar { it.uppercase() },
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+            
+            // 显示视频数量（如果有的话）
+            if (category.videoCount > 0) {
+                Text(
+                    text = "${category.videoCount} videos",
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 12.sp
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        // 水平滑动的视频列表
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            items(lazyPagingItems.itemCount) { index ->
+                lazyPagingItems[index]?.let { video ->
+                    HorizontalVideoCard(
+                        video = video,
+                        onClick = {
+                            // 点击视频跳转到WebView页面播放
+                            navigator.push(WebViewScreen(video.videoURL))
+                        }
+                    )
+                }
+            }
+            
+            // 如果还有更多数据可以加载，显示加载更多指示器
+            if (lazyPagingItems.itemCount > 0) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "More →",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
+/**
+ * 水平滑动列表中的视频卡片组件
+ * 采用竖向布局，适合水平滑动展示
+ */
+@Composable
+private fun HorizontalVideoCard(
+    video: com.app.videobox.network.model.MediaVideo,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .height(200.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            // 视频缩略图
+            AsyncImageImpl(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(8.dp)),
+                model = video.imageURL,
+                contentScale = ContentScale.Crop
+            )
+
+            // 视频标题
+            Text(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                text = video.title,
+                color = Color.White,
+                fontSize = 14.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
 }
 
 /**
  * 状态栏组件 - 模拟iPhone状态栏
  */
 @Composable
-private fun StatusBarSection() {
+fun StatusBarSection() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,6 +541,77 @@ private fun WebsiteItemCard(
 
 
 
+
+/**
+ * 单个视频卡片组件
+ */
+@Composable
+private fun VideoItemCard(
+    video: com.app.videobox.network.model.MediaVideo,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 视频缩略图
+            AsyncImageImpl(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                model = video.imageURL,
+                contentScale = ContentScale.Crop
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // 视频信息
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // 视频标题
+                Text(
+                    text = video.title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // 作者
+                Text(
+                    text = "By ${video.author}",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // 发布日期
+                Text(
+                    text = video.publishDate,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+}
 
 /**
  * 处理搜索功能

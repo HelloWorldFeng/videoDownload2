@@ -1,6 +1,6 @@
 package com.app.videobox.network.model
 
-data class MeidaVideo(
+data class MediaVideo(
     val author: String,
     val id: Int,
     val imageURL: String,

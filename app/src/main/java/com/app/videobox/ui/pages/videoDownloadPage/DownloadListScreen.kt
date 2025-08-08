@@ -40,9 +40,9 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.TitleBar
-import com.app.videobox.ui.pages.video.VideoPlayerManager
 import com.videodownloader.module.api.*
 import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
+import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.DeleteBarWidget
 import com.app.videobox.ui.widgets.ProgressLinear
 
@@ -173,97 +173,146 @@ private fun TaskListContent(
     Box(
         Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
+
             .background(Color(0xFF1C1D1E))
             .singClick {
                 if (uiState.isSelectModeEnabled) {
                     selectedCallback.invoke(true)
                 }
             }){
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+        AsyncImageImpl(
+            modifier = Modifier.fillMaxWidth(),
+            model = R.drawable.bg_comm
+        )
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp),
                 verticalAlignment = Alignment.CenterVertically
-            ) {
+            )
+            {
                 Text(text = stringResource(R.string.download_list), fontSize = 18.sp,color = Color.White)
 
+                Spacer(Modifier.weight(1f))
+                //多选状态下才显示
+                AnimatedVisibility(
+                    visible = uiState.isSelectModeEnabled
+                ) {
+                    val allTasks = remember(filteredMap) { filteredMap.keys.toList() }
+                    val isAllSelected = viewModel.isAllSelected(allTasks)
+                    
+                    Text(
+                        text = if (isAllSelected) stringResource(R.string.cancel_select_all) else stringResource(R.string.select_all),
+                        color = Color.White,
+                        modifier = Modifier.singClick{
+                            if (isAllSelected) {
+                                // 当前是全选状态，点击取消全选
+                                viewModel.handleIntent(DownloadListViewModel.Intent.ClearSelection)
+                            } else {
+                                // 当前不是全选状态，点击全选
+                                viewModel.handleIntent(DownloadListViewModel.Intent.SelectAllTasks(allTasks))
+                            }
+                        }
+                    )
+                }
             }
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = lazyListState,
-                verticalArrangement = Arrangement.spacedBy(12.dp), // 列表项之间的间距
-            ) {
-                items(
-                    items = filteredMap.toList().sortedBy { (_, state) -> state.downloadState },
-                    key = { (task, _) -> task.id },
-                ){ (task, state) ->
-                    with(state.viewState){
-                        AnimatedVisibility(
-                            modifier = Modifier.fillMaxWidth(),
-                            visible = true,
-                            exit = shrinkVertically() + fadeOut(),
-                            enter = expandVertically() + fadeIn(),
-                        ){
-                            // 记录下载状态日志，便于生产环境问题追踪
-                            Log.d("DownloadListScreen", "任务ID: ${task.id}, 下载状态: ${state.downloadState}")
 
-                            VideoCardV1(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp), // 减少垂直内边距，因为LazyColumn已有间距
-                                viewState = this@with,
-                                downloadState = state.downloadState,
-                                progressLinear = {
-                                    ProgressLinear(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        downloadState = state.downloadState
-                                    )
-                                },
-                                isSelectEnabled = {
-                                    uiState.isSelectModeEnabled
-                                },
-                                isSelected = {
-                                    uiState.selectedTasks.contains(task)
-                                },
-                                onSelect = {
-                                    onTaskSelection(task)
-                                },
-                                onClick = { action ->
-                                    when (action) {
-                                        is DownloadListViewModel.TaskAction.OpenFile -> {
-                                            viewModel.handleIntent(
-                                                DownloadListViewModel.Intent.ExecuteTaskAction(
-                                                    task = task,
-                                                    action = action
-                                                )
-                                            )
-                                        }
-                                        else -> {
-                                            onActionPost(task, action)
-                                        }
-                                    }
-                                },
-                                onLongClick = {
-                                    // 长按进入选择模式
-                                    if (!uiState.isSelectModeEnabled) {
-                                        selectedCallback.invoke(false)
+            if (filteredMap.isEmpty()){
+                Spacer(Modifier.weight(1f))
+                AsyncImageImpl(
+                    modifier = Modifier.size(171.dp),
+                    model = R.drawable.icon_empty_1
+                )
+                Text(
+                    text = stringResource(R.string.there_is_no_video_please_go_to_add_it),
+                    fontSize = 16.sp,
+                    color = Color.White
+                    )
+                Spacer(Modifier.weight(2f))
+            }else{
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = lazyListState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp), // 列表项之间的间距
+                )
+                {
+                    items(
+                        items = filteredMap.toList().sortedBy { (_, state) -> state.downloadState },
+                        key = { (task, _) -> task.id },
+                    ){ (task, state) ->
+                        with(state.viewState){
+                            AnimatedVisibility(
+                                modifier = Modifier.fillMaxWidth(),
+                                visible = true,
+                                exit = shrinkVertically() + fadeOut(),
+                                enter = expandVertically() + fadeIn(),
+                            ){
+                                // 记录下载状态日志，便于生产环境问题追踪
+                                Log.d("DownloadListScreen", "任务ID: ${task.id}, 下载状态: ${state.downloadState}")
+
+                                VideoCardV1(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp), // 减少垂直内边距，因为LazyColumn已有间距
+                                    viewState = this@with,
+                                    downloadState = state.downloadState,
+                                    progressLinear = {
+                                        ProgressLinear(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            downloadState = state.downloadState
+                                        )
+                                    },
+                                    isSelectEnabled = {
+                                        uiState.isSelectModeEnabled
+                                    },
+                                    isSelected = {
+                                        uiState.selectedTasks.contains(task)
+                                    },
+                                    onSelect = {
                                         onTaskSelection(task)
-                                    }
-                                },
-                            )
+                                    },
+                                    onClick = { action ->
+                                        when (action) {
+                                            is DownloadListViewModel.TaskAction.OpenFile -> {
+                                                viewModel.handleIntent(
+                                                    DownloadListViewModel.Intent.ExecuteTaskAction(
+                                                        task = task,
+                                                        action = action
+                                                    )
+                                                )
+                                            }
+                                            else -> {
+                                                onActionPost(task, action)
+                                            }
+                                        }
+                                    },
+                                    onLongClick = {
+                                        // 长按进入选择模式
+                                        if (!uiState.isSelectModeEnabled) {
+                                            selectedCallback.invoke(false)
+                                            onTaskSelection(task)
+                                        }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
             }
+
         }
 
 
         AnimatedVisibility(
             modifier = Modifier
-                .padding(bottom = 30.dp)
+                .padding(bottom = 50.dp)
                 .align(Alignment.BottomCenter),
             visible = uiState.isSelectModeEnabled,
             enter = scaleIn(),

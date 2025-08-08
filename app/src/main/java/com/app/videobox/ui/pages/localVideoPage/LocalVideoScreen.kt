@@ -1,7 +1,5 @@
-package com.app.videobox.ui.pages
+package com.app.videobox.ui.pages.localVideoPage
 
-import android.content.Context
-import android.os.Bundle
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -51,15 +49,12 @@ import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.formatDuration
-import com.app.videobox.ext.safeStartActivity
-import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.shareVideo
 import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
 import com.app.videobox.ui.dialogs.RenameDialog
-import com.app.videobox.ui.pages.video.VideoPlayerManager
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
@@ -128,19 +123,11 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                                             adType = "int",
                                             adScene = "play_int",
                                             closeAction = {
-                                                VideoPlayerManager.launchVideoPlayer(
-                                                    context,
-                                                    videoUrl = fileInfo.file.absolutePath,
-                                                    videoTitle = fileInfo.titleName
-                                                )
+
                                             })
                                     },
                                     closeAction = {
-                                        VideoPlayerManager.launchVideoPlayer(
-                                            context,
-                                            videoUrl = fileInfo.file.absolutePath,
-                                            videoTitle = fileInfo.titleName
-                                        )
+
                                     })
 
                             },

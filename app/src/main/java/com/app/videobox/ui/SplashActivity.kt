@@ -53,7 +53,7 @@ class SplashActivity : BaseActivity() {
     private var showSplashState by mutableStateOf(
         value = SPStaticUtils.getBoolean("firstLaunch",false)
     )
-    private var launchTime = if(BuildConfig.DEBUG) 3 else SPStaticUtils.getInt("launchTime",10)
+    private var launchTime = if(BuildConfig.DEBUG) 1 else SPStaticUtils.getInt("launchTime",10)
     private var startPlay = mutableStateOf(value = false)
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
