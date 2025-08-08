@@ -108,33 +108,40 @@ class NewHomeScreen : Screen {
 fun HomeScreen(){
     val navigator = LocalNavigator.currentOrThrow
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding())
-    {
-        // 状态栏区域
-        StatusBarSection()
+    Box(Modifier.fillMaxSize()){
+        AsyncImageImpl(
+            modifier = Modifier.fillMaxWidth(),
+            model = R.drawable.bg_comm
+        )
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding())
+        {
+            // 状态栏区域
+            StatusBarSection()
 
-        // 主要内容区域
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            // 主要内容区域
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // 搜索框
-            SearchSection()
+                // 搜索框
+                SearchSection()
 
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // 热门网站展示区域 - 两页轮播
-            PopularWebsitesSection(navigator)
-            Spacer(modifier = Modifier.height(20.dp))
-            // 热门推荐展示区域
-            PopularVideoSection(navigator)
+                // 热门网站展示区域 - 两页轮播
+                PopularWebsitesSection(navigator)
+                Spacer(modifier = Modifier.height(20.dp))
+                // 热门推荐展示区域
+                PopularVideoSection(navigator)
+            }
         }
     }
+
 }
 
 @Composable

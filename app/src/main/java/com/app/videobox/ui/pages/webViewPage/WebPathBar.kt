@@ -21,7 +21,7 @@ import com.app.videobox.ui.widgets.WebUrlInputWidget
 import com.app.videobox.ui.widgets.singClick
 
 @Composable
-fun WebUrlBar(
+fun WebPathBar(
     currentUrl: String,
     onUrlChanged: (String) -> Unit = {},
     onRefresh:()-> Unit = {},

@@ -2,40 +2,45 @@ package com.app.videobox.ui.pages.webViewPage
 
 import VideoInfo
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.app.videobox.App.Companion.coroutineScope
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
-import com.app.videobox.ui.widgets.ModalBottomSheetM3
+import com.app.videobox.ui.widgets.ModalBottomSheetV3
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.ui.widgets.webView.WebViewWidget
 import com.app.videobox.ui.widgets.webView.rememberWebViewState
@@ -46,7 +51,6 @@ import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
-import com.blankj.utilcode.util.ToastUtils
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.TaskFactory
 import kotlinx.coroutines.launch
@@ -82,6 +86,7 @@ class WebViewScreen(
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun WebPageScreen(
     inputUrl: String,
@@ -113,7 +118,7 @@ fun WebPageScreen(
         {
 
             // 显示当前URL的状态栏
-            WebUrlBar(
+            WebPathBar(
                 currentUrl = currentUrl,
                 onUrlChanged = { newUrl ->
                     //网址栏，修改网址，回车确定新的网址
@@ -176,14 +181,15 @@ fun WebPageScreen(
         }
 
         // 悬浮视频按钮
-        FloatingVideoButton(
-            onClick = {
-                viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
-            },
-            viewModel = viewModel,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            content = {
+                DraggableResolveButton(
+                    viewModel = viewModel,
+                    maxWidthPx = with(LocalDensity.current) { maxWidth.toPx() },
+                    maxHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
+                )
+            }
         )
 
         //解析出来的信息弹窗状态
@@ -211,6 +217,74 @@ fun WebPageScreen(
     }
 
 }
+
+@Composable
+fun DraggableResolveButton(
+    viewModel: WebViewModel,
+    maxWidthPx: Float,
+    maxHeightPx: Float
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+    var isInitialized by remember { mutableStateOf(false) }
+
+    val density = LocalDensity.current
+
+    // 按钮尺寸
+    val buttonSize = 56.dp
+    val buttonSizePx = with(density) { buttonSize.toPx() }
+
+    // 计算安全的拖动边界
+    val maxOffsetX = maxWidthPx - buttonSizePx
+    val maxOffsetY = maxHeightPx - buttonSizePx
+    // 获取状态栏高度
+    val statusBarHeightPx = with(density) {
+        WindowInsets.statusBars.getTop(this).toFloat()
+    }
+
+    // 初始化按钮位置（右下角）
+    LaunchedEffect(isInitialized) {
+        if (!isInitialized) {
+            // 设置初始位置为右下角
+            offsetX = maxOffsetX - with(density) { 30.dp.toPx() } // 右边距
+            offsetY = maxOffsetY - with(density) { 130.dp.toPx() } // 底部边距，对应原来的 padding
+            isInitialized = true
+        }
+    }
+
+    FloatingVideoButton(
+        viewModel = viewModel,
+        modifier = Modifier
+            .offset {
+                IntOffset(
+                    offsetX.roundToInt(),
+                    offsetY.roundToInt()
+                )
+            }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+
+                    // 计算新位置
+                    val newX = offsetX + dragAmount.x
+                    val newY = offsetY + dragAmount.y
+
+                    // 更精确的边界限制
+                    offsetX = newX.coerceIn(
+                        0f, // 不允许超出左边界
+                        maxOffsetX // 不允许超出右边界
+                    )
+                    offsetY = newY.coerceIn(
+                        statusBarHeightPx,
+                        // 不允许超出状态栏
+                        maxOffsetY
+                    )
+                }
+            }
+    )
+}
+
+
 @Composable
 fun ResolveInfoDialog(
     viewModel: WebViewModel,
@@ -247,7 +321,7 @@ private fun ResolveDialog(
     val scope = rememberCoroutineScope()
     BackHandler { scope.launch { sheetStateV3.hide() }.invokeOnCompletion { onDismissRequest() } }
 
-    ModalBottomSheetM3(
+    ModalBottomSheetV3(
         sheetState = sheetStateV3,
         contentPadding = PaddingValues(),
         onDismissRequest = {
@@ -272,7 +346,6 @@ private fun ResolveDialogImpl(
     onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {
     val lazyGridState = rememberLazyGridState()
-    val context = LocalActivity.current
 
     Box(
         modifier = Modifier
@@ -289,26 +362,10 @@ private fun ResolveDialogImpl(
             columns = GridCells.Adaptive(150.dp),
             contentPadding = PaddingValues(8.dp),
         ){
-            item(span = {GridItemSpan(maxLineSpan)}){
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier =
-                        Modifier
-                            .padding(top = 12.dp, bottom = 14.dp)
-                            .padding(horizontal = 12.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.download),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            }
             //视频信息样式
             info.run {
                 item(span = {GridItemSpan(maxLineSpan)}) {
-                    FormatVideoPreview(
+                    VideoInfoPreview(
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
                             .padding(bottom = 18.dp),
@@ -324,9 +381,30 @@ private fun ResolveDialogImpl(
             info.run {
                 item(span = {GridItemSpan(maxLineSpan)}){
                     val fileSizeText = info.size.toFileSizeText()
-                    Text(
-                        text = resolution
-                    )
+
+                    Box{
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(221.dp,52.dp)
+                                .background(color = Color(0xFF464748), shape = RoundedCornerShape(12.dp))
+                                .padding(horizontal = 22.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = info.resolution,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = fileSizeText,
+                                fontSize = 12.sp,
+                                color = Color(0xFFF4F4F4)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -366,7 +444,6 @@ private fun ResolveDialogImpl(
  */
 @Composable
 private fun FloatingVideoButton(
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WebViewModel
 ) {
@@ -374,50 +451,49 @@ private fun FloatingVideoButton(
     val videoInfoState = viewModel.resolveStateFlow.collectAsStateWithLifecycle().value
 
 
-    FloatingActionButton(
-        onClick = onClick,
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.primary
-    ) {
-        when (videoInfoState) {
-            is WebViewModel.ResolveVideoState.Idle -> {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "视频资源",
-                        tint = Color.Black
-                    )
-                }
-            }
+    when (videoInfoState) {
+        is WebViewModel.ResolveVideoState.Idle -> {
+            AsyncImageImpl(
+                modifier = modifier
+                    .padding(bottom = 130.dp, end = 30.dp)
+                    .size(56.dp)
+                    .singClick {
 
-            is WebViewModel.ResolveVideoState.Loading->{
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "视频资源",
-                        tint = Color.White
-                    )
-                }
-            }
-
-            is WebViewModel.ResolveVideoState.ResolveSuccess -> {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "视频资源",
-                        tint = Color.Red
-                    )
-                }
-
-            }
+                    },
+                model = R.drawable.icon_resolve_not,
+                contentDescription = null
+            )
         }
 
+        is WebViewModel.ResolveVideoState.Loading->{
+            val iconComposition by rememberLottieComposition(LottieCompositionSpec.Asset("resolve_loading_btn.json"))
+            LottieAnimation(
+                composition = iconComposition,
+                iterations = LottieConstants.IterateForever,
+                modifier = modifier
+                    .padding(bottom = 130.dp, end = 30.dp)
+                    .size(56.dp)
+                ,
+                contentScale = ContentScale.FillWidth
+            )
+        }
+
+        is WebViewModel.ResolveVideoState.ResolveSuccess -> {
+            val iconComposition by rememberLottieComposition(LottieCompositionSpec.Asset("resolve_success_btn.json"))
+            LottieAnimation(
+                composition = iconComposition,
+                iterations = LottieConstants.IterateForever,
+                modifier = modifier
+                    .padding(bottom = 130.dp, end = 30.dp)
+                    .size(56.dp)
+                    .singClick{
+                        viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
+                    }
+                ,
+                contentScale = ContentScale.FillWidth
+            )
+
+        }
     }
 }
 
@@ -469,7 +545,7 @@ private fun VideoResourceDialog(
 }
 
 @Composable
-fun FormatVideoPreview(
+fun VideoInfoPreview(
     modifier: Modifier = Modifier,
     title: String,
     thumbnailUrl: String,
@@ -481,9 +557,26 @@ fun FormatVideoPreview(
         MediaImage(
             modifier = Modifier,
             imageModel = thumbnailUrl,
-            isAudio = false,
             contentDescription = stringResource(R.string.thumbnail),
         )
+
+        Column(
+            modifier = Modifier
+                .padding(14.dp)
+                .align(Alignment.BottomStart)
+        ) {
+            Text(
+                text = stringResource(R.string.download),
+                fontSize = 16.sp,
+                color = Color.White
+            )
+            Text(
+                text = title,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = Color.White
+            )
+        }
         Surface(
             modifier = Modifier
                 .padding(2.dp)
@@ -508,13 +601,12 @@ fun FormatVideoPreview(
 fun MediaImage(
     modifier: Modifier = Modifier,
     imageModel: String,
-    isAudio: Boolean = false,
     contentDescription: String? = null,
 ) {
     StateAsyncImageImpl(
         modifier = modifier
             .height(180.dp)
-            .aspectRatio(if (!isAudio) 16f / 9f else 1f, matchHeightConstraintsFirst = true)
+            .aspectRatio(16f / 9f, matchHeightConstraintsFirst = true)
             .clip(MaterialTheme.shapes.extraSmall),
         model = imageModel,
         contentDescription = contentDescription,
@@ -524,7 +616,7 @@ fun MediaImage(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        color = Color(0xFFFFFFFF).copy(alpha = 0.2f),
+                        color = Color(0xFF1C1D1E),
                         shape = RoundedCornerShape(12.dp)
                     )
             ) {
@@ -542,7 +634,7 @@ fun MediaImage(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        color = Color(0xFFFFFFFF).copy(alpha = 0.2f),
+                        color = Color(0xFF1C1D1E),
                         shape = RoundedCornerShape(12.dp)
                     )
             ) {

@@ -26,15 +26,10 @@ fun GradientButton(
             .clickable {
                 onClick.invoke()
             }
-            .shadow(
-                elevation = 8.dp,
-                spotColor = Color.White,
-                shape = RoundedCornerShape(25.dp)
-            )
             .size(300.dp, 50.dp)
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(Color(0xFFB14FE5), Color(0xFF7864FF))
+                    listOf(Color(0xFFFF5A83), Color(0xFFFF7B29))
                 ), shape = RoundedCornerShape(25.dp)
             )
     ) {

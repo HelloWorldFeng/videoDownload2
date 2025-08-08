@@ -57,24 +57,26 @@ object DownloadUtil {
         taskId: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，用户可直接访问
-        val publicDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // 使用外部存储的公共下载目录，在其下创建应用专属目录
+        val baseDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
+        val publicDownloadDir = File(baseDownloadDir, appName)
         val url = videoInfo.url // 下载链接
         
         Log.d(TAG, "开始下载视频: taskId=$taskId, url=$url, title=${videoInfo.title}")
-        Log.d(TAG, "使用外部存储公共下载目录: ${publicDownloadDir.absolutePath}")
+        Log.d(TAG, "使用应用专属下载目录: ${publicDownloadDir.absolutePath}")
         
         // 生成安全的文件名，移除特殊字符，确保文件系统兼容性
         val safeFileName = videoInfo.title
             .replace("[^a-zA-Z0-9\u4e00-\u9fa5._-]".toRegex(), "_") // 保留中文、英文、数字、点、下划线、横线
             .take(100) // 限制文件名长度，避免文件系统限制
 
-        // 确保公共下载目录存在
+        // 确保应用专属下载目录存在
         if (!publicDownloadDir.exists()) {
             val created = publicDownloadDir.mkdirs()
-            Log.d(TAG, "创建公共下载目录: path=${publicDownloadDir.absolutePath}, 创建结果=$created")
+            Log.d(TAG, "创建应用专属下载目录: path=${publicDownloadDir.absolutePath}, 创建结果=$created")
             if (!created) {
-                Log.e(TAG, "无法创建公共下载目录")
+                Log.e(TAG, "无法创建应用专属下载目录")
                 return Result.failure(Exception("无法创建下载目录"))
             }
         }
@@ -199,10 +201,13 @@ object DownloadUtil {
         title: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，用户可直接访问
-        val publicDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        // 使用外部存储的公共下载目录，在其下创建应用专属目录
+        val baseDownloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
+        val publicDownloadDir = File(baseDownloadDir, appName)
         if (!publicDownloadDir.exists()) {
             publicDownloadDir.mkdirs()
+            Log.d(TAG, "创建应用下载目录: ${publicDownloadDir.absolutePath}")
         }
         
         // 生成安全的文件名
@@ -229,11 +234,12 @@ object DownloadUtil {
                 throw Exception("M3U8播放列表中未找到TS分片")
             }
             
-            // 第三步：创建临时目录存储TS分片
-            val tempDir = File(publicDownloadDir, "temp_${System.currentTimeMillis()}")
+            // 第三步：创建临时目录存储TS分片（使用应用私有目录）
+            val privateCacheDir = context.cacheDir // 使用应用私有缓存目录
+            val tempDir = File(privateCacheDir, "m3u8_temp_${System.currentTimeMillis()}")
             if (!tempDir.exists()) {
                 tempDir.mkdirs()
-                Log.d(TAG, "创建临时目录: ${tempDir.absolutePath}")
+                Log.d(TAG, "创建应用私有临时目录: ${tempDir.absolutePath}")
             }
             
             // 第四步：下载所有TS分片
