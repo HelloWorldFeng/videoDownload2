@@ -128,7 +128,8 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
         val defaultVideoInfo = VideoInfo(
             id = task.id,
             title = task.url,
-            duration = 0,
+            duration = 0f,
+            size = 0,
             thumbnail = "",
             url = task.url,
             ext = "mp4"

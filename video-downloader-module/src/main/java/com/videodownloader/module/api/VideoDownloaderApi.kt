@@ -1117,8 +1117,9 @@ import kotlinx.serialization.Serializable
 data class VideoInfo(
     val id: String,
     val title: String,
-    val duration: Int, // 秒
+    val duration: Float, // 秒
     val thumbnail: String,
+    val size: Long,
     val url: String,
     val ext: String,
 )

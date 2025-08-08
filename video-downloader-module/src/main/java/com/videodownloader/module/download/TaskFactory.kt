@@ -25,7 +25,7 @@ object TaskFactory {
             title = finalTitle,
             uploader = "", // VideoInfo 中没有 uploader 字段
             duration = videoInfo.duration,
-            fileSizeApprox = 0.0, // VideoInfo 中没有文件大小字段
+            fileSizeApprox = videoInfo.size.toDouble(), // VideoInfo
             thumbnailUrl = videoInfo.thumbnail
         )
         
@@ -60,7 +60,7 @@ object TaskFactory {
             title = finalTitle,
             uploader = "", // VideoInfo 中没有 uploader 字段
             duration = videoInfo.duration,
-            fileSizeApprox = 0.0, // VideoInfo 中没有文件大小字段
+            fileSizeApprox = videoInfo.size.toDouble(), // VideoInfo
             thumbnailUrl = videoInfo.thumbnail
         )
 

@@ -116,7 +116,7 @@ data class Task(
         val title: String = "",
         val uploader: String = "",
         val extractorKey: String = "",
-        val duration: Int = 0,
+        val duration: Float = 0f,
         val fileSizeApprox: Double = .0,
         val thumbnailUrl: String? = null,
     )

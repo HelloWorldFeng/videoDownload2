@@ -2,6 +2,7 @@ package com.app.videobox.ui.pages.webViewPage
 
 import VideoInfo
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -51,6 +52,7 @@ import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
+import com.blankj.utilcode.util.ToastUtils
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.TaskFactory
 import kotlinx.coroutines.launch
@@ -345,6 +347,7 @@ private fun ResolveDialogImpl(
     onNavigateBack: () -> Unit,
     onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {
+    val context = LocalContext.current
     val lazyGridState = rememberLazyGridState()
 
     Box(
@@ -386,8 +389,11 @@ private fun ResolveDialogImpl(
                         Row(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .size(221.dp,52.dp)
-                                .background(color = Color(0xFF464748), shape = RoundedCornerShape(12.dp))
+                                .size(221.dp, 52.dp)
+                                .background(
+                                    color = Color(0xFF464748),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                                 .padding(horizontal = 22.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -422,13 +428,15 @@ private fun ResolveDialogImpl(
                             val newVideoInfo = VideoInfo(
                                 id = System.currentTimeMillis().toString(),
                                 title = info.title,
-                                duration = 0,
-                                thumbnail = "",
+                                duration = info.duration,
+                                thumbnail = info.thumbnail,
+                                size = info.size,
                                 url = info.originUrl,
                                 ext = info.ext,
                             )
                             onClickDownload.invoke(newVideoInfo)
                             onNavigateBack.invoke()
+                            ToastUtils.showLong(context.getString(R.string.start_download_task))
                         }
                         startDownload()
                     }, text = stringResource(R.string.download))
@@ -486,7 +494,7 @@ private fun FloatingVideoButton(
                 modifier = modifier
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
-                    .singClick{
+                    .singClick {
                         viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
                     }
                 ,
@@ -497,52 +505,6 @@ private fun FloatingVideoButton(
     }
 }
 
-/**
- * 视频资源对话框
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun VideoResourceDialog(
-    videoResources: List<VideoResource>,
-    onDismiss: () -> Unit,
-    onDownload: (VideoResource) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("检测到的视频资源") },
-        text = {
-            Column {
-                videoResources.forEach { resource ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        onClick = { onDownload(resource) }
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp)
-                        ) {
-                            Text(
-                                text = resource.type,
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            Text(
-                                text = resource.url,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 2
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("关闭")
-            }
-        }
-    )
-}
 
 @Composable
 fun VideoInfoPreview(
@@ -552,6 +514,7 @@ fun VideoInfoPreview(
     duration: Int,
 ) {
     Box(modifier = modifier
+        .padding(top = 15.dp)
         .wrapContentWidth()
         .wrapContentHeight(Alignment.Top, unbounded = false)) {
         MediaImage(
@@ -623,8 +586,8 @@ fun MediaImage(
                 AsyncImageImpl(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .size(70.dp, 58.dp),
-                    model = R.drawable.ic_launcher_background,
+                        .size(28.dp),
+                    model = R.drawable.icon_place,
                     contentDescription = null
                 )
             }
@@ -641,8 +604,8 @@ fun MediaImage(
                 AsyncImageImpl(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .size(70.dp, 58.dp),
-                    model = R.drawable.ic_launcher_background,
+                        .size(28.dp),
+                    model = R.drawable.icon_place,
                     contentDescription = null
                 )
             }

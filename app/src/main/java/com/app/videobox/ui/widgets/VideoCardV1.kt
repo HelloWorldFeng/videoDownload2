@@ -116,7 +116,7 @@ fun VideoCardV1(
                     }
                     VideoTimeInfoLabel(
                         modifier = Modifier.align(Alignment.BottomEnd),
-                        duration = duration,
+                        duration = duration.toInt(),
                     )
 
                 }
