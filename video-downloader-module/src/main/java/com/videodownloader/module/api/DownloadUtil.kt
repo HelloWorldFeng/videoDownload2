@@ -55,7 +55,8 @@ object DownloadUtil {
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
         // 使用应用私有的下载目录，无需存储权限且数据更安全
-        val privateDownloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString())
+
+        val privateDownloadDir = File(context.getExternalFilesDir("Downloads").toString())
         val url = videoInfo.url // 下载链接
         
         Log.d(TAG, "开始下载视频: taskId=$taskId, url=$url, title=${videoInfo.title}")
@@ -196,7 +197,7 @@ object DownloadUtil {
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
         // 使用应用私有的下载目录，确保数据安全
-        val privateDownloadDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).toString())
+        val privateDownloadDir = File(context.getExternalFilesDir("Downloads").toString())
         if (!privateDownloadDir.exists()) {
             privateDownloadDir.mkdirs()
         }

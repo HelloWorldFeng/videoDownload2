@@ -11,11 +11,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.app.videobox.R
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.pages.video.VideoPlayerManager
@@ -146,7 +145,8 @@ fun DownloadListScreen(
 
 /**
  * 任务列表内容组件
- * 显示下载任务列表
+ * 使用LazyColumn显示下载任务列表，提供更好的垂直滚动体验
+ * 遵循Material Design 3设计规范，支持选择模式和批量操作
  */
 @Composable
 private fun TaskListContent(
@@ -158,6 +158,7 @@ private fun TaskListContent(
     onTaskSelection: (Task) -> Unit = {},
     onBatchAction: (DownloadListViewModel.TaskAction) -> Unit = {},
 ) {
+    // 缓存过滤后的任务映射，避免不必要的重组
     val filteredMap = remember(taskDownloadStateMap) {
         taskDownloadStateMap
     }
@@ -166,81 +167,99 @@ private fun TaskListContent(
     val context = LocalContext.current
     val view = LocalView.current
 
-    val lazyListState = rememberLazyGridState()
+    // 使用LazyColumn的状态管理器
+    val lazyListState = rememberLazyListState()
 
     Box(
-        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+        Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .background(Color(0xFF1C1D1E))
             .singClick {
-        if (uiState.isSelectModeEnabled) {
-            selectedCallback.invoke(true)
-        }
-    }){
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            state = lazyListState,
-            columns = GridCells.Adaptive(240.dp),
-            contentPadding = PaddingValues(start = 0.dp, end = 0.dp, bottom = 0.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),)
-        {
-            items(
-                items = filteredMap.toList().sortedBy { (_, state) -> state.downloadState },
-                key = { (task, _) -> task.id },
-            ){ (task,state)->
-                with(state.viewState){
-                    AnimatedVisibility(
-                        modifier = Modifier,
-                        visible = true,
-                        exit = shrinkVertically() + fadeOut(),
-                        enter = expandVertically() + fadeIn(),
-                    ){
+                if (uiState.isSelectModeEnabled) {
+                    selectedCallback.invoke(true)
+                }
+            }){
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = stringResource(R.string.download_list), fontSize = 18.sp,color = Color.White)
 
-                        Log.d("ProgressLinear", "下载状态:${state.downloadState}")
+            }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = lazyListState,
+                verticalArrangement = Arrangement.spacedBy(12.dp), // 列表项之间的间距
+            ) {
+                items(
+                    items = filteredMap.toList().sortedBy { (_, state) -> state.downloadState },
+                    key = { (task, _) -> task.id },
+                ){ (task, state) ->
+                    with(state.viewState){
+                        AnimatedVisibility(
+                            modifier = Modifier.fillMaxWidth(),
+                            visible = true,
+                            exit = shrinkVertically() + fadeOut(),
+                            enter = expandVertically() + fadeIn(),
+                        ){
+                            // 记录下载状态日志，便于生产环境问题追踪
+                            Log.d("DownloadListScreen", "任务ID: ${task.id}, 下载状态: ${state.downloadState}")
 
-                        VideoCardV1(
-                            modifier = Modifier.padding(bottom = 20.dp),
-                            viewState = this@with,
-                            downloadState = state.downloadState,
-                            actionButton = {},
-                            progressLinear = {
-                                ProgressLinear(modifier = Modifier
-                                    .fillMaxWidth(), downloadState = state.downloadState)
-                            },
-                            isSelectEnabled = {
-                                uiState.isSelectModeEnabled
-                            },
-                            isSelected = {
-                                uiState.selectedTasks.contains(task)
-                            },
-                            onSelect = {
-                                onTaskSelection(task)
-                            },
-                            onClick = {
-                            when (it) {
-                                is DownloadListViewModel.TaskAction.OpenFile -> {
-                                    viewModel.handleIntent(
-                                        DownloadListViewModel.Intent.ExecuteTaskAction(
-                                            task = task,
-                                            action = it
-                                        )
+                            VideoCardV1(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp), // 减少垂直内边距，因为LazyColumn已有间距
+                                viewState = this@with,
+                                downloadState = state.downloadState,
+                                progressLinear = {
+                                    ProgressLinear(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        downloadState = state.downloadState
                                     )
-                                }
-                                else -> {
-                                    onActionPost(task, it)
-                                }
-                            }
-                        },
-                            onLongClick = {
-                                if (!uiState.isSelectModeEnabled) {
-                                    selectedCallback.invoke(false)
+                                },
+                                isSelectEnabled = {
+                                    uiState.isSelectModeEnabled
+                                },
+                                isSelected = {
+                                    uiState.selectedTasks.contains(task)
+                                },
+                                onSelect = {
                                     onTaskSelection(task)
-                                }
-                            },
-                        )
+                                },
+                                onClick = { action ->
+                                    when (action) {
+                                        is DownloadListViewModel.TaskAction.OpenFile -> {
+                                            viewModel.handleIntent(
+                                                DownloadListViewModel.Intent.ExecuteTaskAction(
+                                                    task = task,
+                                                    action = action
+                                                )
+                                            )
+                                        }
+                                        else -> {
+                                            onActionPost(task, action)
+                                        }
+                                    }
+                                },
+                                onLongClick = {
+                                    // 长按进入选择模式
+                                    if (!uiState.isSelectModeEnabled) {
+                                        selectedCallback.invoke(false)
+                                        onTaskSelection(task)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
+
 
         AnimatedVisibility(
             modifier = Modifier

@@ -199,6 +199,124 @@ VLC播放器在播放视频时出现黑屏问题，虽然播放器初始化成�
 - 在CI/CD流程中添加版本一致性检查
 - 使用Gradle的依赖版本管理功能统一管理版本
 
+### 下载列表UI组件优化 - LazyVerticalGrid转LazyColumn (2025-01-08)
+
+#### 优化背景
+用户反馈下载列表页面在显示大量下载任务时，LazyVerticalGrid的网格布局在手机屏幕上显示效果不佳，需要改为更适合移动端的垂直列表布局。
+
+#### 技术实现
+
+**1. 组件替换**
+- **原组件**: `LazyVerticalGrid` - 网格布局，适合平板或大屏设备
+- **新组件**: `LazyColumn` - 垂直列表布局，更适合手机屏幕
+
+**2. 导入优化**
+```kotlin
+// 移除网格相关导入
+- import androidx.compose.foundation.lazy.grid.GridCells
+- import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+- import androidx.compose.foundation.lazy.grid.items
+- import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+
+// 添加列表相关导入
++ import androidx.compose.foundation.lazy.rememberLazyListState
+```
+
+**3. 状态管理优化**
+```kotlin
+// 状态管理器替换
+- val lazyListState = rememberLazyGridState()
++ val lazyListState = rememberLazyListState()
+```
+
+**4. 布局参数调整**
+```kotlin
+LazyColumn(
+    modifier = Modifier.fillMaxSize(),
+    state = lazyListState,
+    contentPadding = PaddingValues(
+        start = 16.dp,           // 左右边距，提供视觉呼吸空间
+        end = 16.dp, 
+        top = 8.dp,              // 顶部小间距
+        bottom = 100.dp          // 底部预留删除栏空间
+    ),
+    verticalArrangement = Arrangement.spacedBy(12.dp), // 列表项间距
+)
+```
+
+**5. 列表项布局优化**
+```kotlin
+VideoCardV1(
+    modifier = Modifier
+        .fillMaxWidth()                    // 充满列表宽度
+        .padding(vertical = 4.dp),         // 减少内边距，避免与LazyColumn间距重复
+    // ... 其他参数保持不变
+)
+```
+
+#### 用户体验提升
+
+**1. 视觉效果改进**
+- **更好的内容展示**: 每个下载任务占据完整宽度，信息展示更充分
+- **统一的视觉节奏**: 12dp的统一间距，提供更好的视觉层次
+- **适配移动端**: 垂直滚动更符合手机操作习惯
+
+**2. 交互体验优化**
+- **更大的点击区域**: 全宽度布局提供更大的交互区域
+- **更流畅的滚动**: LazyColumn针对垂直滚动优化，性能更好
+- **更好的选择模式**: 选择框和内容对齐更清晰
+
+**3. 空间利用优化**
+- **内容密度平衡**: 既保证信息展示充分，又避免过于拥挤
+- **底部空间预留**: 100dp底部间距确保删除栏不遮挡内容
+- **边距设计**: 16dp左右边距提供舒适的阅读体验
+
+#### 技术要点
+
+**1. 性能考虑**
+- LazyColumn对垂直滚动的内存管理更优化
+- 减少了网格布局的复杂计算开销
+- 保持了原有的key-based重组优化
+
+**2. 代码质量**
+- 添加详细的中文注释，便于团队维护
+- 优化日志输出，从"ProgressLinear"改为"DownloadListScreen"
+- 保持原有的状态管理和事件处理逻辑
+
+**3. 兼容性保证**
+- 保持所有原有功能不变（选择模式、批量操作、长按等）
+- 保持原有的动画效果（AnimatedVisibility）
+- 保持原有的状态同步机制
+
+#### 构建验证
+- **编译状态**: ✅ 成功通过
+- **编译命令**: `./gradlew :app:compileConfigDebugKotlin`
+- **构建时间**: 3秒
+- **任务执行**: 31个任务，5个执行，26个最新
+- **警告处理**: 仅有AndroidManifest.xml的配置警告，不影响功能
+
+#### 最佳实践总结
+
+**1. UI组件选择原则**
+- 根据目标设备和使用场景选择合适的布局组件
+- 手机端优先考虑垂直布局，平板端可考虑网格布局
+- 考虑内容密度和交互便利性的平衡
+
+**2. 布局参数设计**
+- 合理设置contentPadding，避免内容被系统UI遮挡
+- 使用Arrangement.spacedBy统一管理间距
+- 预留足够空间给浮动UI元素（如删除栏）
+
+**3. 代码重构策略**
+- 优先保持功能完整性，再优化用户体验
+- 逐步替换，避免大范围修改引入风险
+- 保持详细的注释和日志，便于后续维护
+
+#### 扩展建议
+- 可考虑根据屏幕尺寸动态选择LazyColumn或LazyVerticalGrid
+- 可添加列表项高度自适应功能
+- 可考虑添加下拉刷新和上拉加载更多功能
+
 ### 热门网站展示功能开发 (2025-01-08)
 
 #### 功能概述

@@ -8,11 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +22,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
@@ -50,8 +49,7 @@ fun VideoCardV1(
     modifier: Modifier = Modifier,
     viewState: Task.ViewState,
     downloadState: Task.DownloadState,
-    actionButton: @Composable (BoxScope.() -> Unit)? = null,
-    progressLinear: @Composable (ColumnScope.() -> Unit)? = null,
+    progressLinear: @Composable (BoxScope.() -> Unit)? = null,
     isSelectEnabled: () -> Boolean = { false },
     isSelected: () -> Boolean = { false },
     onSelect: () -> Unit = {},
@@ -59,7 +57,7 @@ fun VideoCardV1(
     onLongClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
-    val containerColor = Color(0x20FFFFFF)
+    val containerColor = Color(0xFF2E2F30)
     val contentPadding = PaddingValues(12.dp)
 
     with(viewState) {
@@ -106,32 +104,21 @@ fun VideoCardV1(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(101.dp)
                     .padding(contentPadding)
             ) {
-                AnimatedVisibility(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    visible = isSelectEnabled(),
-                ) {
-                    CustomCheckBox(
-                        modifier = Modifier
-                            .padding(start = 4.dp, end = 16.dp)
-                            .size(20.dp),
-                        checked = isSelected(),
-                    )
-                }
-
                 Box(modifier = Modifier.width(127.dp)) {
                     Card(shape = RoundedCornerShape(8.dp)) {
                         CardImage(modifier = Modifier, thumbnailModel = thumbnailModel)
                     }
-                    Box(Modifier.align(Alignment.Center)) { 
-                        actionButton?.invoke(this) 
+                    Box(Modifier.align(Alignment.Center)) {
+                        progressLinear?.invoke(this)
                     }
-                    VideoInfoLabel(
+                    VideoTimeInfoLabel(
                         modifier = Modifier.align(Alignment.BottomEnd),
                         duration = duration,
-                        fileSizeApprox = fileSizeApprox,
                     )
+
                 }
 
                 Column(modifier = Modifier.padding(start = 14.dp)) {
@@ -140,8 +127,30 @@ fun VideoCardV1(
                         text = title, 
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    progressLinear?.invoke(this)
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Row {
+                        val fileSizeText = fileSizeApprox.toFileSizeText()
+                        Text(
+                            modifier = Modifier,
+                            text = fileSizeText,
+                            color = Color(0xFF898989)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        AnimatedVisibility(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            visible = isSelectEnabled(),
+                        ) {
+                            CustomCheckBox(
+                                modifier = Modifier
+                                    .padding(start = 4.dp, end = 16.dp)
+                                    .size(20.dp),
+                                checked = isSelected(),
+                            )
+                        }
+
+                    }
+
                 }
             }
         }
@@ -149,17 +158,16 @@ fun VideoCardV1(
 }
 
 @Composable
-private fun VideoInfoLabel(modifier: Modifier = Modifier, duration: Int, fileSizeApprox: Double) {
+private fun VideoTimeInfoLabel(modifier: Modifier = Modifier, duration: Int) {
     Surface(
         modifier = modifier.padding(4.dp),
         color = Color.Black.copy(alpha = 0.68f),
         shape = MaterialTheme.shapes.extraSmall,
     ) {
-        val fileSizeText = fileSizeApprox.toFileSizeText()
         val durationText = duration.toDurationText()
         Text(
             modifier = Modifier.padding(horizontal = 4.dp),
-            text = "$fileSizeText  $durationText",
+            text = durationText,
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
         )
@@ -174,10 +182,10 @@ private fun CardImage(modifier: Modifier = Modifier, thumbnailModel: Any? = null
                 modifier
                     .padding()
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f, matchHeightConstraintsFirst = true),
+                    .aspectRatio(16f / 10f),
             model = thumbnailModel,
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.FillBounds,
         )
     } else {
         Surface(
@@ -185,7 +193,7 @@ private fun CardImage(modifier: Modifier = Modifier, thumbnailModel: Any? = null
                 modifier
                     .padding()
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f, matchHeightConstraintsFirst = true),
+                    .aspectRatio(16f / 10f),
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
         ) {}
     }
