@@ -98,7 +98,7 @@ fun StateAsyncImageImpl(
 @Composable
 fun AsyncImageImpl(
     model: Any?,
-    contentDescription: String?,
+    contentDescription: String?=null,
     modifier: Modifier = Modifier,
     transform: (AsyncImagePainter.State) -> AsyncImagePainter.State =
         AsyncImagePainter.DefaultTransform,

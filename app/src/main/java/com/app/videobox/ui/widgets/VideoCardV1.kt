@@ -1,6 +1,5 @@
 package com.app.videobox.ui.widgets
 
-import android.R.attr.onClick
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -23,6 +22,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
@@ -35,23 +35,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
+import com.app.videobox.ui.pages.videoDownloadPage.DownloadListViewModel.TaskAction
 import com.videodownloader.module.download.Task
 
-sealed interface UiAction{
-    data class OpenFile(val filePath: String?) : UiAction
 
-    data object Cancel : UiAction
-
-    data object Delete : UiAction
-
-    data object Resume : UiAction
-
-}
 
 
 @Composable
@@ -59,46 +50,43 @@ fun VideoCardV1(
     modifier: Modifier = Modifier,
     viewState: Task.ViewState,
     downloadState: Task.DownloadState,
-    stateIndicator: @Composable (BoxScope.() -> Unit)? = null,
     actionButton: @Composable (BoxScope.() -> Unit)? = null,
-    progressLinear:@Composable (ColumnScope.()-> Unit)? =null,
+    progressLinear: @Composable (ColumnScope.() -> Unit)? = null,
     isSelectEnabled: () -> Boolean = { false },
     isSelected: () -> Boolean = { false },
     onSelect: () -> Unit = {},
-    onClick: (UiAction) -> Unit,
+    onClick: (TaskAction) -> Unit,
     onLongClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
+    val containerColor = Color(0x20FFFFFF)
+    val contentPadding = PaddingValues(12.dp)
 
     with(viewState) {
-        var mThumbnailUrl = if (downloadState is Task.DownloadState.Completed){
+        val thumbnailModel = if (downloadState is Task.DownloadState.Completed) {
             downloadState.filePath
-        }else{
+        } else {
             thumbnailUrl
         }
 
-        VideoCardV1(
+        Card(
             modifier = with(modifier) {
-                if (!isSelectEnabled())
+                if (!isSelectEnabled()) {
                     combinedClickable(
                         enabled = true,
                         onClick = {
                             when (downloadState) {
-                                is Task.DownloadState.Error,Task.DownloadState.Idle -> {
-                                    onClick(UiAction.Resume)
+                                is Task.DownloadState.Error, Task.DownloadState.Idle -> {
+                                    onClick(TaskAction.Resume)
                                 }
-
                                 is Task.DownloadState.Canceled -> {
-                                    onClick(UiAction.Resume)
+                                    onClick(TaskAction.Resume)
                                 }
-
                                 is Task.DownloadState.Completed -> {
-                                    onClick(UiAction.OpenFile(downloadState.filePath))
+                                    onClick(TaskAction.OpenFile(downloadState.filePath))
                                 }
-
-
                                 is Task.DownloadState.Running -> {
-                                    onClick(UiAction.Cancel)
+                                    onClick(TaskAction.Cancel)
                                 }
                             }
                         },
@@ -109,71 +97,52 @@ fun VideoCardV1(
                         },
                         onLongClickLabel = "",
                     )
-                else selectable(selected = isSelected(), onClick = onSelect)
-            },
-            thumbnailModel = mThumbnailUrl,
-            title = title,
-            duration = duration,
-            fileSizeApprox = fileSizeApprox,
-            actionButton = actionButton,
-            progressLinear = progressLinear,
-            isSelectEnabled = isSelectEnabled,
-            isSelected = isSelected,
-        )
-    }
-}
-
-@Composable
-private fun VideoCardV1(
-    modifier: Modifier = Modifier,
-    thumbnailModel: Any? = null,
-    title: String = "",
-    duration: Int = 0,
-    fileSizeApprox: Double = .0,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
-    actionButton: @Composable (BoxScope.() -> Unit)? = null,
-    progressLinear:@Composable (ColumnScope.() -> Unit)? = null,
-    isSelectEnabled: () -> Boolean = { false },
-    isSelected: () -> Boolean = { false },
-) {
-    val containerColor = Color(0x20FFFFFF)
-
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-    ) {
-
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(contentPadding),) {
-            AnimatedVisibility(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                visible = isSelectEnabled(),
-            ) {
-                CheckBoxV2(
-                    modifier = Modifier
-                        .padding(start = 4.dp, end = 16.dp)
-                        .size(20.dp),
-                    checked = isSelected(),
-                )
-            }
-
-            Box(modifier = Modifier.width(127.dp)){
-                Card(shape = RoundedCornerShape(8.dp)) {
-                    CardImage(modifier = Modifier, thumbnailModel = thumbnailModel)
+                } else {
+                    selectable(selected = isSelected(), onClick = onSelect)
                 }
-                Box(Modifier.align(Alignment.Center)) { actionButton?.invoke(this) }
-                VideoInfoLabel(
-                    modifier = Modifier.align(Alignment.BottomEnd),
-                    duration = duration,
-                    fileSizeApprox = fileSizeApprox,
-                )
-            }
+            },
+            colors = CardDefaults.cardColors(containerColor = containerColor),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding)
+            ) {
+                AnimatedVisibility(
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    visible = isSelectEnabled(),
+                ) {
+                    CustomCheckBox(
+                        modifier = Modifier
+                            .padding(start = 4.dp, end = 16.dp)
+                            .size(20.dp),
+                        checked = isSelected(),
+                    )
+                }
 
-            Column(modifier = Modifier.padding(start = 14.dp)) {
-                Text(modifier = Modifier, text = title,color = Color.White)
-                Spacer(modifier = Modifier.height(20.dp))
-                progressLinear?.invoke(this)
+                Box(modifier = Modifier.width(127.dp)) {
+                    Card(shape = RoundedCornerShape(8.dp)) {
+                        CardImage(modifier = Modifier, thumbnailModel = thumbnailModel)
+                    }
+                    Box(Modifier.align(Alignment.Center)) { 
+                        actionButton?.invoke(this) 
+                    }
+                    VideoInfoLabel(
+                        modifier = Modifier.align(Alignment.BottomEnd),
+                        duration = duration,
+                        fileSizeApprox = fileSizeApprox,
+                    )
+                }
+
+                Column(modifier = Modifier.padding(start = 14.dp)) {
+                    Text(
+                        modifier = Modifier, 
+                        text = title, 
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    progressLinear?.invoke(this)
+                }
             }
         }
     }
@@ -232,20 +201,20 @@ fun ProgressLinear(
         is Task.DownloadState.Running -> {
             Log.d("ProgressLinear", "下载中 progress:${downloadState.progress},speed->:${downloadState.speed} ")
 
-            ProgressLinear(
-                modifier = modifier,
-                progress = downloadState.progress,
-                downloadState.speed
+            CustomCircularProgress(
+                progress = { downloadState.progress }
             )
+
         }
         is Task.DownloadState.Canceled -> {
-            ProgressLinear(
-                modifier = modifier,
-                progress = 0.1f
+            CustomCircularProgress(
+                progress = { 0.01f }
             )
         }
         else -> {
-
+            CustomCircularProgress(
+                progress = { 0.5f }
+            )
         }
     }
 }

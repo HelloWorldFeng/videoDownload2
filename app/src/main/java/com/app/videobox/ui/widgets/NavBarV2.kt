@@ -1,0 +1,135 @@
+package com.app.videobox.ui.widgets
+
+import android.Manifest
+import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.app.videobox.R
+import com.blankj.utilcode.util.ToastUtils
+import com.hjq.permissions.OnPermissionCallback
+import com.hjq.permissions.XXPermissions
+
+private val ContainColor : Color
+    @Composable get() = Color(0xFF474A57)
+private val BorderColor : Color
+    @Composable get() = Color(0xFF6C6F7C)
+
+@Composable
+fun NavBarV2(
+    modifier: Modifier,
+    defaultIndex: Int = 0,
+    onClickHome:()-> Unit = {},
+    onClickDownload:()-> Unit = {},
+    onClickVideo:()-> Unit = {}
+) {
+    val context = LocalContext.current
+    var selected by remember { mutableIntStateOf(defaultIndex) }
+    Row(
+        modifier = modifier
+            .width(193.dp)
+            .height(52.dp)
+            .border(width = 1.dp, color = BorderColor, shape = RoundedCornerShape(26.dp))
+            .background(ContainColor, shape = RoundedCornerShape(26.dp))
+            .padding(all = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        NavBarIcon(
+            onClick = {
+                if (XXPermissions.isGranted(context, Manifest.permission.READ_MEDIA_VIDEO)){
+                    selected = 0
+                    onClickVideo.invoke()
+                    return@NavBarIcon
+                }
+                XXPermissions.with(context).permission(arrayOf(Manifest.permission.READ_MEDIA_VIDEO)).request(object : OnPermissionCallback {
+                    override fun onGranted(p0: MutableList<String>, p1: Boolean) {
+                        selected = 0
+                        onClickVideo.invoke()
+                    }
+
+                    override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {
+                        super.onDenied(permissions, doNotAskAgain)
+                        ToastUtils.showShort("Storage permission denied, Unable to access stored videos")
+                    }
+                })
+
+            },
+            selected = selected == 0,
+            defaultIcon = R.drawable.ic_launcher_background,
+            checkedIcon = R.drawable.icon_nav_video_ed
+        )
+
+        NavBarIcon(
+            onClick = {
+                selected = 1
+                onClickHome.invoke()
+            },
+            selected = selected == 1,
+            defaultIcon = R.drawable.ic_launcher_background,
+            checkedIcon = R.drawable.ic_launcher_background
+        )
+
+        NavBarIcon(
+            onClick = {
+                selected = 2
+                onClickDownload.invoke()
+
+            },
+            selected = selected == 2,
+            defaultIcon = R.drawable.icon_nav_download,
+            checkedIcon = R.drawable.icon_nav_download_ed
+        )
+    }
+}
+
+@Composable
+private fun NavBarIcon(
+    onClick: () -> Unit,
+    selected: Boolean = false,
+    defaultIcon: Any,
+    checkedIcon: Any,
+){
+    Box(
+        modifier = Modifier
+            .padding()
+            .aspectRatio(1f / 1f, matchHeightConstraintsFirst = true)
+            .singClick {
+                onClick.invoke()
+            }
+    ) {
+        if (selected) {
+            AsyncImageImpl(
+                modifier = Modifier.fillMaxSize(),
+                model = checkedIcon,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            AsyncImageImpl(
+                modifier = Modifier.fillMaxSize(),
+                model = defaultIcon,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+            )
+        }
+    }
+
+}

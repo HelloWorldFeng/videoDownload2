@@ -8,7 +8,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.app.videobox.R
 
 @Composable
-fun CheckBoxV2(
+fun CustomCheckBox(
     modifier: Modifier,
     checked: Boolean,
 ){

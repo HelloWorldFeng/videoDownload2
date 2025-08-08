@@ -1,0 +1,27 @@
+{
+  "urlList": [{
+    "url": "https://archive.org",
+    "icon": "https://s3.videoboxai.com/Image/archive.org.png",
+    "name": "Internet Archive "
+  }, {
+    "url": "https://wikimedia.org",
+    "icon": "https://s3.videoboxai.com/Image/wikimedia.org.png",
+    "name": "Wikimedia Commons"
+  }, {
+    "url": "https://ocw.mit.edu",
+    "icon": "https://s3.videoboxai.com/Image/ocw.mit.edu.png",
+    "name": "MIT OpenCourseWare"
+  }, {
+    "url": "https://freesound.org",
+    "icon": "https://s3.videoboxai.com/Image/freesound.org.png",
+    "name": "Freesound"
+  }, {
+    "url": "https://www.pbs.org",
+    "icon": "https://s3.videoboxai.com/Image/pbs.png",
+    "name": "PBS"
+  }, {
+    "url": "https://www.khanacademy.org",
+    "icon": "https://s3.videoboxai.com/Image/khanacademy.png",
+    "name": "Khan Academy"
+  }]
+}

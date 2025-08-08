@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instanc
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.manager.RemoteConfigManager.checkProbability
+import com.app.videobox.network.DataRepository
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
@@ -52,6 +53,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         initColSdk()
+        initApi()
         //依赖注入
         startKoin {
             androidContext(this@App)
@@ -79,7 +81,15 @@ class App : Application() {
             }
         })
     }
-    
+
+    private fun initApi() {
+        coroutineScope.launch {
+            launch { DataRepository.fetchWebUrlList() }
+            launch { DataRepository.getVideoClass() }
+            launch { DataRepository.initWork() }
+        }
+    }
+
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)

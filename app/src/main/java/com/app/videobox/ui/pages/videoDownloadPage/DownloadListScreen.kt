@@ -1,7 +1,11 @@
 package com.app.videobox.ui.pages.videoDownloadPage
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -41,44 +46,26 @@ import com.videodownloader.module.api.*
 import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
 import com.app.videobox.ui.widgets.DeleteBarWidget
 import com.app.videobox.ui.widgets.ProgressLinear
-import com.app.videobox.ui.widgets.UiAction
+
 import com.app.videobox.ui.widgets.VideoCardV1
 import com.app.videobox.ui.widgets.singClick
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.Task
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.koinInject
 import java.io.File
-import kotlin.collections.remove
-import kotlin.text.clear
 
 /**
  * 视频下载列表页面
  * 遵循标准MVI架构模式，通过ViewModel管理状态和业务逻辑
  */
-class VideoDownloadListScreen : Screen {
-    
-    companion object {
-        private const val TAG = "VideoDownloadListScreen"
-    }
-    
-    @SuppressLint("ContextCastToActivity")
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val context = LocalContext.current as BaseActivity
-        
-        DownloadListScreen(
-            onNavigateBack = { navigator.pop() }
-        )
-    }
-}
+
 
 /**
  * 下载列表主页面
  * 使用 DownloadListViewModel 进行状态管理
  * 
  * @param modifier 修饰符
- * @param onNavigateBack 返回导航回调
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,107 +73,76 @@ fun DownloadListScreen(
     modifier: Modifier = Modifier,
     downloader: DownloaderV2 = koinInject(),
     viewModel: DownloadListViewModel = viewModel(),
-    onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    
+    // ViewModel状态
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // 处理副作用事件
+    LaunchedEffect(Unit) {
+        viewModel.effects.collectLatest { effect ->
+            when (effect) {
+                is DownloadListViewModel.Effect.ShowToast -> {
+                    // 显示Toast消息
+                }
+                is DownloadListViewModel.Effect.NavigateToPlayer -> {
+                    VlcPlayerActivity.start(
+                        context = context,
+                        videoPath = effect.filePath,
+                    )
+                }
+                is DownloadListViewModel.Effect.ShowError -> {
+                    // 显示错误消息
+                }
+                is DownloadListViewModel.Effect.ScrollToTop -> {
+                    // 处理滚动到顶部的逻辑
+                }
+            }
+        }
+    }
+    
     TaskListContent(
         taskDownloadStateMap = downloader.getTaskStateMap(),
-        selectedCallback = {state->
-            
+        uiState = uiState,
+        viewModel = viewModel,
+        selectedCallback = { state ->
+            if (state) {
+                viewModel.handleIntent(DownloadListViewModel.Intent.DisableSelectMode)
+            } else {
+                viewModel.handleIntent(DownloadListViewModel.Intent.EnableSelectMode)
+            }
         },
         onActionPost = { task, action ->
-            
             when (action) {
-                is UiAction.Cancel -> downloader.cancel(task)
-                is UiAction.Delete -> downloader.remove(task)
-                is UiAction.Resume -> downloader.restart(task)
-                is UiAction.OpenFile -> {
-                    if (action.filePath != null){
-                        VlcPlayerActivity.start(
-                            context = context,
-                            videoPath = action.filePath,
-                            )
+                is DownloadListViewModel.TaskAction.Cancel -> downloader.cancel(task)
+                is DownloadListViewModel.TaskAction.Delete -> downloader.remove(task)
+                is DownloadListViewModel.TaskAction.Resume -> downloader.restart(task)
+                is DownloadListViewModel.TaskAction.Pause -> downloader.cancel(task) // 使用cancel代替pause
+                is DownloadListViewModel.TaskAction.Retry -> downloader.restart(task)
+                is DownloadListViewModel.TaskAction.OpenFile -> {
+                    if (action.filePath != null) {
+                        viewModel.handleIntent(
+                            DownloadListViewModel.Intent.ExecuteTaskAction(task, action)
+                        )
                     }
                 }
             }
+        },
+        onTaskSelection = { task ->
+            viewModel.handleIntent(
+                DownloadListViewModel.Intent.ToggleTaskSelection(task)
+            )
+        },
+        onBatchAction = { action ->
+            viewModel.handleIntent(
+                DownloadListViewModel.Intent.ExecuteBatchAction(action)
+            )
         }
     )
 }
 
 
-/**
- * 状态栏区域组件
- * 模拟iPhone状态栏样式
- */
-@Composable
-private fun StatusBarSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .background(Color.Transparent)
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 时间显示
-        Text(
-            text = "9:41",
-            color = Color.White,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        
-        // 右侧状态图标区域
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 信号强度图标
-            Box(
-                modifier = Modifier
-                    .size(18.dp, 12.dp)
-                    .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
-            )
-            // WiFi图标
-            Box(
-                modifier = Modifier
-                    .size(15.dp, 12.dp)
-                    .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
-            )
-            // 电池图标
-            Box(
-                modifier = Modifier
-                    .size(24.dp, 12.dp)
-                    .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
-            )
-        }
-    }
-}
-
-/**
- * 标题栏区域组件
- */
-@Composable
-private fun TitleBarSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(Color(0xFF2A2A2A))
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 显示标题
-        Text(
-            text = "Download List",
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
 
 /**
  * 任务列表内容组件
@@ -195,28 +151,33 @@ private fun TitleBarSection() {
 @Composable
 private fun TaskListContent(
     taskDownloadStateMap: SnapshotStateMap<Task, Task.State>,
+    uiState: DownloadListViewModel.UiState,
+    viewModel: DownloadListViewModel,
     selectedCallback:(state: Boolean)-> Unit = {},
-    onActionPost: (Task, UiAction) -> Unit,
+    onActionPost: (Task, DownloadListViewModel.TaskAction) -> Unit,
+    onTaskSelection: (Task) -> Unit = {},
+    onBatchAction: (DownloadListViewModel.TaskAction) -> Unit = {},
 ) {
     val filteredMap = remember(taskDownloadStateMap) {
         taskDownloadStateMap
     }
     
-    var isSelectEnabled by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val view = LocalView.current
-    val selectedItemIds = remember(filteredMap) { mutableStateListOf<Task>() }
 
     val lazyListState = rememberLazyGridState()
 
-    Box(Modifier.fillMaxSize().singClick {
-        isSelectEnabled = false
-        selectedCallback.invoke(true)
-        selectedItemIds.clear()
+    Box(
+        Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()
+            .background(Color(0xFF1C1D1E))
+            .singClick {
+        if (uiState.isSelectModeEnabled) {
+            selectedCallback.invoke(true)
+        }
     }){
         LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize().navigationBarsPadding().statusBarsPadding(),
+            modifier = Modifier.fillMaxSize(),
             state = lazyListState,
             columns = GridCells.Adaptive(240.dp),
             contentPadding = PaddingValues(start = 0.dp, end = 0.dp, bottom = 0.dp),
@@ -241,28 +202,39 @@ private fun TaskListContent(
                             viewState = this@with,
                             downloadState = state.downloadState,
                             actionButton = {},
-                            stateIndicator = {},
                             progressLinear = {
                                 ProgressLinear(modifier = Modifier
                                     .fillMaxWidth(), downloadState = state.downloadState)
                             },
                             isSelectEnabled = {
-                                isSelectEnabled
+                                uiState.isSelectModeEnabled
                             },
                             isSelected = {
-                                selectedItemIds.contains(task)
+                                uiState.selectedTasks.contains(task)
                             },
                             onSelect = {
-                                if (selectedItemIds.contains(task)) selectedItemIds.remove(task)
-                                else selectedItemIds.add(task)
+                                onTaskSelection(task)
                             },
                             onClick = {
-                                onActionPost(task, it)
-                            },
+                            when (it) {
+                                is DownloadListViewModel.TaskAction.OpenFile -> {
+                                    viewModel.handleIntent(
+                                        DownloadListViewModel.Intent.ExecuteTaskAction(
+                                            task = task,
+                                            action = it
+                                        )
+                                    )
+                                }
+                                else -> {
+                                    onActionPost(task, it)
+                                }
+                            }
+                        },
                             onLongClick = {
-                                isSelectEnabled = true
-                                selectedCallback.invoke(!isSelectEnabled)
-                                selectedItemIds.add(task)
+                                if (!uiState.isSelectModeEnabled) {
+                                    selectedCallback.invoke(false)
+                                    onTaskSelection(task)
+                                }
                             },
                         )
                     }
@@ -274,23 +246,21 @@ private fun TaskListContent(
             modifier = Modifier
                 .padding(bottom = 30.dp)
                 .align(Alignment.BottomCenter),
-            visible = isSelectEnabled,
+            visible = uiState.isSelectModeEnabled,
             enter = scaleIn(),
             exit = scaleOut()
         ){
             DeleteBarWidget(
                 Modifier.padding(vertical = 20.dp),
                 onCancel = {
-                    isSelectEnabled = false
-                    selectedCallback.invoke(!isSelectEnabled)
+                    selectedCallback.invoke(true)
                 },
                 onDelete = {
-                    selectedItemIds.forEach {
-                        onActionPost(it, UiAction.Cancel)
-                        onActionPost(it, UiAction.Delete)
+                    uiState.selectedTasks.forEach {
+                        onActionPost(it, DownloadListViewModel.TaskAction.Cancel)
+                        onActionPost(it, DownloadListViewModel.TaskAction.Delete)
                     }
-                    isSelectEnabled = false
-                    selectedCallback.invoke(!isSelectEnabled)
+                    onBatchAction(DownloadListViewModel.TaskAction.Delete)
                 })
         }
     }

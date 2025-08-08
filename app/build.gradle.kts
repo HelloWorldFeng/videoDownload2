@@ -176,5 +176,8 @@ dependencies {
 
     //ffmpeg
     implementation("com.arthenica:mobile-ffmpeg-full-gpl:4.4.LTS")
-
+    // Paging3 依赖
+    implementation("androidx.paging:paging-runtime:3.3.6")
+    implementation("androidx.paging:paging-runtime-ktx:3.3.6")
+    implementation("androidx.paging:paging-compose:3.3.6")
 }

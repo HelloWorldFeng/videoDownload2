@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
+import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.SystemBarTheme
 import com.app.videobox.ui.widgets.singClick
@@ -136,7 +138,7 @@ abstract class BaseActivity : ComponentActivity() {
 
                 Box(modifier = Modifier
                     .fillMaxSize()
-                    .background(color = Color.Black)) {
+                    .background(color = Color(0xFF1C1D1E))) {
                     content()
                 }
             })
