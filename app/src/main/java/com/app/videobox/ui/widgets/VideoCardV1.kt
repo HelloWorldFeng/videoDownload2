@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListViewModel.TaskAction
-import com.app.videobox.utils.rememberVideoMetadata
 import com.videodownloader.module.download.Task
 
 
@@ -66,28 +65,6 @@ fun VideoCardV1(
             downloadState.filePath
         } else {
             thumbnailUrl
-        }
-        
-        // 当视频下载完成时，通过文件路径动态获取视频元数据信息
-        val videoMetadata = rememberVideoMetadata(
-            filePath = if (downloadState is Task.DownloadState.Completed) {
-                downloadState.filePath
-            } else null
-        )
-        
-        // 根据下载状态决定使用哪个数据源：
-        // - 下载完成：使用从文件获取的实际元数据
-        // - 其他状态：使用原始的viewState数据
-        val displayDuration = if (downloadState is Task.DownloadState.Completed && videoMetadata.duration > 0) {
-            (videoMetadata.duration / 1000).toInt() // 转换为秒
-        } else {
-            duration.toInt()
-        }
-        
-        val displayFileSize = if (downloadState is Task.DownloadState.Completed && videoMetadata.fileSize > 0) {
-            videoMetadata.fileSize
-        } else {
-            fileSizeApprox
         }
 
         Card(
@@ -139,7 +116,7 @@ fun VideoCardV1(
                     }
                     VideoTimeInfoLabel(
                         modifier = Modifier.align(Alignment.BottomEnd),
-                        duration = displayDuration,
+                        duration = duration.toInt(),
                     )
 
                 }
@@ -153,12 +130,17 @@ fun VideoCardV1(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Row {
-                        val fileSizeText = displayFileSize.toFileSizeText()
+                        val fileSizeText = fileSizeApprox.toFileSizeText()
                         Text(
-                            modifier = Modifier,
                             text = fileSizeText,
                             color = Color(0xFF898989)
                         )
+
+                        Spacer(Modifier.width(30.dp))
+                        Text(
+                            text =
+                        )
+
                         Spacer(modifier = Modifier.weight(1f))
                         AnimatedVisibility(
                             modifier = Modifier.align(Alignment.CenterVertically),

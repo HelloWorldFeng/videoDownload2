@@ -35,7 +35,7 @@ class WebViewModel : ViewModel() {
     sealed interface ResolveVideoState {
         data object Idle : ResolveVideoState
         data object Loading: ResolveVideoState
-        data class ResolveSuccess(val info: VideoResolve.ResolveVideoInfo) : ResolveVideoState
+        data class ResolveSuccess(val info: VideoResolve.VideoInfo) : ResolveVideoState
     }
 
     sealed interface Action{

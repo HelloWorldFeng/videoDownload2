@@ -1,5 +1,8 @@
 package com.app.videobox.ui.pages.webViewPage
+
+import VideoInfo
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -50,8 +53,8 @@ import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.blankj.utilcode.util.ToastUtils
-import com.videodownloader.module.api.VideoDownloaderManager
-import com.videodownloader.module.api.VideoInfo as DownloaderVideoInfo
+import com.videodownloader.module.download.DownloaderV2
+import com.videodownloader.module.download.TaskFactory
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -81,7 +84,7 @@ class WebViewScreen(
         val context = LocalContext.current as BaseActivity
         val viewModel: WebViewModel = koinViewModel()
 
-        WebPageScreen(inputUrl = url, viewModel = viewModel)
+        WebPageScreen(inputUrl = url,viewModel = viewModel)
     }
 }
 
@@ -90,6 +93,7 @@ class WebViewScreen(
 fun WebPageScreen(
     inputUrl: String,
     viewModel: WebViewModel,
+    downloader: DownloaderV2 = koinInject(),
 ) {
     val context = LocalContext.current
     val navigator = LocalNavigator.currentOrThrow
@@ -194,7 +198,21 @@ fun WebPageScreen(
         ResolveInfoDialog(
             viewModel,
             onClickDownload = { info->
-                // 下载逻辑已经在ResolveDialogImpl中处理，这里不需要额外操作
+                //新方法-创建下载任务
+                val task = if (info.ext == "m3u8"){
+                    TaskFactory.createM3U8Task(
+                        videoInfo = info,
+                        newTitle = info.title,
+                    )
+                }else{
+                    TaskFactory.createMP4Task(
+                        videoInfo = info,
+                        newTitle = info.title,
+                    )
+                }
+                downloader.enqueue(task)
+                //旧方法-创建下载任务
+//                handleVideoResourceDownload(videoUrl = "videoUrl", videoTitle = "test")
             }
         )
 
@@ -272,7 +290,7 @@ fun DraggableResolveButton(
 @Composable
 fun ResolveInfoDialog(
     viewModel: WebViewModel,
-    onClickDownload:(videoUrl: VideoResolve.ResolveVideoInfo)-> Unit,
+    onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {
     val resolveDialogState = viewModel.resolveDialogStateFlow.collectAsStateWithLifecycle().value
     val state = viewModel.resolveStateFlow.collectAsStateWithLifecycle().value
@@ -298,7 +316,7 @@ private fun ResolveDialog(
     modifier: Modifier = Modifier,
     state: WebViewModel.ResolveVideoState.ResolveSuccess,
     onDismissRequest: () -> Unit,
-    onClickDownload:(videoUrl: VideoResolve.ResolveVideoInfo)-> Unit,
+    onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ){
     val sheetStateV3 = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     LaunchedEffect(Unit) { sheetStateV3.show() }
@@ -325,9 +343,9 @@ private fun ResolveDialog(
 @Composable
 private fun ResolveDialogImpl(
     modifier: Modifier,
-    info: VideoResolve.ResolveVideoInfo,
+    info: VideoResolve.VideoInfo,
     onNavigateBack: () -> Unit,
-    onClickDownload:(videoUrl: VideoResolve.ResolveVideoInfo)-> Unit,
+    onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {
     val context = LocalContext.current
     val lazyGridState = rememberLazyGridState()
@@ -407,7 +425,7 @@ private fun ResolveDialogImpl(
                     GradientButton(onClick = {
                         // 本地函数：执行下载逻辑
                         fun startDownload() {
-                            val newVideoInfo = DownloaderVideoInfo(
+                            val newVideoInfo = VideoInfo(
                                 id = System.currentTimeMillis().toString(),
                                 title = info.title,
                                 duration = info.duration,
@@ -416,7 +434,7 @@ private fun ResolveDialogImpl(
                                 url = info.originUrl,
                                 ext = info.ext,
                             )
-                            VideoDownloaderManager.startDownload(newVideoInfo)
+                            onClickDownload.invoke(newVideoInfo)
                             onNavigateBack.invoke()
                             ToastUtils.showLong(context.getString(R.string.start_download_task))
                         }
