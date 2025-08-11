@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1065,13 +1065,14 @@ private fun MediaStreamOrchestrator(
                                 onDismissRequest = { speedMenuExpanded = false }
                             ) {
                                 listOf(0.5f, 1.0f, 1.5f, 2.0f).forEach { speedOption ->
-                                    DropdownMenuItem(onClick = {
-                                        playbackVelocity = speedOption
-                                        speedMenuExpanded = false
-                                        Log.d(MEDIA_ORCHESTRATOR_TAG, "播放速度选择: ${speedOption}x")
-                                    }) {
-                                        Text("${speedOption}x")
-                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("${speedOption}x") },
+                                        onClick = {
+                                            playbackVelocity = speedOption
+                                            speedMenuExpanded = false
+                                            Log.d(MEDIA_ORCHESTRATOR_TAG, "播放速度选择: ${speedOption}x")
+                                        }
+                                    )
                                 }
                             }
                         }

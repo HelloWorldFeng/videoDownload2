@@ -273,19 +273,51 @@ class VlcVideoPlayer(private val context: Context) {
         try {
             if (isPrepared) {
                 val wasPlaying = mediaPlayer?.isPlaying ?: false
-                mediaPlayer?.time = position
-                Log.d(TAG, "跳转到位置: ${position}ms, 之前播放状态: $wasPlaying")
+                Log.d(TAG, "开始跳转: 目标位置=${position}ms, 当前播放状态=$wasPlaying")
                 
-                // 如果之前在播放，跳转后继续播放
-                if (wasPlaying) {
-                    // 给一点延迟确保跳转完成
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        if (mediaPlayer?.isPlaying != true) {
-                            mediaPlayer?.play()
-                            Log.d(TAG, "跳转后恢复播放状态")
+                // 执行跳转
+                mediaPlayer?.time = position
+                Log.d(TAG, "跳转命令已发送到VLC")
+                
+                // 强制刷新视频输出，确保画面更新
+                mediaPlayer?.let { player ->
+                    try {
+                        // 触发视频输出刷新
+                        val vlcVout = player.vlcVout
+                        if (vlcVout != null && vlcVout.areViewsAttached()) {
+                            Log.d(TAG, "视频输出已连接，强制刷新画面")
+                            // 通过短暂暂停和恢复来强制刷新视频输出
+                            if (wasPlaying) {
+                                player.pause()
+                                // 延迟恢复播放，确保跳转和画面刷新完成
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    player.play()
+                                    Log.d(TAG, "跳转后恢复播放状态，强制刷新完成")
+                                }, 50) // 减少延迟时间，提高响应速度
+                            }
+                        } else {
+                            Log.w(TAG, "视频输出未连接，无法强制刷新")
+                            // 如果视频输出未连接，仍然尝试恢复播放状态
+                            if (wasPlaying) {
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    player.play()
+                                    Log.d(TAG, "跳转后恢复播放状态（无视频输出刷新）")
+                                }, 100)
+                            }
                         }
-                    }, 100)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "强制刷新视频输出失败: ${e.message}", e)
+                        // 回退到原有逻辑
+                        if (wasPlaying) {
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                player.play()
+                                Log.d(TAG, "跳转后恢复播放状态（回退逻辑）")
+                            }, 100)
+                        }
+                    }
                 }
+                
+                Log.d(TAG, "跳转处理完成")
             } else {
                 Log.w(TAG, "播放器未准备就绪，无法跳转")
             }

@@ -220,8 +220,37 @@ class VlcPlayerManager private constructor() {
      * @param position 目标位置（毫秒）
      */
     fun seekTo(position: Long) {
-        currentPlayer?.seekTo(position)
-        Log.d(TAG, "跳转到位置: ${position}ms")
+        try {
+            val wasPlaying = _playbackState.value == PlaybackState.PLAYING
+            Log.d(TAG, "开始跳转: 目标位置=${position}ms, 当前播放状态=$wasPlaying")
+            
+            // 执行跳转
+            currentPlayer?.seekTo(position)
+            
+            // 如果之前在播放，确保跳转后继续播放
+            if (wasPlaying) {
+                // 短暂延迟后检查播放状态，确保跳转后播放继续
+                managerScope.launch {
+                    delay(100) // 给跳转操作一些时间
+                    
+                    // 检查播放状态是否需要恢复
+                    val currentlyPlaying = currentPlayer?.isPlaying() ?: false
+                    if (!currentlyPlaying && _playbackState.value == PlaybackState.PLAYING) {
+                        Log.d(TAG, "跳转后检测到播放状态异常，尝试恢复播放")
+                        currentPlayer?.play()
+                        
+                        // 再次检查
+                        delay(50)
+                        val finallyPlaying = currentPlayer?.isPlaying() ?: false
+                        Log.d(TAG, "播放状态恢复结果: $finallyPlaying")
+                    }
+                }
+            }
+            
+            Log.d(TAG, "跳转到位置: ${position}ms - 状态保持逻辑已启动")
+        } catch (e: Exception) {
+            Log.e(TAG, "跳转失败: ${e.message}", e)
+        }
     }
 
     /**

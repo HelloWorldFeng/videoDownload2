@@ -4,20 +4,32 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.media.AudioManager
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,40 +37,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.foundation.border
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
 import java.io.File
 
 /**
- * VLC播放器Activity
- * 提供全屏视频播放界面和完整的播放控制功能
+ * VLC播放器Activity - 生产级全功能视频播放器
+ * 集成playerV2的核心播放逻辑、现代化UI设计和高级手势操作功能
  * 
- * 功能特性：
- * - 全屏播放体验
- * - 播放控制界面
- * - 进度条和时间显示
- * - 音量和亮度控制
+ * 核心功能特性：
+ * - 全屏沉浸式播放体验
+ * - 智能手势控制系统（进度、音量、亮度）
+ * - 现代化Material3 UI设计
+ * - 完整的播放控制功能
+ * - 自适应屏幕方向和锁定
  * - 播放速度调节
- * - 手势控制支持
  * - 自动隐藏控制栏
+ * - 生产级错误处理和日志记录
  */
 class VlcPlayerActivity : ComponentActivity() {
 
@@ -91,17 +97,17 @@ class VlcPlayerActivity : ComponentActivity() {
         }
     }
 
-    // VLC播放器相关
+    // === VLC播放器核心组件 ===
     private var vlcPlayer: VlcVideoPlayer? = null
     private var playerManager: VlcPlayerManager? = null
     private var vlcVideoLayout: VLCVideoLayout? = null
     
-    // 播放参数
+    // === 播放参数 ===
     private var videoPath: String? = null
     private var videoTitle: String? = null
     private var autoPlay: Boolean = true
     
-    // UI状态
+    // === 播放状态管理 ===
     private var isControlsVisible = mutableStateOf(true)
     private var isPlaying = mutableStateOf(false)
     private var currentPosition = mutableStateOf(0L)
@@ -111,19 +117,39 @@ class VlcPlayerActivity : ComponentActivity() {
     private var isLoading = mutableStateOf(false)
     private var errorMessage = mutableStateOf<String?>(null)
     
-    // 新增功能状态
-    private var isFullScreen = mutableStateOf(true) // 默认已经是全屏
-    private var isLandscape = mutableStateOf(false) // 当前是否横屏
-    private var isOrientationLocked = mutableStateOf(false) // 是否锁定屏幕方向
-    private var showSpeedMenu = mutableStateOf(false) // 是否显示倍速菜单
+    // === 界面控制状态 ===
+    private var isFullScreen = mutableStateOf(true) // 默认全屏拉伸模式
+    private var isLandscape = mutableStateOf(false) // 当前屏幕方向
+    private var isOrientationLocked = mutableStateOf(false) // 屏幕方向锁定
+    private var showSpeedMenu = mutableStateOf(false) // 倍速菜单显示
+    private var interfaceLocked = mutableStateOf(false) // 界面锁定状态
     
-    // 自动隐藏控制界面的任务
+    // === 手势控制系统 ===
+    internal var gestureIndicatorVisible = mutableStateOf(false)
+    internal var gestureIndicatorText = mutableStateOf("")
+    internal var currentGestureType = mutableStateOf("")
+    internal var gestureStartX = mutableStateOf(0f)
+    internal var gestureStartY = mutableStateOf(0f)
+    internal var gestureCumulativeDeltaX = mutableStateOf(0f)
+    internal var gestureCumulativeDeltaY = mutableStateOf(0f)
+    internal var gestureSeekStartPosition = mutableStateOf(0L)
+    internal var previewSeekPosition = mutableStateOf(0L)
+    internal var seekOperationActive = mutableStateOf(false)
+    internal var gestureVolumeStartLevel = mutableStateOf(0)
+    internal var gestureBrightnessStartLevel = mutableStateOf(0.5f)
+    
+    // === 系统服务 ===
+    private lateinit var audioManager: AudioManager
+    var maxVolumeLevel = 15
+        private set
+    
+    // === 自动隐藏控制界面任务 ===
     private var hideControlsJob: Job? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        Log.d(TAG, "VLC播放器Activity创建")
+        Log.d(TAG, "VLC播放器Activity创建 - 集成playerV2核心功能")
         
         // 获取传入参数
         videoPath = intent.getStringExtra(EXTRA_VIDEO_PATH)
@@ -137,8 +163,11 @@ class VlcPlayerActivity : ComponentActivity() {
             return
         }
         
-        // 设置全屏模式
-        setupFullScreen()
+        // 初始化系统服务
+        initializeSystemServices()
+        
+        // 设置全屏沉浸式模式
+        setupFullScreenImmersive()
         
         // 初始化播放器
         initializePlayer()
@@ -146,12 +175,10 @@ class VlcPlayerActivity : ComponentActivity() {
         // 观察播放器管理器的状态流
         observePlayerManagerStates()
         
-        // 设置UI - 使用明确的setContent调用避免版本兼容性问题
-        Log.d(TAG, "开始设置Compose UI内容")
-        try {
-            // 使用明确的参数调用，避免默认参数版本
-            setContent(parent = null, content = {
-                VlcPlayerScreen(
+        // 设置现代化Compose UI
+        setContent {
+            MaterialTheme {
+                ModernVlcPlayerScreen(
                     videoTitle = videoTitle ?: extractFileNameFromPath(videoPath ?: ""),
                     isControlsVisible = isControlsVisible.value,
                     isPlaying = isPlaying.value,
@@ -165,28 +192,19 @@ class VlcPlayerActivity : ComponentActivity() {
                     isLandscape = isLandscape.value,
                     isOrientationLocked = isOrientationLocked.value,
                     showSpeedMenu = showSpeedMenu.value,
-                    onPlayPauseClick = { 
-                        Log.d(TAG, "播放/暂停按钮点击")
-                        togglePlayPause() 
-                    },
-                    onSeekTo = { position -> 
-                        Log.d(TAG, "拖拽进度条到: $position")
-                        seekTo(position) 
-                    },
+                    interfaceLocked = interfaceLocked.value,
+                    gestureIndicatorVisible = gestureIndicatorVisible.value,
+                    gestureIndicatorText = gestureIndicatorText.value,
+                    onPlayPauseClick = { togglePlayPause() },
+                    onSeekTo = { position -> seekTo(position) },
                     onSeekForward = { seekForward() },
                     onSeekBackward = { seekBackward() },
                     onSpeedChange = { speed -> setPlaybackSpeed(speed) },
                     onVolumeChange = { vol -> setVolume(vol) },
-                    onBackClick = { 
-                        Log.d(TAG, "返回按钮点击")
-                        finish() 
-                    },
-                    onControlsVisibilityChange = { visible -> 
-                        Log.d(TAG, "控制界面显示状态变更: $visible")
+                    onBackClick = { finish() },
+                    onControlsVisibilityChange = { visible ->
                         isControlsVisible.value = visible
                         if (visible) {
-                            // 显示控制栏时自动隐藏
-                            Log.d(TAG, "启动3秒自动隐藏定时器")
                             scheduleControlsHide()
                         }
                     },
@@ -195,25 +213,55 @@ class VlcPlayerActivity : ComponentActivity() {
                     onOrientationLockToggle = { toggleOrientationLock() },
                     onSpeedMenuToggle = { toggleSpeedMenu() },
                     onSpeedSelect = { speed -> setPlaybackSpeedFromMenu(speed) },
+                    onInterfaceLockToggle = { interfaceLocked.value = !interfaceLocked.value },
                     vlcVideoLayoutProvider = { vlcVideoLayout }
                 )
-            })
-            Log.d(TAG, "Compose UI内容设置成功")
-            
-            // 启动时也启动自动隐藏定时器
-            Log.d(TAG, "onCreate: 启动初始的控制界面自动隐藏定时器")
-            scheduleControlsHide()
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "设置Compose UI内容失败: ${e.message}", e)
-            // 降级处理：使用传统View方式
-            Toast.makeText(this, "UI初始化失败，请重试", Toast.LENGTH_LONG).show()
-            finish()
+            }
         }
         
-        Log.d(TAG, "VLC播放器Activity初始化完成")
+        // 启动初始的控制界面自动隐藏定时器
+        scheduleControlsHide()
+        
+        Log.d(TAG, "VLC播放器Activity初始化完成 - 现代化UI和手势系统已激活")
     }
     
+    /**
+     * 初始化系统服务
+     */
+    private fun initializeSystemServices() {
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        maxVolumeLevel = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        
+        // 获取当前系统音量并同步到播放器状态
+        val currentSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        volume.value = currentSystemVolume
+        
+        Log.d(TAG, "系统服务初始化完成 - 最大音量: $maxVolumeLevel, 当前音量: $currentSystemVolume")
+    }
+    
+    /**
+     * 设置全屏沉浸式模式
+     */
+    private fun setupFullScreenImmersive() {
+        // 允许自动旋转，根据视频内容和设备方向自动调整
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        
+        // 设置沉浸式全屏模式
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_FULLSCREEN
+            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        )
+        
+        // 保持屏幕常亮
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        
+        Log.d(TAG, "沉浸式全屏模式设置完成 - 支持自动旋转")
+    }
+
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "VLC播放器Activity恢复")
@@ -479,14 +527,22 @@ class VlcPlayerActivity : ComponentActivity() {
     }
     
     /**
-     * 设置音量
-     * @param vol 音量值
+     * 设置音量 - 支持系统音量和播放器音量同步调节
+     * @param vol 音量值 (0 到 maxVolumeLevel)
      */
     private fun setVolume(vol: Int) {
         try {
-            playerManager?.setVolume(vol)
-            volume.value = vol
-            Log.d(TAG, "设置音量: $vol")
+            val clampedVolume = vol.coerceIn(0, maxVolumeLevel)
+            
+            // 设置系统音量
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, clampedVolume, 0)
+            
+            // 同步播放器音量（如果支持）
+            playerManager?.setVolume(clampedVolume)
+            
+            // 更新状态
+            volume.value = clampedVolume
+            Log.d(TAG, "设置音量: $clampedVolume (系统音量已同步)")
         } catch (e: Exception) {
             Log.e(TAG, "设置音量失败", e)
         }
@@ -651,11 +707,11 @@ class VlcPlayerActivity : ComponentActivity() {
 }
 
 /**
- * VLC播放器UI组件 - 根据Figma设计稿重新设计的竖屏播放界面
- * 完全按照Stream Box设计稿实现，包含状态栏、播放控制、进度条等所有元素
+ * 现代化VLC播放器UI组件 - 集成手势控制和现代化设计
+ * 包含完整的播放控制、手势操作、界面锁定等功能
  */
 @Composable
-fun VlcPlayerScreen(
+fun ModernVlcPlayerScreen(
     videoTitle: String,
     isControlsVisible: Boolean,
     isPlaying: Boolean,
@@ -669,6 +725,9 @@ fun VlcPlayerScreen(
     isLandscape: Boolean,
     isOrientationLocked: Boolean,
     showSpeedMenu: Boolean,
+    interfaceLocked: Boolean,
+    gestureIndicatorVisible: Boolean,
+    gestureIndicatorText: String,
     onPlayPauseClick: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onSeekForward: () -> Unit,
@@ -682,18 +741,156 @@ fun VlcPlayerScreen(
     onOrientationLockToggle: () -> Unit,
     onSpeedMenuToggle: () -> Unit,
     onSpeedSelect: (Float) -> Unit,
+    onInterfaceLockToggle: () -> Unit,
     vlcVideoLayoutProvider: () -> VLCVideoLayout?
 ) {
-    // 主容器 - 深色背景
+    // 获取屏幕尺寸和上下文
+    val context = LocalContext.current
+    val activity = context as? VlcPlayerActivity
+    
+    // 主容器 - 深色背景，集成完整手势控制系统
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF040C15)) // 根据Figma设计的背景色
-            .clickable {
-                Log.d("VlcPlayerScreen", "视频区域点击事件触发，当前控制界面可见状态: $isControlsVisible")
-                val newVisibility = !isControlsVisible
-                Log.d("VlcPlayerScreen", "准备切换控制界面可见状态到: $newVisibility")
-                onControlsVisibilityChange(newVisibility)
+            .background(Color(0xFF040C15))
+            .pointerInput(Unit) {
+                // 点击手势 - 切换UI控件可见性
+                detectTapGestures(
+                    onTap = {
+                        if (!interfaceLocked) {
+                            Log.d("ModernVlcPlayerScreen", "视频区域点击事件触发")
+                            onControlsVisibilityChange(!isControlsVisible)
+                        }
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                // 拖拽手势 - 亮度、音量、进度调节
+                detectDragGestures(
+                    onDragStart = { startOffset ->
+                        if (interfaceLocked) return@detectDragGestures
+                        
+                        activity?.let { act ->
+                            // 重置手势状态
+                            act.currentGestureType.value = ""
+                            act.gestureIndicatorVisible.value = false
+                            act.gestureCumulativeDeltaX.value = 0f
+                            act.gestureCumulativeDeltaY.value = 0f
+                            act.gestureStartX.value = startOffset.x
+                            act.gestureStartY.value = startOffset.y
+                            
+                            val screenWidth = size.width
+                            Log.d("ModernVlcPlayerScreen", "手势开始: 位置(${startOffset.x}, ${startOffset.y})")
+                            
+                            // 手势类型识别策略 - 基于playerV2的智能识别
+                            when {
+                                startOffset.x < screenWidth * 0.2f -> {
+                                    act.currentGestureType.value = "brightness"
+                                    act.gestureBrightnessStartLevel.value = 0.5f // 简化版本，避免系统权限问题
+                                    Log.d("ModernVlcPlayerScreen", "手势类型: 亮度调节")
+                                }
+                                startOffset.x > screenWidth * 0.8f -> {
+                                    act.currentGestureType.value = "volume"
+                                    act.gestureVolumeStartLevel.value = volume
+                                    Log.d("ModernVlcPlayerScreen", "手势类型: 音量调节 - 起始值: $volume")
+                                }
+                                else -> {
+                                    act.currentGestureType.value = "seek"
+                                    act.gestureSeekStartPosition.value = currentPosition
+                                    act.previewSeekPosition.value = currentPosition
+                                    act.seekOperationActive.value = true
+                                    Log.d("ModernVlcPlayerScreen", "手势类型: 进度调节 - 起始位置: ${currentPosition}ms")
+                                }
+                            }
+                            
+                            // 显示UI控件
+                            if (!isControlsVisible) {
+                                onControlsVisibilityChange(true)
+                            }
+                        }
+                    },
+                    onDrag = { change, dragAmount ->
+                        if (interfaceLocked) return@detectDragGestures
+                        
+                        activity?.let { act ->
+                            val deltaX = dragAmount.x
+                            val deltaY = dragAmount.y
+                            
+                            when (act.currentGestureType.value) {
+                                "seek" -> {
+                                    // 进度调节手势
+                                    act.gestureCumulativeDeltaX.value += deltaX
+                                    val seekOffsetMs = (act.gestureCumulativeDeltaX.value / size.width * totalDuration).toLong()
+                                    val newPosition = (act.gestureSeekStartPosition.value + seekOffsetMs).coerceIn(0L, totalDuration)
+                                    act.previewSeekPosition.value = newPosition
+                                    
+                                    act.gestureIndicatorText.value = if (seekOffsetMs > 0) {
+                                        "快进 ${seekOffsetMs / 1000} 秒"
+                                    } else {
+                                        "快退 ${-seekOffsetMs / 1000} 秒"
+                                    }
+                                    act.gestureIndicatorVisible.value = true
+                                    Log.v("ModernVlcPlayerScreen", "进度手势: 偏移=${seekOffsetMs}ms, 新位置=${newPosition}ms")
+                                }
+                                "volume" -> {
+                                    // 音量调节手势
+                                    act.gestureCumulativeDeltaY.value += deltaY
+                                    val volumeChangePercent = (-act.gestureCumulativeDeltaY.value / size.height).coerceIn(-1f, 1f)
+                                    val maxVolume = act.maxVolumeLevel
+                                    val newVolumeLevel = (act.gestureVolumeStartLevel.value + volumeChangePercent * maxVolume)
+                                        .toInt().coerceIn(0, maxVolume)
+                                    
+                                    // 调用音量变更回调
+                                    onVolumeChange(newVolumeLevel)
+                                    act.gestureIndicatorText.value = "音量 ${(newVolumeLevel * 100 / maxVolume)}%"
+                                    act.gestureIndicatorVisible.value = true
+                                    Log.v("ModernVlcPlayerScreen", "音量手势: 新音量=$newVolumeLevel")
+                                }
+                                "brightness" -> {
+                                    // 亮度调节手势
+                                    act.gestureCumulativeDeltaY.value += deltaY
+                                    val brightnessChangePercent = (-act.gestureCumulativeDeltaY.value / size.height).coerceIn(-1f, 1f)
+                                    val newBrightnessLevel = (act.gestureBrightnessStartLevel.value + brightnessChangePercent).coerceIn(0f, 1f)
+                                    
+                                    // 调整窗口亮度
+                                    try {
+                                        val window = act.window
+                                        val layoutParams = window.attributes
+                                        layoutParams.screenBrightness = newBrightnessLevel
+                                        window.attributes = layoutParams
+                                        
+                                        act.gestureIndicatorText.value = "亮度 ${(newBrightnessLevel * 100).toInt()}%"
+                                        act.gestureIndicatorVisible.value = true
+                                        Log.v("ModernVlcPlayerScreen", "亮度手势: 新亮度=$newBrightnessLevel")
+                                    } catch (e: Exception) {
+                                        Log.w("ModernVlcPlayerScreen", "亮度调节失败", e)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        if (interfaceLocked) return@detectDragGestures
+                        
+                        activity?.let { act ->
+                            // 处理手势结束
+                            if (act.currentGestureType.value == "seek") {
+                                // 执行进度跳转
+                                onSeekTo(act.previewSeekPosition.value)
+                                act.seekOperationActive.value = false
+                                Log.d("ModernVlcPlayerScreen", "进度手势结束: 跳转到位置 ${act.previewSeekPosition.value}ms")
+                            }
+                            
+                            // 重置手势状态
+                            act.gestureIndicatorVisible.value = false
+                            act.gestureCumulativeDeltaX.value = 0f
+                            act.gestureCumulativeDeltaY.value = 0f
+                            act.currentGestureType.value = ""
+                            
+                            Log.d("ModernVlcPlayerScreen", "手势操作结束")
+                        }
+                    }
+                )
             }
     ) {
         // VLC视频播放区域 - 铺满整个屏幕
@@ -701,19 +898,29 @@ fun VlcPlayerScreen(
             factory = { context ->
                 vlcVideoLayoutProvider() ?: VLCVideoLayout(context)
             },
-            modifier = Modifier
-                .fillMaxSize() // 填满整个屏幕，提供沉浸式播放体验
+            modifier = Modifier.fillMaxSize()
         )
         
-
-        
-        // 播放控制界面 - 根据Figma设计实现，添加淡入淡出动画
+        // 手势指示器
         AnimatedVisibility(
-            visible = isControlsVisible,
+            visible = gestureIndicatorVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center)
+        ) {
+            GestureIndicator(
+                text = gestureIndicatorText,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+        
+        // 播放控制界面 - 现代化设计，支持界面锁定
+        AnimatedVisibility(
+            visible = isControlsVisible && !interfaceLocked,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            PlayerControlsOverlay(
+            ModernPlayerControlsOverlay(
                 videoTitle = videoTitle,
                 isPlaying = isPlaying,
                 currentPosition = currentPosition,
@@ -733,7 +940,18 @@ fun VlcPlayerScreen(
                 onOrientationLockToggle = onOrientationLockToggle,
                 onSpeedMenuToggle = onSpeedMenuToggle,
                 onSpeedSelect = onSpeedSelect,
+                onInterfaceLockToggle = onInterfaceLockToggle,
                 modifier = Modifier.fillMaxSize()
+            )
+        }
+        
+        // 界面锁定指示器
+        if (interfaceLocked) {
+            InterfaceLockIndicator(
+                onUnlock = onInterfaceLockToggle,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
             )
         }
         
@@ -761,10 +979,10 @@ fun VlcPlayerScreen(
 
 
 /**
- * 播放控制覆盖层 - 根据Figma设计实现完整的播放控制界面
+ * 现代化播放控制覆盖层 - 集成界面锁定和现代化设计
  */
 @Composable
-fun PlayerControlsOverlay(
+fun ModernPlayerControlsOverlay(
     videoTitle: String,
     isPlaying: Boolean,
     currentPosition: Long,
@@ -784,6 +1002,7 @@ fun PlayerControlsOverlay(
     onOrientationLockToggle: () -> Unit,
     onSpeedMenuToggle: () -> Unit,
     onSpeedSelect: (Float) -> Unit,
+    onInterfaceLockToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -799,7 +1018,7 @@ fun PlayerControlsOverlay(
             )
     ) {
         // 顶部控制区域
-        TopControlsSection(
+        ModernTopControlsSection(
             videoTitle = videoTitle,
             isFullScreen = isFullScreen,
             isLandscape = isLandscape,
@@ -811,10 +1030,11 @@ fun PlayerControlsOverlay(
             onOrientationLockToggle = onOrientationLockToggle,
             onSpeedMenuToggle = onSpeedMenuToggle,
             onSpeedSelect = onSpeedSelect,
+            onInterfaceLockToggle = onInterfaceLockToggle,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = 16.dp) // 顶部间距
+                .padding(top = 16.dp)
         )
         
         // 中央播放控制区域
@@ -1219,6 +1439,239 @@ fun SpeedSelectionMenu(
             }
         }
     }
+}
+
+/**
+ * 手势指示器组件 - 显示手势操作提示
+ */
+@Composable
+fun GestureIndicator(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Color.Black.copy(alpha = 0.7f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+        )
+    }
+}
+
+/**
+ * 界面锁定指示器 - 显示解锁按钮
+ */
+@Composable
+fun InterfaceLockIndicator(
+    onUnlock: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onUnlock,
+        modifier = modifier
+            .size(48.dp)
+            .background(
+                Color.Black.copy(alpha = 0.6f),
+                CircleShape
+            )
+    ) {
+        Icon(
+            Icons.Default.LockOpen,
+            contentDescription = "解锁界面",
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+/**
+ * 现代化顶部控制区域 - 集成界面锁定功能
+ */
+@Composable
+fun ModernTopControlsSection(
+    videoTitle: String,
+    isFullScreen: Boolean,
+    isLandscape: Boolean,
+    isOrientationLocked: Boolean,
+    showSpeedMenu: Boolean,
+    onBackClick: () -> Unit,
+    onFullScreenToggle: () -> Unit,
+    onOrientationToggle: () -> Unit,
+    onOrientationLockToggle: () -> Unit,
+    onSpeedMenuToggle: () -> Unit,
+    onSpeedSelect: (Float) -> Unit,
+    onInterfaceLockToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.6f),
+                        Color.Transparent
+                    )
+                )
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 返回按钮
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .size(40.dp)
+                .background(Color.White.copy(alpha = 0.2f), CircleShape)
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "返回",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        // 视频标题
+        Text(
+            text = videoTitle,
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp)
+        )
+        
+        // 功能按钮组
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 播放速度按钮
+            IconButton(
+                onClick = onSpeedMenuToggle,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        Color.White.copy(alpha = if (showSpeedMenu) 0.4f else 0.2f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.Speed,
+                    contentDescription = "播放速度",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            // 屏幕方向锁定按钮
+            IconButton(
+                onClick = onOrientationLockToggle,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        Color.White.copy(alpha = if (isOrientationLocked) 0.4f else 0.2f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    if (isOrientationLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    contentDescription = if (isOrientationLocked) "解锁旋转" else "锁定旋转",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            // 界面锁定按钮
+            IconButton(
+                onClick = onInterfaceLockToggle,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Default.Lock,
+                    contentDescription = "锁定界面",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+    
+    // 播放速度选择菜单
+    if (showSpeedMenu) {
+        ModernSpeedSelectionMenu(
+            onSpeedSelect = onSpeedSelect,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, end = 16.dp)
+        )
+    }
+}
+
+/**
+ * 现代化播放速度选择菜单
+ */
+@Composable
+fun ModernSpeedSelectionMenu(
+    onSpeedSelect: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        Card(
+            modifier = Modifier.align(Alignment.TopEnd),
+            colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.8f)),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f).forEach { speed ->
+                    TextButton(
+                        onClick = { onSpeedSelect(speed) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "${speed}x",
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 格式化时间显示 - 支持现代化格式
+ */
+fun formatTimeDisplay(timeMs: Long): String {
+    val totalSeconds = timeMs / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    
+    return if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%d:%02d", minutes, seconds)
+    }
+}
+
+/**
+ * 用户交互处理 - 记录用户操作
+ */
+fun processUserInteraction(action: String) {
+    Log.d("UserInteraction", "用户操作: $action")
 }
 
 /**

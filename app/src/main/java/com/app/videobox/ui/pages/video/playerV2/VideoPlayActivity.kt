@@ -1,9 +1,10 @@
-package com.mvi.downloadvideomodel.ui.page.videoPlayerPage
+package com.app.videobox.ui.pages.video.playerV2
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -11,7 +12,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.app.videobox.ui.pages.video.playerV2.VideoPlayerPage
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLDecoder
@@ -356,8 +356,8 @@ class VideoPlayActivity : ComponentActivity() {
                     // 尝试构建下载文件路径
                     val fileName = getDisplayNameFromUri(uri)
                     if (fileName != null) {
-                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
-                            android.os.Environment.DIRECTORY_DOWNLOADS
+                        val downloadsDir = Environment.getExternalStoragePublicDirectory(
+                            Environment.DIRECTORY_DOWNLOADS
                         )
                         val file = File(downloadsDir, fileName)
                         if (file.exists()) {

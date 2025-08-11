@@ -97,7 +97,9 @@
             android:screenOrientation="portrait"/>
 
 
-
+        <activity android:name=".ui.pages.video.playerV2.VideoPlayActivity"
+            android:exported="true"
+            />
         <!-- VLC视频播放Activity - VlcPlayerActivity -->
         <activity android:name=".ui.pages.video.player.VlcPlayerActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"

@@ -48,6 +48,7 @@ import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.TitleBar
 import com.videodownloader.module.api.*
 import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
+import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.DeleteBarWidget
 import com.app.videobox.ui.widgets.ProgressLinear
@@ -96,6 +97,11 @@ fun DownloadListScreen(
                         context = context,
                         videoPath = effect.filePath,
                     )
+//                    VideoPlayActivity.start(
+//                        context = context,
+//                        videoUrl = effect.filePath,
+//                        title = "test"
+//                    )
                 }
                 is DownloadListViewModel.Effect.ShowError -> {
                     // 显示错误消息
