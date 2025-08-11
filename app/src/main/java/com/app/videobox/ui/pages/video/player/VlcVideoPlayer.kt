@@ -56,17 +56,24 @@ class VlcVideoPlayer(private val context: Context) {
      */
     private fun initializeVLC() {
         try {
-            // VLC初始化选项
+            // VLC初始化选项 - 使用经过验证的稳定配置
             val options = arrayListOf<String>().apply {
                 add("--aout=opensles")           // 音频输出
                 add("--audio-time-stretch")     // 音频时间拉伸
-                add("-vvv")                     // 详细日志
                 add("--avcodec-skiploopfilter") // 跳过循环滤波器
                 add("--avcodec-skip-frame")     // 跳过帧
                 add("--avcodec-skip-idct")      // 跳过IDCT
                 add("--android-display-chroma") // Android显示色度
-                add("--file-logging")           // 文件日志
-                add("--logfile=/sdcard/vlc-log.txt") // 日志文件路径
+                
+                // 网络和缓存优化 - 提高TS流稳定性
+                add("--network-caching=3000")   // 增加网络缓存到3秒
+                add("--file-caching=1000")      // 文件缓存1秒
+                add("--live-caching=1000")      // 直播流缓存1秒
+                
+                // 错误处理优化
+                add("--intf=dummy")             // 使用虚拟接口，减少错误
+                add("--no-video-title-show")    // 不显示视频标题
+                add("--quiet")                  // 减少日志输出
             }
 
             // 创建LibVLC实例
@@ -94,6 +101,8 @@ class VlcVideoPlayer(private val context: Context) {
      * @param event MediaPlayer事件
      */
     private fun handleMediaPlayerEvent(event: MediaPlayer.Event) {
+        Log.d(TAG, "收到MediaPlayer事件: ${event.type}, 当前播放状态: ${mediaPlayer?.isPlaying}")
+        
         when (event.type) {
             MediaPlayer.Event.Opening -> {
                 Log.d(TAG, "媒体打开中...")
@@ -104,35 +113,48 @@ class VlcVideoPlayer(private val context: Context) {
                 playbackListener?.onBuffering(event.buffering)
             }
             MediaPlayer.Event.Playing -> {
-                Log.d(TAG, "开始播放")
+                Log.d(TAG, "VLC Playing事件触发 - 开始播放")
                 isPrepared = true
-                playbackListener?.onPlaying()
+                
+                // 确保播放状态回调被触发
+                playbackListener?.let { listener ->
+                    Log.d(TAG, "调用playbackListener.onPlaying()")
+                    listener.onPlaying()
+                } ?: Log.w(TAG, "playbackListener为null，无法触发onPlaying回调")
             }
             MediaPlayer.Event.Paused -> {
-                Log.d(TAG, "播放暂停")
+                Log.d(TAG, "VLC Paused事件触发 - 播放暂停")
                 playbackListener?.onPaused()
             }
             MediaPlayer.Event.Stopped -> {
-                Log.d(TAG, "播放停止")
+                Log.d(TAG, "VLC Stopped事件触发 - 播放停止")
                 playbackListener?.onStopped()
             }
             MediaPlayer.Event.EndReached -> {
-                Log.d(TAG, "播放完成")
+                Log.d(TAG, "VLC EndReached事件触发 - 播放完成")
                 playbackListener?.onCompleted()
             }
             MediaPlayer.Event.EncounteredError -> {
-                Log.e(TAG, "播放错误")
+                Log.e(TAG, "VLC EncounteredError事件触发 - 播放错误")
                 playbackListener?.onError("播放过程中发生错误")
             }
             MediaPlayer.Event.TimeChanged -> {
                 // 播放进度更新
                 val currentTime = mediaPlayer?.time ?: 0L
                 val totalTime = mediaPlayer?.length ?: 0L
+                // 减少TimeChanged日志频率，避免日志过多
+                if (currentTime % 5000 < 1000) { // 每5秒打印一次
+                    Log.d(TAG, "VLC TimeChanged事件: currentTime=$currentTime, totalTime=$totalTime")
+                }
                 playbackListener?.onProgressUpdate(currentTime, totalTime)
             }
             MediaPlayer.Event.Vout -> {
+                Log.d(TAG, "VLC Vout事件触发 - 视频输出就绪")
                 // 视频输出事件，检测视频尺寸并调整屏幕方向
                 checkVideoOrientationAndAdjust()
+            }
+            else -> {
+                Log.d(TAG, "其他VLC事件: ${event.type}")
             }
         }
     }
@@ -145,6 +167,8 @@ class VlcVideoPlayer(private val context: Context) {
     fun setVideoPath(videoPath: String, autoPlay: Boolean = false) {
         try {
             Log.d(TAG, "设置视频源: $videoPath")
+            Log.d(TAG, "MediaPlayer状态: ${mediaPlayer != null}, LibVLC状态: ${libVLC != null}")
+            Log.d(TAG, "播放器准备状态: isPlayerReady=$isPlayerReady, isPrepared=$isPrepared")
             
             // 释放之前的媒体资源
             currentMedia?.release()
@@ -152,10 +176,12 @@ class VlcVideoPlayer(private val context: Context) {
             // 创建新的Media对象
             currentMedia = if (videoPath.startsWith("http")) {
                 // 网络流媒体
+                Log.d(TAG, "创建网络媒体源")
                 Media(libVLC, Uri.parse(videoPath))
             } else {
                 // 本地文件
                 val file = File(videoPath)
+                Log.d(TAG, "检查本地文件: ${file.absolutePath}, 存在: ${file.exists()}, 大小: ${file.length()} bytes")
                 if (!file.exists()) {
                     Log.e(TAG, "视频文件不存在: $videoPath")
                     playbackListener?.onError("视频文件不存在")
@@ -164,11 +190,17 @@ class VlcVideoPlayer(private val context: Context) {
                 Media(libVLC, Uri.fromFile(file))
             }
             
+            Log.d(TAG, "Media对象创建成功: ${currentMedia != null}")
+            
             // 设置媒体到播放器
             mediaPlayer?.media = currentMedia
+            Log.d(TAG, "媒体已设置到播放器")
             
             if (autoPlay && isPlayerReady) {
+                Log.d(TAG, "自动播放已启用，开始播放")
                 play()
+            } else {
+                Log.d(TAG, "自动播放未启用或播放器未准备好: autoPlay=$autoPlay, isPlayerReady=$isPlayerReady")
             }
             
             Log.d(TAG, "视频源设置完成")
@@ -183,6 +215,11 @@ class VlcVideoPlayer(private val context: Context) {
      */
     fun play() {
         try {
+            Log.d(TAG, "尝试开始播放")
+            Log.d(TAG, "MediaPlayer状态: ${mediaPlayer != null}")
+            Log.d(TAG, "Media状态: ${mediaPlayer?.media != null}")
+            Log.d(TAG, "播放器准备状态: isPlayerReady=$isPlayerReady")
+            
             if (mediaPlayer?.media == null) {
                 Log.w(TAG, "未设置视频源，无法播放")
                 return
@@ -193,7 +230,9 @@ class VlcVideoPlayer(private val context: Context) {
                 return
             }
             
-            mediaPlayer?.play()
+            val result = mediaPlayer?.play()
+            Log.d(TAG, "播放调用结果: $result")
+            Log.d(TAG, "播放后状态检查: isPlaying=${mediaPlayer?.isPlaying}")
             Log.d(TAG, "开始播放视频")
         } catch (e: Exception) {
             Log.e(TAG, "播放失败: ${e.message}", e)
@@ -233,8 +272,20 @@ class VlcVideoPlayer(private val context: Context) {
     fun seekTo(position: Long) {
         try {
             if (isPrepared) {
+                val wasPlaying = mediaPlayer?.isPlaying ?: false
                 mediaPlayer?.time = position
-                Log.d(TAG, "跳转到位置: ${position}ms")
+                Log.d(TAG, "跳转到位置: ${position}ms, 之前播放状态: $wasPlaying")
+                
+                // 如果之前在播放，跳转后继续播放
+                if (wasPlaying) {
+                    // 给一点延迟确保跳转完成
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (mediaPlayer?.isPlaying != true) {
+                            mediaPlayer?.play()
+                            Log.d(TAG, "跳转后恢复播放状态")
+                        }
+                    }, 100)
+                }
             } else {
                 Log.w(TAG, "播放器未准备就绪，无法跳转")
             }
@@ -248,7 +299,9 @@ class VlcVideoPlayer(private val context: Context) {
      * @return 当前位置（毫秒）
      */
     fun getCurrentPosition(): Long {
-        return mediaPlayer?.time ?: 0L
+        val position = mediaPlayer?.time ?: 0L
+        Log.d(TAG, "getCurrentPosition: $position")
+        return position
     }
 
     /**
@@ -256,7 +309,9 @@ class VlcVideoPlayer(private val context: Context) {
      * @return 总时长（毫秒）
      */
     fun getDuration(): Long {
-        return mediaPlayer?.length ?: 0L
+        val duration = mediaPlayer?.length ?: 0L
+        Log.d(TAG, "getDuration: $duration")
+        return duration
     }
 
     /**
@@ -264,7 +319,9 @@ class VlcVideoPlayer(private val context: Context) {
      * @return true表示正在播放
      */
     fun isPlaying(): Boolean {
-        return mediaPlayer?.isPlaying ?: false
+        val playing = mediaPlayer?.isPlaying ?: false
+        Log.d(TAG, "isPlaying: $playing")
+        return playing
     }
 
     /**

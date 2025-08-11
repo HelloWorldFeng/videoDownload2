@@ -96,13 +96,16 @@ class VlcPlayerManager private constructor() {
             
             override fun onBuffering(percent: Float) {
                 _playbackState.value = PlaybackState.BUFFERING
-                Log.d(TAG, "缓冲中: ${percent}%")
+                // 缓冲时暂停进度更新，避免进度条在视频卡住时继续前进
+                stopProgressUpdates()
+                Log.d(TAG, "缓冲中: ${percent}% - 已暂停进度更新")
             }
             
             override fun onPlaying() {
                 _playbackState.value = PlaybackState.PLAYING
+                // 只有在真正播放时才启动进度更新
                 startProgressUpdates()
-                Log.d(TAG, "开始播放")
+                Log.d(TAG, "开始播放 - 启动进度更新")
             }
             
             override fun onPaused() {
@@ -314,18 +317,33 @@ class VlcPlayerManager private constructor() {
      */
     private fun startProgressUpdates() {
         stopProgressUpdates()
+        Log.d(TAG, "开始进度更新循环")
         
         progressUpdateJob = managerScope.launch {
-            while (isPlaying()) {
+            // 修复竞态条件：只要状态是PLAYING就继续更新，不依赖isPlaying()的即时状态
+            while (_playbackState.value == PlaybackState.PLAYING) {
                 try {
                     val currentTime = getCurrentPosition()
                     val totalTime = getDuration()
+                    val actuallyPlaying = isPlaying()
                     
+                    Log.d(TAG, "VlcPlayerManager进度更新: currentTime=$currentTime, totalTime=$totalTime, state=${_playbackState.value}, actuallyPlaying=$actuallyPlaying")
+                    
+                    // 直接使用视频实际播放时间更新进度条，确保时间同步
+                    // 不管视频是否卡住，都以实际视频时间为准，避免进度条超前
                     _playbackProgress.value = PlaybackProgress(
                         currentTime = currentTime,
                         totalTime = totalTime,
                         progress = if (totalTime > 0) currentTime.toFloat() / totalTime else 0f
                     )
+                    
+                    // 如果底层播放器状态与管理器状态不一致，进行状态同步
+                    if (!actuallyPlaying && _playbackState.value == PlaybackState.PLAYING) {
+                        Log.w(TAG, "检测到状态不一致：管理器状态为PLAYING但底层播放器未播放，可能是缓冲或暂停")
+                        // 给播放器一些时间来同步状态，避免立即停止进度更新
+                        delay(500)
+                        continue
+                    }
                     
                     delay(1000) // 每秒更新一次
                 } catch (e: Exception) {
@@ -333,6 +351,7 @@ class VlcPlayerManager private constructor() {
                     break
                 }
             }
+            Log.d(TAG, "进度更新循环结束 - 当前状态: ${_playbackState.value}")
         }
     }
 

@@ -21,6 +21,7 @@ import com.app.videobox.manager.FileManager.fetchPhoneVideo
 import com.app.videobox.service.DownloadService
 import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
+import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewScreen
 import com.app.videobox.utils.FileUtils
@@ -98,7 +99,11 @@ class MainActivity : BaseActivity() {
             MAIN_SHOW_VIDEO -> {
                 intent.getStringExtra("videoUrl")?.let {
                     val title = intent.getStringExtra("videoTitle")?:"title"
-//                    VideoPlayActivity.start(this, title = title, videoUrl = it)
+                    VlcPlayerActivity.start(
+                        context = this,
+                        videoPath = it,
+                        videoTitle = title
+                    )
                 }
             }
         }
