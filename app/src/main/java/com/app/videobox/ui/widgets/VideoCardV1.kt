@@ -137,9 +137,9 @@ fun VideoCardV1(
                         )
 
                         Spacer(Modifier.width(30.dp))
-                        Text(
-                            text =
-                        )
+//                        Text(
+//                            text =
+//                        )
 
                         Spacer(modifier = Modifier.weight(1f))
                         AnimatedVisibility(
