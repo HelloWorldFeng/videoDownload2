@@ -94,7 +94,7 @@ private fun createVLCWithSmartFallback(context: Context, options: ArrayList<Stri
     } catch (e: Exception) {
         Log.w(MEDIA_ORCHESTRATOR_TAG, "VLC主配置创建失败，尝试降级配置: ${e.message}")
         
-        // 第一级降级：简化配置但保持文件位置适配
+        // 🔧 第一级降级：简化配置但保持文件位置适配，移除可能有问题的选项
         try {
             val fallbackOptions = ArrayList<String>().apply {
                 add("--no-spu")                // 禁用字幕(关键)
@@ -102,12 +102,13 @@ private fun createVLCWithSmartFallback(context: Context, options: ArrayList<Stri
                 
                 if (isPrivateFile) {
                     add("--no-mediacodec")     // 私有目录强制软件解码
-                    add("--codec=avcodec")     // 使用ffmpeg解码器
-                    add("--vout=android_window") // 兼容性输出
+                    // 移除--codec=avcodec，可能导致兼容性问题
+                    // 移除--vout=android_window，使用默认输出
+                    add("--file-caching=1000") // 增加文件缓存
                 }
                 
                 add("--aout=opensles")         // 音频输出
-                add("--verbose=1")             // 基础日志
+                add("--verbose=0")             // 减少日志输出
             }
             val fallbackLibVLC = LibVLC(context, fallbackOptions)
             Log.w(MEDIA_ORCHESTRATOR_TAG, "VLC LibVLC第一级降级配置创建成功")
@@ -115,13 +116,15 @@ private fun createVLCWithSmartFallback(context: Context, options: ArrayList<Stri
         } catch (fallbackException: Exception) {
             Log.w(MEDIA_ORCHESTRATOR_TAG, "第一级降级失败，尝试最小化配置: ${fallbackException.message}")
             
-            // 第二级降级：最小化配置
+            // 🔧 第二级降级：极简配置，仅保留最关键的选项
             try {
                 val minimalOptions = ArrayList<String>().apply {
                     add("--no-spu")            // 仅保留禁用字幕(最关键)
                     if (isPrivateFile) {
                         add("--no-mediacodec") // 私有目录必须禁用硬件解码
+                        add("--file-caching=1000") // 基础文件缓存
                     }
+                    add("--intf=dummy")        // 使用虚拟接口，减少复杂度
                 }
                 val minimalLibVLC = LibVLC(context, minimalOptions)
                 Log.w(MEDIA_ORCHESTRATOR_TAG, "VLC LibVLC最小化配置创建成功")
@@ -310,33 +313,26 @@ private fun MediaStreamOrchestrator(
             
             // === 根据文件位置选择解码策略 ===
             if (isPrivateFile) {
-                Log.d(MEDIA_ORCHESTRATOR_TAG, "应用私有目录文件 - 使用软件解码器配置")
+                Log.d(MEDIA_ORCHESTRATOR_TAG, "应用私有目录文件 - 使用简化软件解码配置")
                 
-                // 强制软件解码 - 解决私有目录MediaCodec失败问题
+                // 🔧 重大修复：大幅简化私有目录配置，移除可能导致问题的复杂选项
+                // 核心软件解码配置 - 最小化但有效的配置
                 add("--no-mediacodec")             // 完全禁用MediaCodec硬件解码器
                 add("--no-mediacodec-dr")          // 禁用MediaCodec直接渲染
-                add("--no-omxil")                  // 禁用OMX硬件解码器
-                add("--no-omxil-dr")               // 禁用OMX直接渲染
-                add("--codec=avcodec")             // 强制使用ffmpeg软件解码器
+                // 移除--codec=avcodec，让VLC自动选择最佳解码器
                 
-                // 软件渲染配置 - 避免硬件加速问题
-                add("--swscale-mode=0")            // 软件缩放模式
-                add("--no-hwdec")                  // 禁用硬件解码加速
-                add("--vout=android_window")       // 使用兼容性更好的输出模块
-                
-                // 私有目录专用音频配置
+                // 基础音频配置
                 add("--aout=opensles")             // OpenSL ES音频输出
                 add("--no-audio-time-stretch")     // 禁用音频时间拉伸(减少复杂度)
                 
-                // 私有目录文件缓存优化
-                add("--file-caching=2000")         // 增加文件缓存到2秒
-                add("--network-caching=1000")       // 减少网络缓存(主要是文件访问)
-                add("--live-caching=500")          // 直播缓存0.5秒
+                // 简化缓存配置
+                add("--file-caching=1500")         // 适中的文件缓存
+                add("--network-caching=500")       // 最小网络缓存
                 
-                // Surface兼容性配置 - 解决window request问题
-                add("--no-overlay")                // 禁用覆盖层
-                add("--no-video-deco")             // 禁用视频装饰
-                add("--android-display-chroma=YV12") // 使用兼容性更好的色彩格式
+                // 移除所有可能导致兼容性问题的高级选项：
+                // - 移除--swscale-mode、--no-hwdec、--vout等可能有问题的选项
+                // - 移除--no-overlay、--no-video-deco、--android-display-chroma等复杂配置
+                // - 让VLC使用默认的渲染和显示配置
                 
             } else {
                 Log.d(MEDIA_ORCHESTRATOR_TAG, "公共目录文件 - 使用硬件加速配置")
@@ -347,7 +343,7 @@ private fun MediaStreamOrchestrator(
                 
                 // 硬件解码器配置 - 性能优先
                 add("--no-mediacodec-dr")           // 禁用MediaCodec直接渲染(稳定性)
-                add("--no-omxil-dr")               // 禁用OMX直接渲染(稳定性)
+                // 注意：移除--no-omxil-dr选项，因为当前VLC版本不支持
                 add("--swscale-mode=0")            // 软件缩放模式(兼容性)
                 
                 // 公共目录缓存配置 - 平衡性能和兼容性

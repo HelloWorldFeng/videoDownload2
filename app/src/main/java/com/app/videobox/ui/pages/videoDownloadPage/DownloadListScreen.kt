@@ -93,15 +93,15 @@ fun DownloadListScreen(
                     // 显示Toast消息
                 }
                 is DownloadListViewModel.Effect.NavigateToPlayer -> {
-                    VlcPlayerActivity.start(
-                        context = context,
-                        videoPath = effect.filePath,
-                    )
-//                    VideoPlayActivity.start(
+//                    VlcPlayerActivity.start(
 //                        context = context,
-//                        videoUrl = effect.filePath,
-//                        title = "test"
+//                        videoPath = effect.filePath,
 //                    )
+                    VideoPlayActivity.start(
+                        context = context,
+                        videoUrl = effect.filePath,
+                        title = "test"
+                    )
                 }
                 is DownloadListViewModel.Effect.ShowError -> {
                     // 显示错误消息

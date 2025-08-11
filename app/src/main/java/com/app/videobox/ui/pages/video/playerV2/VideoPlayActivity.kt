@@ -155,17 +155,84 @@ class VideoPlayActivity : ComponentActivity() {
     /**
      * 处理本地文件路径，转换为VLC兼容的file:// URI格式
      * 专门解决中文文件名和特殊字符的编码问题，支持URL编码路径解码
+     * 
+     * 🔧 修复说明：为应用私有目录文件跳过复杂处理，避免路径被破坏
+     * 私有目录文件直接返回原始路径，公共目录文件才进行复杂的URL解码和转换
      */
     private fun processLocalFilePath(filePath: String): String {
+        try {
+            // 🎯 关键修复：检测是否为应用私有目录文件
+            if (isInAppPrivateDirectory(this, filePath)) {
+                Log.d(VIDEO_ACTIVITY_TAG, "检测到应用私有目录文件，使用简化处理: $filePath")
+                
+                // 🔧 重要修复：私有目录文件也需要转换为file://格式
+                // 但跳过复杂的URL解码处理，直接使用File对象确保路径正确性
+                val file = File(filePath)
+                if (file.exists()) {
+                    val uri = Uri.fromFile(file)
+                    val uriString = uri.toString()
+                    Log.d(VIDEO_ACTIVITY_TAG, "私有目录文件URI转换: $filePath -> $uriString")
+                    return uriString
+                } else {
+                    Log.w(VIDEO_ACTIVITY_TAG, "私有目录文件不存在，返回原始路径: $filePath")
+                    return filePath
+                }
+            }
+            
+            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件，执行标准路径处理: $filePath")
+            
+            // 对于公共目录文件，执行原有的复杂处理逻辑
+            return processPublicFilePath(filePath)
+            
+        } catch (e: Exception) {
+            Log.e(VIDEO_ACTIVITY_TAG, "处理本地文件路径时发生错误: ${e.message}", e)
+            return filePath // 发生异常时返回原始路径
+        }
+    }
+    
+    /**
+     * 检测视频文件是否位于应用私有目录
+     * 
+     * 应用私有目录包括：
+     * - /Android/data/包名/ (应用私有数据目录)
+     * - /Android/obb/包名/ (应用私有OBB目录)
+     * - 内部存储文件目录 (context.filesDir)
+     * - 内部存储缓存目录 (context.cacheDir)
+     * - 外部存储缓存目录 (context.externalCacheDir)
+     */
+    private fun isInAppPrivateDirectory(context: Context, videoPath: String): Boolean {
+        val appPrivatePatterns = listOf(
+            "/Android/data/${context.packageName}/",     // 应用私有数据目录
+            "/Android/obb/${context.packageName}/",      // 应用私有OBB目录
+            context.filesDir.absolutePath,               // 内部存储文件目录
+            context.cacheDir.absolutePath,               // 内部存储缓存目录
+            context.externalCacheDir?.absolutePath ?: "", // 外部存储缓存目录
+        )
+        
+        val isPrivate = appPrivatePatterns.any { pattern ->
+            pattern.isNotEmpty() && videoPath.contains(pattern)
+        }
+        
+        Log.d(VIDEO_ACTIVITY_TAG, "文件位置检测 - 路径: $videoPath")
+        Log.d(VIDEO_ACTIVITY_TAG, "文件位置检测 - 是否为应用私有目录: $isPrivate")
+        
+        return isPrivate
+    }
+    
+    /**
+     * 处理公共目录文件路径的复杂逻辑
+     * 包含URL解码、文件验证、URI转换等处理
+     */
+    private fun processPublicFilePath(filePath: String): String {
         try {
             // 检查路径是否包含URL编码字符（%字符）
             val decodedPath = if (filePath.contains("%")) {
                 try {
                     val decoded = URLDecoder.decode(filePath, "UTF-8")
-                    Log.d(VIDEO_ACTIVITY_TAG, "URL解码本地路径: $filePath -> $decoded")
+                    Log.d(VIDEO_ACTIVITY_TAG, "URL解码公共目录路径: $filePath -> $decoded")
                     decoded
                 } catch (e: Exception) {
-                    Log.w(VIDEO_ACTIVITY_TAG, "本地路径URL解码失败，使用原始路径: ${e.message}")
+                    Log.w(VIDEO_ACTIVITY_TAG, "公共目录路径URL解码失败，使用原始路径: ${e.message}")
                     filePath
                 }
             } else {
@@ -173,12 +240,12 @@ class VideoPlayActivity : ComponentActivity() {
             }
             
             val file = File(decodedPath)
-            Log.d(VIDEO_ACTIVITY_TAG, "文件存在检查: ${file.exists()}, 文件路径: ${file.absolutePath}")
+            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件存在检查: ${file.exists()}, 文件路径: ${file.absolutePath}")
             
             if (!file.exists()) {
                 // 如果解码后的文件不存在，尝试原始路径
                 if (decodedPath != filePath) {
-                    Log.w(VIDEO_ACTIVITY_TAG, "解码后的文件不存在，尝试原始路径")
+                    Log.w(VIDEO_ACTIVITY_TAG, "解码后的公共目录文件不存在，尝试原始路径")
                     val originalFile = File(filePath)
                     if (originalFile.exists()) {
                         Log.d(VIDEO_ACTIVITY_TAG, "使用原始路径: $filePath")
@@ -186,7 +253,7 @@ class VideoPlayActivity : ComponentActivity() {
                         return uri.toString()
                     }
                 }
-                Log.w(VIDEO_ACTIVITY_TAG, "文件不存在: 解码路径=$decodedPath, 原始路径=$filePath")
+                Log.w(VIDEO_ACTIVITY_TAG, "公共目录文件不存在: 解码路径=$decodedPath, 原始路径=$filePath")
                 return filePath // 文件不存在时返回原始路径
             }
             
@@ -195,11 +262,11 @@ class VideoPlayActivity : ComponentActivity() {
             val uri = Uri.fromFile(file)
             val uriString = uri.toString()
             
-            Log.d(VIDEO_ACTIVITY_TAG, "本地文件URI转换: $filePath -> $uriString")
+            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件URI转换: $filePath -> $uriString")
             return uriString
             
         } catch (e: Exception) {
-            Log.e(VIDEO_ACTIVITY_TAG, "处理本地文件路径时发生错误: ${e.message}", e)
+            Log.e(VIDEO_ACTIVITY_TAG, "处理公共目录文件路径时发生错误: ${e.message}", e)
             return filePath // 发生异常时返回原始路径
         }
     }
