@@ -17,6 +17,7 @@ import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
+import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.EventReportUtils
@@ -28,6 +29,7 @@ import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils
 import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
+import com.google.android.gms.ads.AdActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.videodownloader.module.download.DownloaderV2
@@ -64,6 +66,7 @@ class App : Application() {
         var foregroundTime = 0L
         private var beatCount = 0
 
+        var notLaunchHot = false
     }
     override fun onCreate() {
         super.onCreate()
@@ -104,7 +107,8 @@ class App : Application() {
                     return
                 }
 
-                if (activity is SplashActivity) {
+                if (activity is SplashActivity || activity is PrivacyActivity || activity is AdActivity || notLaunchHot) {
+                    notLaunchHot = false
                     return
                 }
                 activity?.startActivity(Intent(activity, SplashActivity::class.java))

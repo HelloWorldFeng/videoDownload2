@@ -1,5 +1,8 @@
 package com.app.videobox.ui.pages.webViewPage
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Log
 import android.webkit.WebView
 import androidx.core.net.toUri
@@ -269,10 +272,9 @@ class WebViewModel : ViewModel() {
     }
 
     fun reportUrl(newUrl: String) {
-        viewModelScope.launch {
-//            DataRepository.reportUnsupportedUrl(newUrl)
-        }
+
     }
+
 
 
 }

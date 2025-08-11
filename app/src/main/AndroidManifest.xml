@@ -72,30 +72,31 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- 支持作为默认浏览器 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- 支持 HTTP 和 HTTPS 链接 -->
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+
+            <!-- 支持从其他应用分享链接 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".ui.LanguageActivity"
             android:exported="false"
             android:screenOrientation="portrait"/>
 
-        <activity android:name=".ui.pages.video.VideoPlayActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:screenOrientation="portrait"/>
 
-        <!-- 重构后的视频播放Activity - StreamPlayActivity -->
-        <activity android:name=".ui.pages.video.StreamPlayActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:screenOrientation="portrait"
-            android:exported="false"/>
-
-        <!-- 基于Figma设计的视频播放Activity - FigmaPlayerActivity -->
-        <activity android:name=".ui.pages.video.FigmaPlayerActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:screenOrientation="portrait"
-            android:exported="false"/>
 
         <!-- VLC视频播放Activity - VlcPlayerActivity -->
         <activity android:name=".ui.pages.video.player.VlcPlayerActivity"
@@ -106,8 +107,7 @@
             android:launchMode="singleTop"/>
 
 
-        <activity android:name="com.google.android.gms.ads.AdActivity"
-            android:noHistory="true"
+        <activity android:name=".ui.pages.webViewPage.WebViewActivity"
             android:exported="false"
             android:screenOrientation="portrait"/>
 

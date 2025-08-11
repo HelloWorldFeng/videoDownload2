@@ -1,7 +1,9 @@
 package com.app.videobox.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,9 +54,18 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.MAIN_OPERATE
+import com.app.videobox.MAIN_SHOW_VIDEO
+import com.app.videobox.MAIN_SHOW_WEB
+import com.app.videobox.NOTIFY_TYPE
+import com.app.videobox.NOTIFY_TYPE_CUSTOM
+import com.app.videobox.NOTIFY_TYPE_DOWNLOAD
+import com.app.videobox.NOTIFY_TYPE_FOREGROUND
 import com.app.videobox.ad.AdManager
 import com.app.videobox.service.DownloadService
 import com.app.videobox.ui.dialogs.NotifyDialog
+import com.app.videobox.utils.EventReportUtils
+import com.app.videobox.utils.NotifyHelper
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
@@ -69,6 +80,12 @@ class SplashActivity : BaseActivity() {
     private var startPlay = mutableStateOf(value = false)
     // 控制 NotifyDialog 是否显示的状态
     private var showNotifyDialog by mutableStateOf(false)
+
+    private var videoUrl = ""
+    private var videoTitle = ""
+    private var imageUrl = ""
+    private var pageType = 0    //4-网页类型 其他都是视频类型
+
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
@@ -98,9 +115,12 @@ class SplashActivity : BaseActivity() {
 
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
-        
+        acceptIntent(intent)
         setContent {
-            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF1C1D1E))){
+            BackHandler {  }
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF1C1D1E))){
                 CoilImage(
                     modifier = Modifier.fillMaxWidth(),
                     data = R.drawable.bg_splash,
@@ -183,8 +203,7 @@ class SplashActivity : BaseActivity() {
                 adType = "open",
                 adScene = "cold_start",
                 closeAction = {
-                    safeStartActivity(LanguageActivity::class.java)
-                    finish()
+                    goNextType()
                 })
 
         }else{
@@ -193,8 +212,7 @@ class SplashActivity : BaseActivity() {
                 adType = "open",
                 adScene = if (!AppManager.isInitialized) "cold_start" else "hot_start",
                 closeAction = {
-                    safeStartActivity(MainActivity::class.java)
-                    finish()
+                    goNextType()
                 })
 
         }
@@ -202,23 +220,38 @@ class SplashActivity : BaseActivity() {
         AppManager.isInitialized = true
     }
 
+    private fun goNextType() {
+        if (interType == "media") {
+            val operateType = if (pageType == 4) MAIN_SHOW_WEB else MAIN_SHOW_VIDEO
+            val extras = Bundle().apply {
+                putString(MAIN_OPERATE, operateType)
+                putString("videoUrl", videoUrl)
+                putString("videoTitle", videoTitle)
+                putString("imageUrl", imageUrl)
+            }
+            MainActivity.start(this, extras = extras)
+            return
+        }
+
+        if (interType == "action_url"){
+            val extras = Bundle().apply {
+                putString(MAIN_OPERATE, MAIN_SHOW_WEB)
+                putString("videoUrl", videoUrl)
+            }
+            MainActivity.start(this, extras = extras)
+            return
+        }
+        MainActivity.start(this)
+    }
+
+
     private fun handleAppLaunch() {
-        if (!AppManager.isInitialized) {
-            initForColdLaunch()
-        } else {
-            initForWarmLaunch()
-        }
-    }
 
-    private fun initForColdLaunch() {
-        UmpHelper.requestUmp(this) {
-            AdManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
-        }
-    }
-
-    private fun initForWarmLaunch() {
         AdManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
+
     }
+
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -229,9 +262,91 @@ class SplashActivity : BaseActivity() {
         @Volatile
         var isInitialized = false
 
-        fun reset() {
-            isInitialized = false
+    }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        acceptIntent(intent)
+    }
+    private fun acceptIntent(intent: Intent) {
+        when(intent.action){
+            Intent.ACTION_VIEW -> {
+                // 处理从其他应用打开的链接
+                intent.data?.let { uri ->
+                    videoUrl = uri.toString()
+                    interType = "action_url"
+                }
+            }
+
+            Intent.ACTION_SEND -> {
+                // 处理从其他应用分享的链接
+                intent.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
+                    // 尝试从分享的文本中提取 URL
+                    fun extractUrlFromText(text: String): String {
+                        // 简单的 URL 提取逻辑
+                        val urlPattern = Regex("https?://[^\\s]+")
+                        return urlPattern.find(text)?.value ?: ""
+                    }
+                    val url = extractUrlFromText(sharedText)
+                    if (url.isNotEmpty()) {
+                        interType = "action_url"
+                        videoUrl = url
+                    }
+                }
+            }
+
+            else -> {
+                val notifyType = intent.getIntExtra(NOTIFY_TYPE, -1)
+                Log.d("TestLog", "进入启动页的类型:${notifyType} ")
+
+                if (notifyType == -1) {
+                    EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "active"), desc = "进入启动页->主动点击")
+                    return
+                }
+
+                val notificationId = intent.getIntExtra("notificationId", 1)
+                NotifyHelper.clearNotification(notificationId)
+
+                interType = when (notifyType) {
+                    NOTIFY_TYPE_DOWNLOAD -> {
+                        EventReportUtils.reportTDParams("push_click", mutableMapOf<String, Any>().apply {
+                            put("push_scene", "download")
+                        })
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "download"), desc = "进入启动页->download")
+                        "download"
+                    }
+
+                    NOTIFY_TYPE_CUSTOM -> {
+                        val scene = intent.getStringExtra("scene")?:""
+                        videoUrl = intent.getStringExtra("videoUrl") ?: ""
+                        videoTitle = intent.getStringExtra("videoTitle") ?: ""
+                        imageUrl = intent.getStringExtra("imageUrl") ?: ""
+                        pageType = intent.getIntExtra("pageType", 0)
+
+                        EventReportUtils.reportTDParams("push_click", mutableMapOf<String, Any>().apply {
+                            put("push_scene", scene)
+                            put("content", videoTitle)
+                            put("videoUrl",videoUrl)
+                            put("pageType",if (pageType == 4) "webUrl" else "video")
+                        })
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "media"), desc = "进入启动页->media")
+                        "media"
+                    }
+
+                    NOTIFY_TYPE_FOREGROUND -> {
+                        EventReportUtils.reportTDParams("permanent_click", desc = "常驻通知栏点击")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "permanent"), desc = "进入启动页->permanent")
+                        "permanent" // 前台服务通知
+                    }
+                    else -> {
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "normal"), desc = "进入启动页->normal")
+                        "normal"
+                    }
+                }
+            }
         }
+
     }
 
 }

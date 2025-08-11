@@ -121,12 +121,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Spacer(modifier = Modifier.weight(1f))
-                NativeAdsView(
-                    modifier = Modifier
-                        .padding(top = 15.dp)
-                        .fillMaxWidth(1f),
-                    adScene = "n_home"
-                )
+
             }
 
         }

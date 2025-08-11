@@ -1,6 +1,7 @@
 package com.app.videobox.ui
 
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ class PrivacyActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            BackHandler {  }
             Box(modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF1C1D1E))){

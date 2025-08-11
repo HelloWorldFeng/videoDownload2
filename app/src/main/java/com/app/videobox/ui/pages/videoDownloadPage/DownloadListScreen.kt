@@ -43,6 +43,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
+import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.TitleBar
 import com.videodownloader.module.api.*
@@ -225,7 +226,12 @@ private fun TaskListContent(
                     )
                 }
             }
-
+            NativeAdsView(
+                modifier = Modifier
+                    .padding(vertical = 15.dp)
+                    .fillMaxWidth(1f),
+                adScene = "n_download_list"
+            )
             if (filteredMap.isEmpty()){
                 Spacer(Modifier.weight(1f))
                 val emptyLottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_empty.json"))

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.manager.FileManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.LoadingDialog
@@ -113,6 +114,12 @@ fun FolderScreen(
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
+            NativeAdsView(
+                modifier = Modifier
+                    .padding(vertical = 15.dp)
+                    .fillMaxWidth(1f),
+                adScene = "n_local_video"
+            )
             LazyColumn(modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             )

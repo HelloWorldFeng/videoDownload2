@@ -2,6 +2,7 @@ package com.app.videobox.ui.pages.webViewPage
 
 import VideoInfo
 import android.annotation.SuppressLint
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -39,6 +40,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.BuildConfig
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.ModalBottomSheetV3
@@ -52,6 +54,8 @@ import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
+import com.app.videobox.utils.DefaultBrowserUtils
+import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.TaskFactory
@@ -85,6 +89,13 @@ class WebViewScreen(
         val viewModel: WebViewModel = koinViewModel()
 
         WebPageScreen(inputUrl = url,viewModel = viewModel)
+
+        if (SPStaticUtils.getBoolean("SettingBrowser", true)) {
+            SPStaticUtils.put("SettingBrowser",false)
+            LaunchedEffect(Unit) {
+                DefaultBrowserUtils.requestDefaultBrowser(context)
+            }
+        }
     }
 }
 
@@ -95,8 +106,8 @@ fun WebPageScreen(
     viewModel: WebViewModel,
     downloader: DownloaderV2 = koinInject(),
 ) {
-    val context = LocalContext.current
-    val navigator = LocalNavigator.currentOrThrow
+    val context = LocalContext.current as Activity
+
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var currentUrl = inputUrl
@@ -108,7 +119,7 @@ fun WebPageScreen(
             viewModel.postAction(WebViewModel.Action.ResetResolve)
             webViewState.goBack()
         }else{
-            navigator.pop()
+            context.finish()
         }
     }
 
@@ -143,11 +154,11 @@ fun WebPageScreen(
                         viewModel.postAction(WebViewModel.Action.ResetResolve)
                         webViewState.goBack()
                     }else{
-                        navigator.pop()
+                        context.finish()
                     }
                 },
                 onHome = {
-                    navigator.pop()
+                    context.finish()
                 },
                 onAd = {
 

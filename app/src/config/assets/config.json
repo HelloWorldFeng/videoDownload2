@@ -15,7 +15,7 @@
           "adScene": "hot_start",
           "showCount": 10,
           "clickCount": 3,
-          "showBtn": false
+          "showBtn": true
         }
       ],
 
@@ -27,13 +27,17 @@
     {
       "innerAdList": [
         {
-          "adScene": "home_nav",
+          "adScene": "n_home",
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
-        },
-        {
-          "adScene": "function_nav",
+        },{
+          "adScene": "n_local_video",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
+        },{
+          "adScene": "n_download_list",
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
@@ -52,18 +56,6 @@
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
-        },
-        {
-          "adScene": "play_int",
-          "showCount": 10,
-          "clickCount": 3,
-          "showBtn": true
-        },
-        {
-          "adScene": "back_int",
-          "showCount": 10,
-          "clickCount": 3,
-          "showBtn": false
         }
       ],
 

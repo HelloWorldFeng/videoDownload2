@@ -151,7 +151,7 @@ object NotifyHelper {
             }
 
             // 设置基本属性
-            setSmallIcon(R.drawable.icon_arrow)
+            setSmallIcon(R.drawable.icon_notify_sv)
             setContentIntent(finalPendingIntent)
             setOngoing(true) // 前台服务通知通常不自动取消
             setAutoCancel(false)
@@ -291,7 +291,7 @@ object NotifyHelper {
             PendingIntent.FLAG_UPDATE_CURRENT
         }
 
-        val finalPendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
+        val finalPendingIntent = PendingIntent.getActivity(context, NOTIFY_TYPE_DOWNLOAD, intent, flags)
         // 先清除上一条相同 ID 的通知
         clearNotification(notificationId)
         //记录通知发送的时间
@@ -311,7 +311,7 @@ object NotifyHelper {
             }
 
             // 设置基本属性
-            setSmallIcon(R.drawable.icon_arrow)
+            setSmallIcon(R.drawable.icon_notify_sv)
             setAutoCancel(true)
             setOngoing(false)
             setContentIntent(finalPendingIntent)
@@ -408,7 +408,7 @@ object NotifyHelper {
 
         val customPendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            NOTIFY_TYPE_CUSTOM,
             customIntent,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -543,7 +543,7 @@ object NotifyHelper {
                 }
 
                 // 设置基本属性
-                setSmallIcon(R.drawable.icon_arrow)
+                setSmallIcon(R.drawable.icon_notify_sv)
                 setAutoCancel(true)
                 setOngoing(false)
                 setContentIntent(finalPendingIntent)
@@ -625,4 +625,74 @@ object NotifyHelper {
         }
         return false
     }
+
+    /**
+     * 跳转到系统通知设置页面
+     * 兼容不同 Android 版本的通知设置页面
+     * @param context 上下文
+     * @return 是否成功跳转
+     */
+    fun openNotificationSettings(context: Context): Boolean {
+        return try {
+            val intent = when {
+                // Android 8.0+ (API 26) - 跳转到应用通知设置页面
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                    Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, context.applicationInfo.uid)
+                    }
+                }
+                // Android 5.0-7.1 (API 21-25) - 跳转到应用详情页面
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
+                    Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.parse("package:${context.packageName}")
+                    }
+                }
+                // Android 5.0 以下 - 跳转到应用管理页面
+                else -> {
+                    Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = android.net.Uri.parse("package:${context.packageName}")
+                    }
+                }
+            }
+
+            // 添加标志以在新任务中启动
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+            // 检查是否有可以处理此 Intent 的应用
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+                true
+            } else {
+                // 如果无法打开应用通知设置，尝试打开通用设置页面
+                openGeneralSettings(context)
+            }
+        } catch (e: Exception) {
+            // 发生异常时尝试打开通用设置页面
+            openGeneralSettings(context)
+        }
+    }
+
+    /**
+     * 打开通用设置页面作为备用方案
+     * @param context 上下文
+     * @return 是否成功跳转
+     */
+    private fun openGeneralSettings(context: Context): Boolean {
+        return try {
+            val intent = Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            if (intent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(intent)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }

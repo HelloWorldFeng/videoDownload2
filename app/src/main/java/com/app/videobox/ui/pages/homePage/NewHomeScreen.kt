@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import com.app.videobox.R
+import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ext.openGooglePlayStore
 import com.app.videobox.ext.shareApp
 import com.app.videobox.network.DataRepository
@@ -53,6 +54,7 @@ import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
+import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.NavBarV2
 
@@ -68,6 +70,7 @@ class NewHomeScreen : Screen {
         private const val SELECT_HOME = 1
         private const val SELECT_DOWNLOAD = 2
     }
+
 
     @Composable
     override fun Content() {
@@ -167,7 +170,14 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
 
                 // 热门网站展示区域 - 两页轮播
                 PopularWebsitesSection(navigator)
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                NativeAdsView(
+                    modifier = Modifier
+                        .padding(vertical = 15.dp)
+                        .fillMaxWidth(1f),
+                    adScene = "n_home"
+                )
+
                 // 热门推荐展示区域
                 PopularVideoSection(navigator)
             }
@@ -223,6 +233,7 @@ private fun CategoryVideoSection(
     category: MediaClass,
     navigator: Navigator
 ) {
+    val context = LocalContext.current
     // 为每个分类创建独立的分页器
     val pager = remember(category.id) {
         Pager(
@@ -263,15 +274,7 @@ private fun CategoryVideoSection(
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
-            
-            // 显示视频数量（如果有的话）
-//            if (category.videoCount > 0) {
-//                Text(
-//                    text = "${category.videoCount} videos",
-//                    color = Color.White.copy(alpha = 0.6f),
-//                    fontSize = 12.sp
-//                )
-//            }
+
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -288,7 +291,7 @@ private fun CategoryVideoSection(
                         video = video,
                         onClick = {
                             // 点击视频跳转到WebView页面播放
-                            navigator.push(WebViewScreen(video.videoURL))
+                            WebViewActivity.start(context = context,video.videoURL)
                         }
                     )
                 }
@@ -522,6 +525,7 @@ private fun WebsiteGridRow(
     websites: List<WebsiteItem>,
     navigator: Navigator
 ) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -534,7 +538,7 @@ private fun WebsiteGridRow(
                 website = website,
                 onClick = {
                     // 点击网站图标跳转到WebView页面
-                    navigator.push(WebViewScreen(website.url))
+                    WebViewActivity.start(context = context,website.url)
                 }
             )
         }
@@ -601,9 +605,11 @@ private fun handleSearch(
     }
     //(WebView浏览)
     if (searchText.startsWith("http")) {
-        navigator.push(WebViewScreen(searchText))
+        WebViewActivity.start(context = context,searchText)
+
     }else{
-        navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
+        WebViewActivity.start(context = context,"https://google.com/search?q=${searchText}")
+//        navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
     }
 
 }

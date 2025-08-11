@@ -13,3 +13,7 @@ const val lastPushMessageDetailId = "lastPushMessageDetailId"
 const val powerBtn = "powerBtn"
 const val unLockBtn = "unLockBtn"
 const val appLiveBtn = "appLiveBtn"
+
+const val MAIN_OPERATE = "main_operate"
+const val MAIN_SHOW_WEB = "main_show_web"
+const val MAIN_SHOW_VIDEO = "main_show_video"
