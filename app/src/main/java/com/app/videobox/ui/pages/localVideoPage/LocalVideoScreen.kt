@@ -54,7 +54,6 @@ import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
-import com.app.videobox.ui.dialogs.RenameDialog
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
@@ -71,9 +70,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         var showDialog by remember {
             mutableStateOf(value = false)
         }
-        var showRename by remember {
-            mutableStateOf(value = false)
-        }
+
         var selectFileInfo by remember {
             mutableStateOf<FileManager.FileInfo?>(null)
         }
@@ -180,18 +177,6 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
 
         }
 
-        if (showRename && selectFileInfo != null) {
-            RenameDialog(
-                isVisible = true,
-                fileName = selectFileInfo!!.titleName.split(".").first(),
-                onOK = { newName->
-                    FileUtils.renameFile(newName, selectFileInfo!!)
-                },
-                onDismiss = {
-                    showRename = false
-                }
-            )
-        }
         MoreDialog(showDialog,
             onDelete = {
                 selectFileInfo?.let {
@@ -199,9 +184,6 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     dataList.remove(it)
                 }
 
-            },
-            onRename = {
-                showRename = true
             },
             onShare = {
                 selectFileInfo?.let {

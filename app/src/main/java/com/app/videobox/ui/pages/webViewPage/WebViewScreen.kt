@@ -2,7 +2,6 @@ package com.app.videobox.ui.pages.webViewPage
 
 import VideoInfo
 import android.annotation.SuppressLint
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -27,6 +26,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -216,6 +216,17 @@ fun WebPageScreen(
             }
         )
 
+        //空信息弹窗
+        EmptyResolveDialog(
+            viewModel = viewModel,
+            onDismissRequest = {
+                viewModel.postAction(WebViewModel.Action.HideEmptyResolveDialog)
+            },
+            onClick = {
+                viewModel.postAction(WebViewModel.Action.HideEmptyResolveDialog)
+            }
+        )
+
     }
 
 }
@@ -295,9 +306,9 @@ fun ResolveInfoDialog(
     val resolveDialogState = viewModel.resolveDialogStateFlow.collectAsStateWithLifecycle().value
     val state = viewModel.resolveStateFlow.collectAsStateWithLifecycle().value
     when (resolveDialogState) {
-        is WebViewModel.ResolveDialogState.Hidden -> {}
+        is WebViewModel.DialogState.Hidden -> {}
 
-        is WebViewModel.ResolveDialogState.Showing -> {
+        is WebViewModel.DialogState.Showing -> {
             if (state is WebViewModel.ResolveVideoState.ResolveSuccess){
                 ResolveDialog(
                     state = state,
@@ -308,6 +319,97 @@ fun ResolveInfoDialog(
 
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EmptyResolveDialog(
+    viewModel: WebViewModel,
+    onDismissRequest: () -> Unit,
+    onClick:()-> Unit,
+){
+    val resolveDialogState = viewModel.resolveEmptyDialogStateFlow.collectAsStateWithLifecycle().value
+
+    when (resolveDialogState) {
+        WebViewModel.DialogState.Hidden -> {}
+        WebViewModel.DialogState.Showing -> {
+            val sheetStateV3 = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            LaunchedEffect(Unit) { sheetStateV3.show() }
+            val scope = rememberCoroutineScope()
+            BackHandler { scope.launch { sheetStateV3.hide() }.invokeOnCompletion { onDismissRequest() } }
+
+            ModalBottomSheetV3(
+                sheetState = sheetStateV3,
+                contentPadding = PaddingValues(),
+                onDismissRequest = {
+                    scope.launch { sheetStateV3.hide() }.invokeOnCompletion { onDismissRequest() }
+                },
+            ){
+                Column(Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally)
+                {
+                    val emptyLottie by rememberLottieComposition(LottieCompositionSpec.Asset("resolve_dialog_empty.json"))
+
+                    Row(Modifier.fillMaxWidth()) {
+                        Spacer(Modifier.weight(1f))
+                        AsyncImageImpl(
+                            modifier = Modifier.size(24.dp)
+                                .singClick{
+                                    onDismissRequest.invoke()
+                                },
+                            model = R.drawable.icon_cancel
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.play_video_before_downloading),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    LottieAnimation(
+                        composition = emptyLottie,
+                        modifier = Modifier
+                            .padding(top = 10.dp)
+                            .fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    Spacer(Modifier.height(28.dp))
+                    Text(
+                        text = stringResource(R.string.please_play_the_video_you_want_to_download),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.this_helps_us_detect_the_video_source_and_activate_the_download_button),
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(28.dp))
+
+                    GradientButton(
+                        text = stringResource(R.string.got_it),
+                        onClick = {
+                            onClick.invoke()
+                            onDismissRequest.invoke()
+                        }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.some_websites_may_not_support_downloading),
+                        fontSize = 12.sp,
+                        color = Color(0xFF898989)
+                    )
+                }
+            }
+        }
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -466,7 +568,7 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
-
+                        viewModel.postAction(WebViewModel.Action.ShowEmptyResolveDialog)
                     },
                 model = R.drawable.icon_resolve_not,
                 contentDescription = null
@@ -518,16 +620,16 @@ fun VideoInfoPreview(
         .wrapContentWidth()
         .wrapContentHeight(Alignment.Top, unbounded = false)) {
         MediaImage(
-            modifier = Modifier,
+            modifier = Modifier.align(Alignment.Center),
             imageModel = thumbnailUrl,
             contentDescription = stringResource(R.string.thumbnail),
         )
 
         Column(
             modifier = Modifier
-                .padding(14.dp)
                 .align(Alignment.BottomStart)
-        ) {
+        )
+        {
             Text(
                 text = stringResource(R.string.download),
                 fontSize = 16.sp,
@@ -588,7 +690,8 @@ fun MediaImage(
                         .align(Alignment.Center)
                         .size(28.dp),
                     model = R.drawable.icon_place,
-                    contentDescription = null
+                    contentDescription = null,
+                    contentScale = ContentScale.Inside
                 )
             }
         },

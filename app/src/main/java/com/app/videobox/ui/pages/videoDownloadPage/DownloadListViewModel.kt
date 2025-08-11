@@ -61,8 +61,6 @@ class DownloadListViewModel : ViewModel() {
         object Cancel : TaskAction()                               // 取消下载
         object Delete : TaskAction()                               // 删除任务
         object Resume : TaskAction()                               // 恢复下载
-        object Pause : TaskAction()                                // 暂停下载
-        object Retry : TaskAction()                                // 重试下载
     }
 
     /**
@@ -83,10 +81,7 @@ class DownloadListViewModel : ViewModel() {
         // 任务操作
         data class ExecuteTaskAction(val task: Task, val action: TaskAction) : Intent()  // 执行任务操作
         data class ExecuteBatchAction(val action: TaskAction) : Intent()                 // 批量执行操作
-        
-        // 页面操作
-        object RefreshTasks : Intent()                      // 刷新任务列表
-        data class HandleError(val error: Throwable) : Intent()    // 处理错误
+
     }
     
     /**
@@ -144,10 +139,7 @@ class DownloadListViewModel : ViewModel() {
                     // 任务操作
                     is Intent.ExecuteTaskAction -> executeTaskAction(intent.task, intent.action)
                     is Intent.ExecuteBatchAction -> executeBatchAction(intent.action)
-                    
-                    // 页面操作
-                    is Intent.RefreshTasks -> refreshTasks()
-                    is Intent.HandleError -> handleError(intent.error)
+
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "处理意图时发生错误: ${e.message}", e)
@@ -314,12 +306,7 @@ class DownloadListViewModel : ViewModel() {
                 is TaskAction.Resume -> {
                     Log.d(TAG, "恢复任务操作将由外部处理: $action")
                 }
-                is TaskAction.Pause -> {
-                    Log.d(TAG, "暂停任务操作将由外部处理: $action")
-                }
-                is TaskAction.Retry -> {
-                    Log.d(TAG, "重试任务操作将由外部处理: $action")
-                }
+
             }
         } catch (e: Exception) {
             Log.e(TAG, "执行任务操作失败: ${e.message}", e)
@@ -350,10 +337,6 @@ class DownloadListViewModel : ViewModel() {
                 }
                 is TaskAction.Cancel -> {
                     _effects.emit(Effect.ShowToast("已取消 ${selectedTasks.size} 个任务"))
-                    disableSelectMode()
-                }
-                is TaskAction.Pause -> {
-                    _effects.emit(Effect.ShowToast("已暂停 ${selectedTasks.size} 个任务"))
                     disableSelectMode()
                 }
                 is TaskAction.Resume -> {

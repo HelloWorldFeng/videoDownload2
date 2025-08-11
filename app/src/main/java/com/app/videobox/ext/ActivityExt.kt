@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import java.io.File
 
 fun Context.safeStartActivity(clazz: Class<*>, args: Bundle? = null, options: Bundle? = null) {
@@ -66,4 +67,35 @@ fun shareVideo(context: Context, videoFile: File) {
 
     // 启动分享对话框
     context.startActivity(Intent.createChooser(shareIntent, "Share Video"))
+}
+
+/**
+ * 直接跳转到谷歌商店应用页面
+ */
+fun Context.openGooglePlayStore() {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data = "market://details?id=${this@openGooglePlayStore.packageName}".toUri()
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        this.startActivity(intent)
+    } catch (e: Exception) {
+        // 如果谷歌商店应用不存在，使用浏览器打开
+        openGooglePlayStoreInBrowser()
+    }
+}
+
+/**
+ * 在浏览器中打开谷歌商店页面
+ */
+fun Context.openGooglePlayStoreInBrowser() {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            data =
+                "https://play.google.com/store/apps/details?id=${this@openGooglePlayStoreInBrowser.packageName}".toUri()
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        this.startActivity(intent)
+    } catch (e: Exception) {
+    }
 }

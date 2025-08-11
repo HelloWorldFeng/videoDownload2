@@ -42,7 +42,9 @@ import com.app.videobox.ui.widgets.singClick
 
 
 @Composable
-fun FolderScreen(){
+fun FolderScreen(
+    onMenuClick: () -> Unit = {}
+){
     val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current as BaseActivity
     val dataList = run {
@@ -65,7 +67,7 @@ fun FolderScreen(){
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally) {
         // 状态栏区域
-        StatusBarSection()
+        StatusBarSection(onMenuClick = onMenuClick)
 
 
         Column(

@@ -2,6 +2,7 @@ package com.videodownloader.module.download
 
 import VideoInfo
 import android.content.Context
+import android.text.format.Formatter
 import android.util.Log
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshotFlow
@@ -234,8 +235,7 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                     val progress = progressPercentage / 100f
                     when (val preState = downloadState) {
                         is Running -> {
-                            val pattern2 = """\d+\.?\d*\s*[KMG]iB/s""".toRegex()
-                            val speedText = pattern2.find(text)?.value ?: ""
+                            val speedText = Formatter.formatFileSize(context,long)
                             downloadState = preState.copy(progress = progress, speed = speedText)
                         }
 
@@ -257,12 +257,14 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
 
     private fun Task.cancelImpl(): Boolean {
         when (val preState = downloadState) {
-            is DownloadState.Cancelable -> {
+
+            is DownloadState.Cancelable, -> {
                 preState.job.cancel()
                 val progress = if (preState is Running) preState.progress else null
                 downloadState = Canceled(action = preState.action, progress = progress)
                 return true
             }
+
             Idle -> {
                 // 对于空闲状态的任务，直接设置为已取消状态
                 downloadState = Canceled(action = Download)

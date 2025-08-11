@@ -24,12 +24,15 @@ class WebViewModel : ViewModel() {
 
 
     //解析结果弹窗展示状态
-    private val mResolveDialogStateFlow:MutableStateFlow<ResolveDialogState> = MutableStateFlow(ResolveDialogState.Hidden)
-    val resolveDialogStateFlow = mResolveDialogStateFlow.asStateFlow()
+    private val mDialogStateFlow:MutableStateFlow<DialogState> = MutableStateFlow(DialogState.Hidden)
+    val resolveDialogStateFlow = mDialogStateFlow.asStateFlow()
 
-    sealed interface ResolveDialogState{
-        data object Hidden: ResolveDialogState
-        data object Showing: ResolveDialogState
+    private val mResolveEmptyDialogStateFlow:MutableStateFlow<DialogState> = MutableStateFlow(DialogState.Hidden)
+    val resolveEmptyDialogStateFlow = mResolveEmptyDialogStateFlow.asStateFlow()
+
+    sealed interface DialogState{
+        data object Hidden: DialogState
+        data object Showing: DialogState
     }
 
     sealed interface ResolveVideoState {
@@ -49,6 +52,9 @@ class WebViewModel : ViewModel() {
 
         data object ShowResolveDialog: Action
         data object HideResolveDialog:Action
+
+        data object ShowEmptyResolveDialog:Action
+        data object HideEmptyResolveDialog:Action
     }
 
     fun postAction(action: Action) {
@@ -57,16 +63,25 @@ class WebViewModel : ViewModel() {
             is Action.ResetResolve -> resetResolve()
             is Action.ShowResolveDialog -> showResolveDialog()
             is Action.HideResolveDialog -> hideResolveDialog()
+            Action.HideEmptyResolveDialog -> hideEmptyResolveDialog()
+            Action.ShowEmptyResolveDialog -> showEmptyResolveDialog()
         }
     }
 
-    private fun hideResolveDialog() {
-        mResolveDialogStateFlow.update { ResolveDialogState.Hidden }
+    private fun showEmptyResolveDialog(){
+        mResolveEmptyDialogStateFlow.update { DialogState.Showing }
+    }
 
+    private fun hideEmptyResolveDialog() {
+        mResolveEmptyDialogStateFlow.update { DialogState.Hidden }
+    }
+
+    private fun hideResolveDialog() {
+        mDialogStateFlow.update { DialogState.Hidden }
     }
 
     private fun showResolveDialog() {
-        mResolveDialogStateFlow.update { ResolveDialogState.Showing }
+        mDialogStateFlow.update { DialogState.Showing }
     }
 
     private fun resetResolve() {

@@ -80,7 +80,7 @@ class HotScreen: Screen {
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            TitleBar(title = stringResource(R.string.built_in_video)) {
+            TitleBar(title = stringResource(R.string.hot_video)) {
                 backPopAd(context, navigator)
             }
 

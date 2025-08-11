@@ -19,11 +19,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -37,6 +39,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.TitleBar
@@ -114,11 +119,12 @@ fun DownloadListScreen(
         },
         onActionPost = { task, action ->
             when (action) {
-                is DownloadListViewModel.TaskAction.Cancel -> downloader.cancel(task)
-                is DownloadListViewModel.TaskAction.Delete -> downloader.remove(task)
-                is DownloadListViewModel.TaskAction.Resume -> downloader.restart(task)
-                is DownloadListViewModel.TaskAction.Pause -> downloader.cancel(task) // 使用cancel代替pause
-                is DownloadListViewModel.TaskAction.Retry -> downloader.restart(task)
+                is DownloadListViewModel.TaskAction.Cancel ->
+                    downloader.cancel(task)
+                is DownloadListViewModel.TaskAction.Delete ->
+                    downloader.remove(task)
+                is DownloadListViewModel.TaskAction.Resume ->
+                    downloader.restart(task)
                 is DownloadListViewModel.TaskAction.OpenFile -> {
                     if (action.filePath != null) {
                         viewModel.handleIntent(
@@ -131,11 +137,6 @@ fun DownloadListScreen(
         onTaskSelection = { task ->
             viewModel.handleIntent(
                 DownloadListViewModel.Intent.ToggleTaskSelection(task)
-            )
-        },
-        onBatchAction = { action ->
-            viewModel.handleIntent(
-                DownloadListViewModel.Intent.ExecuteBatchAction(action)
             )
         }
     )
@@ -156,7 +157,6 @@ private fun TaskListContent(
     selectedCallback:(state: Boolean)-> Unit = {},
     onActionPost: (Task, DownloadListViewModel.TaskAction) -> Unit,
     onTaskSelection: (Task) -> Unit = {},
-    onBatchAction: (DownloadListViewModel.TaskAction) -> Unit = {},
 ) {
     // 缓存过滤后的任务映射，避免不必要的重组
     val filteredMap = remember(taskDownloadStateMap) {
@@ -179,7 +179,8 @@ private fun TaskListContent(
                 if (uiState.isSelectModeEnabled) {
                     selectedCallback.invoke(true)
                 }
-            }){
+            })
+    {
         AsyncImageImpl(
             modifier = Modifier.fillMaxWidth(),
             model = R.drawable.bg_comm
@@ -190,7 +191,8 @@ private fun TaskListContent(
             .navigationBarsPadding()
             .padding(horizontal = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        )
+        {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -226,9 +228,11 @@ private fun TaskListContent(
 
             if (filteredMap.isEmpty()){
                 Spacer(Modifier.weight(1f))
-                AsyncImageImpl(
+                val emptyLottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_empty.json"))
+                LottieAnimation(
+                    composition = emptyLottie,
                     modifier = Modifier.size(171.dp),
-                    model = R.drawable.icon_empty_1
+                    contentScale = ContentScale.None
                 )
                 Text(
                     text = stringResource(R.string.there_is_no_video_please_go_to_add_it),
@@ -279,19 +283,7 @@ private fun TaskListContent(
                                         onTaskSelection(task)
                                     },
                                     onClick = { action ->
-                                        when (action) {
-                                            is DownloadListViewModel.TaskAction.OpenFile -> {
-                                                viewModel.handleIntent(
-                                                    DownloadListViewModel.Intent.ExecuteTaskAction(
-                                                        task = task,
-                                                        action = action
-                                                    )
-                                                )
-                                            }
-                                            else -> {
-                                                onActionPost(task, action)
-                                            }
-                                        }
+                                        onActionPost(task, action)
                                     },
                                     onLongClick = {
                                         // 长按进入选择模式
@@ -328,7 +320,6 @@ private fun TaskListContent(
                         onActionPost(it, DownloadListViewModel.TaskAction.Cancel)
                         onActionPost(it, DownloadListViewModel.TaskAction.Delete)
                     }
-                    onBatchAction(DownloadListViewModel.TaskAction.Delete)
                 })
         }
     }

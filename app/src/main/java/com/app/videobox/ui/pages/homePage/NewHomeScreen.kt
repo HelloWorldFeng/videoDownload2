@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +46,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import com.app.videobox.R
+import com.app.videobox.ext.openGooglePlayStore
+import com.app.videobox.ext.shareApp
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
@@ -70,34 +73,60 @@ class NewHomeScreen : Screen {
     override fun Content() {
         // 将状态管理移到Content方法内部，避免序列化问题
         var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
+        val drawerState = rememberDrawerState(DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
         
         BackHandler {  }
-        Box(Modifier.fillMaxSize()) {
-            HomeScreen()
-
-            if (mSelectIndex == SELECT_DOWNLOAD){
-                DownloadListScreen()
+        
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            gesturesEnabled = true,
+            drawerContent = {
+                SettingDrawerContent(
+                    drawerState = drawerState,
+                    scope = scope
+                )
             }
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                HomeScreen(
+                    onMenuClick = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    }
+                )
 
-            if (mSelectIndex == SELECT_VIDEO){
-                // TODO: 实现视频页面内容
-                FolderScreen()
+                if (mSelectIndex == SELECT_DOWNLOAD){
+                    DownloadListScreen()
+                }
+
+                if (mSelectIndex == SELECT_VIDEO){
+                    // TODO: 实现视频页面内容
+                    FolderScreen(
+                        onMenuClick = {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
+                }
+                
+                NavBarV2(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 30.dp),
+                    defaultIndex = SELECT_HOME,
+                    onClickHome = {
+                        mSelectIndex = SELECT_HOME
+                    },
+                    onClickDownload = {
+                        mSelectIndex = SELECT_DOWNLOAD
+                    },
+                    onClickVideo = {
+                        mSelectIndex = SELECT_VIDEO
+                    })
             }
-            
-            NavBarV2(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 30.dp),
-                defaultIndex = SELECT_HOME,
-                onClickHome = {
-                    mSelectIndex = SELECT_HOME
-                },
-                onClickDownload = {
-                    mSelectIndex = SELECT_DOWNLOAD
-                },
-                onClickVideo = {
-                    mSelectIndex = SELECT_VIDEO
-                })
         }
     }
 
@@ -105,7 +134,7 @@ class NewHomeScreen : Screen {
 }
 
 @Composable
-fun HomeScreen(){
+fun HomeScreen(onMenuClick: () -> Unit = {}){
     val navigator = LocalNavigator.currentOrThrow
 
     Box(Modifier.fillMaxSize()){
@@ -113,10 +142,13 @@ fun HomeScreen(){
             modifier = Modifier.fillMaxWidth(),
             model = R.drawable.bg_comm
         )
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding())
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding())
         {
             // 状态栏区域
-            StatusBarSection()
+            StatusBarSection(onMenuClick = onMenuClick)
 
             // 主要内容区域
             Column(
@@ -152,7 +184,9 @@ fun PopularVideoSection(navigator: Navigator) {
     // 只有当分类数据可用时才展示分类列表
     if (videoClasses.isNotEmpty()) {
         Column(
-            modifier = Modifier.padding(bottom = 90.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(bottom = 90.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // 遍历所有分类，为每个分类创建独立的视频列表
@@ -219,7 +253,7 @@ private fun CategoryVideoSection(
                 Spacer(
                     Modifier
                         .padding(end = 4.dp)
-                        .size(4.dp,14.dp)
+                        .size(4.dp, 14.dp)
                         .background(color = Color(0xFFFF5C7F), shape = RoundedCornerShape(3.dp))
                 )
                 Text(
@@ -231,13 +265,13 @@ private fun CategoryVideoSection(
             }
             
             // 显示视频数量（如果有的话）
-            if (category.videoCount > 0) {
-                Text(
-                    text = "${category.videoCount} videos",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 12.sp
-                )
-            }
+//            if (category.videoCount > 0) {
+//                Text(
+//                    text = "${category.videoCount} videos",
+//                    color = Color.White.copy(alpha = 0.6f),
+//                    fontSize = 12.sp
+//                )
+//            }
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -293,8 +327,8 @@ private fun HorizontalVideoCard(
 ) {
     Card(
         modifier = Modifier
-            .width(160.dp)
-            .height(200.dp)
+            .width(102.dp)
+            .height(161.dp)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 1f)
@@ -332,7 +366,7 @@ private fun HorizontalVideoCard(
  * 状态栏组件 - 模拟iPhone状态栏
  */
 @Composable
-fun StatusBarSection() {
+fun StatusBarSection(onMenuClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -342,7 +376,9 @@ fun StatusBarSection() {
     ) {
         Row {
             AsyncImageImpl(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable { onMenuClick() },
                 model = R.drawable.icon_menu
             )
             Spacer(Modifier.weight(1f))
@@ -526,7 +562,9 @@ private fun WebsiteItemCard(
     ) {
         // 使用AsyncImageImpl显示网站图标
         AsyncImageImpl(
-            modifier = Modifier.size(42.dp).clip(CircleShape),
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape),
             model = website.icon,
             contentScale = ContentScale.FillBounds,
         )
@@ -550,77 +588,6 @@ private fun WebsiteItemCard(
 
 
 /**
- * 单个视频卡片组件
- */
-@Composable
-private fun VideoItemCard(
-    video: com.app.videobox.network.model.MediaVideo,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 视频缩略图
-            AsyncImageImpl(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                model = video.imageURL,
-                contentScale = ContentScale.Crop
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            // 视频信息
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                // 视频标题
-                Text(
-                    text = video.title,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // 作者
-                Text(
-                    text = "By ${video.author}",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // 发布日期
-                Text(
-                    text = video.publishDate,
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 12.sp
-                )
-            }
-        }
-    }
-}
-
-/**
  * 处理搜索功能
  */
 private fun handleSearch(
@@ -639,4 +606,159 @@ private fun handleSearch(
         navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
     }
 
+}
+
+/**
+ * 抽屉内容组件
+ */
+@Composable
+private fun SettingDrawerContent(
+    drawerState: DrawerState,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    val context = LocalContext.current
+    ModalDrawerSheet(
+        modifier = Modifier.width(314.dp),
+        drawerContainerColor = Color(0xFF212121)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // 抽屉头部
+            DrawerHeader()
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // 抽屉菜单项
+            DrawerMenuItem(
+                icon = R.drawable.icon_share,
+                title = stringResource(R.string.share_the_app),
+                onClick = {
+                    context.shareApp()
+                    scope.launch { drawerState.close() }
+                }
+            )
+            
+            DrawerMenuItem(
+                icon = R.drawable.icon_language,
+                title = stringResource(R.string.language),
+                onClick = { 
+                    scope.launch { drawerState.close() }
+                }
+            )
+            
+            DrawerMenuItem(
+                icon = R.drawable.icon_rate,
+                title = stringResource(R.string.rate_us),
+                onClick = {
+                    context.openGooglePlayStore()
+                    scope.launch { drawerState.close() }
+                }
+            )
+            
+            DrawerMenuItem(
+                icon = R.drawable.icon_terms,
+                title = stringResource(R.string.terms_of_service),
+                onClick = { 
+                    scope.launch { drawerState.close() }
+                }
+            )
+            
+            DrawerMenuItem(
+                icon = R.drawable.icon_version,
+                title = stringResource(R.string.version_update),
+                onClick = { 
+                    scope.launch { drawerState.close() }
+                }
+            )
+
+            DrawerMenuItem(
+                icon = R.drawable.icon_privacy,
+                title = stringResource(R.string.privacy_policy),
+                onClick = {
+                    scope.launch { drawerState.close() }
+                }
+            )
+
+            DrawerMenuItem(
+                icon = R.drawable.icon_feed,
+                title = stringResource(R.string.feedback),
+                onClick = {
+                    scope.launch { drawerState.close() }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * 抽屉头部组件
+ */
+@Composable
+private fun DrawerHeader() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 应用图标
+        AsyncImageImpl(
+            modifier = Modifier
+                .size(68.dp)
+                .clip(CircleShape),
+            model = R.mipmap.icon_logo // 可以替换为应用图标
+        )
+        
+        Spacer(modifier = Modifier.height(17.dp))
+        
+        // 应用名称
+        Text(
+            text = stringResource(R.string.app_name),
+            color = Color.White,
+            fontSize = 22.sp,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        
+        Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+/**
+ * 抽屉菜单项组件
+ */
+@Composable
+private fun DrawerMenuItem(
+    icon: Any,
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImageImpl(
+            modifier = Modifier.size(27.dp),
+            model = icon
+        )
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = 16.sp
+        )
+        Spacer(modifier = Modifier.weight(1f))
+
+        AsyncImageImpl(
+            modifier = Modifier.size(16.dp),
+            model = R.drawable.icon_arrow_right
+        )
+    }
 }

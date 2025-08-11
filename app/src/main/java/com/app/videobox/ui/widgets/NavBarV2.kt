@@ -27,6 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
 import com.blankj.utilcode.util.ToastUtils
 import com.hjq.permissions.OnPermissionCallback
@@ -52,12 +55,14 @@ fun NavBarV2(
             .height(54.dp)
             .background(ContainColor, shape = RoundedCornerShape(26.dp))
             .padding(all = 5.dp)
-            .singClick{},
+            .singClick {},
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
         NavBarIcon(
-            modifier = Modifier.fillMaxHeight().padding(10.dp),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(10.dp),
             onClick = {
                 if (XXPermissions.isGranted(context, Manifest.permission.READ_MEDIA_VIDEO)){
                     selected = 0
@@ -79,7 +84,7 @@ fun NavBarV2(
             },
             selected = selected == 0,
             defaultIcon = R.drawable.icon_nav_video_not,
-            checkedIcon = R.drawable.icon_nav_video_ed
+            checkedIcon = "tab_video.json"
         )
 
         NavBarIcon(
@@ -89,12 +94,13 @@ fun NavBarV2(
                 onClickHome.invoke()
             },
             selected = selected == 1,
-            defaultIcon = R.drawable.ic_launcher_background,
-            checkedIcon = R.drawable.ic_launcher_background
+            checkedIcon = "tab_web.json"
         )
 
         NavBarIcon(
-            modifier = Modifier.fillMaxHeight().padding(10.dp),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(10.dp),
             onClick = {
                 selected = 2
                 onClickDownload.invoke()
@@ -102,7 +108,7 @@ fun NavBarV2(
             },
             selected = selected == 2,
             defaultIcon = R.drawable.icon_nav_download,
-            checkedIcon = R.drawable.icon_nav_download_ed
+            checkedIcon = "tab_download.json"
         )
     }
 }
@@ -112,7 +118,7 @@ private fun NavBarIcon(
     modifier: Modifier,
     onClick: () -> Unit,
     selected: Boolean = false,
-    defaultIcon: Any,
+    defaultIcon: Any?=null,
     checkedIcon: Any,
 ){
     Box(
@@ -122,12 +128,20 @@ private fun NavBarIcon(
                 onClick.invoke()
             }
     ) {
-        if (selected) {
-            AsyncImageImpl(
+        if (defaultIcon == null) {
+            val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
+            LottieAnimation(
+                composition = lottie,
                 modifier = Modifier.fillMaxSize(),
-                model = checkedIcon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillBounds
+            )
+        }
+        if (selected) {
+            val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
+            LottieAnimation(
+                composition = lottie,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
             )
         } else {
             AsyncImageImpl(

@@ -50,9 +50,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 class SplashActivity : BaseActivity() {
 
-    private var showSplashState by mutableStateOf(
-        value = SPStaticUtils.getBoolean("firstLaunch",false)
-    )
+
     private var launchTime = if(BuildConfig.DEBUG) 1 else SPStaticUtils.getInt("launchTime",10)
     private var startPlay = mutableStateOf(value = false)
 
@@ -65,35 +63,24 @@ class SplashActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        if (SPStaticUtils.getBoolean("firstLaunch",true)){
+            this.safeStartActivity(PrivacyActivity::class.java)
+            return
+        }
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
         
         setContent {
-            Box(modifier = Modifier.fillMaxWidth()){
+            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF1C1D1E))){
                 CoilImage(
                     modifier = Modifier.fillMaxWidth(),
                     data = R.drawable.bg_splash,
                     contentScale = ContentScale.FillWidth
                 )
-                Box(modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(
-                                Color(0x1A000000),
-                                Color(0xFF000000),
-                            )
-                        )
-                    ))
             }
 
-            if (showSplashState) {
-                SplashView()
-            }else{
-                PrivacyView()
-            }
+            SplashView()
         }
     }
 
@@ -120,56 +107,6 @@ class SplashActivity : BaseActivity() {
             Spacer(modifier = Modifier.weight(2f))
         }
 
-    }
-
-    @Composable
-    fun PrivacyView() {
-        val context = LocalContext.current
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()) {
-            Column(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CoilImage(modifier = Modifier.size(100.dp), data = R.mipmap.icon_logo)
-                Spacer(modifier = Modifier.height(24.dp))
-                TextTitle(text = stringResource(id = R.string.app_name),color = Color.White, fontSize = 34.sp)
-                Spacer(modifier = Modifier.height(50.dp))
-                Box(
-                    modifier = Modifier
-
-                        .fillMaxWidth(0.9f)
-                        .height(57.dp)
-                        .background(brush = gradientColor, shape = RoundedCornerShape(35.dp))
-                        .singClick {
-                            showSplashState = true
-                            SPStaticUtils.put("firstLaunch", true)
-                        }
-                ){
-                    Text(
-                        text = "Continue", fontSize = 18.sp, color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(23.dp))
-                Text(text = "Privacy Policy ",
-                    fontSize = 13.sp,
-                    color = Color.White,
-                    modifier = Modifier.singClick {
-                        context.urlInBrowser(BuildConfig.privacyUrl)
-                    })
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "Terms of Service ",
-                    fontSize = 13.sp,
-                    color = Color.White,
-                    modifier = Modifier.singClick {
-                        context.urlInBrowser(BuildConfig.termUrl)
-                    })
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
     }
 
     override fun onBackPressed() {}

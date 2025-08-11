@@ -29,6 +29,7 @@ fun WebPathBar(
     onHome:()-> Unit = {},
     onAd:()-> Unit = {}
 ){
+    val adState = remember { mutableStateOf(true) }
     val searchText = remember(currentUrl) { mutableStateOf(currentUrl) }
     Row(
         modifier = Modifier
@@ -80,9 +81,10 @@ fun WebPathBar(
                 .size(34.dp)
                 .padding(horizontal = 9.dp)
                 .singClick {
+                    adState.value = !adState.value
                     onAd.invoke()
                 },
-            model = R.drawable.icon_ad,
+            model = if (adState.value) R.drawable.icon_ad else R.drawable.icon_ad,
             contentDescription = null
         )
     }

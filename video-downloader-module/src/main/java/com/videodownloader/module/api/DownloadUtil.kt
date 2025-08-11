@@ -26,7 +26,7 @@ object DownloadUtil {
      * @param progressCallback 下载进度回调函数，参数为(进度百分比, 下载速度, 状态信息)
      * @return Result<String> 成功时返回文件绝对路径，失败时返回异常信息
      */
-    fun downloadMP4Video(
+    suspend fun downloadMP4Video(
         context: Context,
         videoInfo: VideoInfo? = null,
         taskId: String,
@@ -37,13 +37,11 @@ object DownloadUtil {
             return Result.failure(Throwable("fetch_info_error_msg"))
         }
         
-        return runBlocking {
-            try {
-                downloadVideoInternal(context, videoInfo, taskId, progressCallback)
-            } catch (e: Exception) {
-                Log.e(TAG, "下载视频失败: taskId=$taskId, error=${e.message}", e)
-                Result.failure(e)
-            }
+        return try {
+            downloadVideoInternal(context, videoInfo, taskId, progressCallback)
+        } catch (e: Exception) {
+            Log.e(TAG, "下载视频失败: taskId=$taskId, error=${e.message}", e)
+            Result.failure(e)
         }
     }
     
@@ -170,7 +168,7 @@ object DownloadUtil {
      * @param progressCallback 下载进度回调函数，参数为(进度百分比, 下载速度, 状态信息)
      * @return Result<String> 成功时返回文件绝对路径，失败时返回异常信息
      */
-    fun downloadM3U8Video(
+    suspend fun downloadM3U8Video(
         context: Context,
         videoInfo: VideoInfo? = null,
         title: String,
@@ -181,13 +179,11 @@ object DownloadUtil {
             return Result.failure(Throwable("fetch_info_error_msg"))
         }
 
-        return runBlocking {
-            try {
-                downloadM3U8VideoInternal(context, videoInfo, title, progressCallback)
-            } catch (e: Exception) {
-                Log.e(TAG, "M3U8下载失败: title=$title, error=${e.message}", e)
-                Result.failure(e)
-            }
+        return try {
+            downloadM3U8VideoInternal(context, videoInfo, title, progressCallback)
+        } catch (e: Exception) {
+            Log.e(TAG, "M3U8下载失败: title=$title, error=${e.message}", e)
+            Result.failure(e)
         }
     }
     

@@ -47,13 +47,10 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- 视频下载服务 -->
-        <service
-            android:name="com.videodownloader.module.core.service.VideoDownloadService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
+        <activity android:name=".ui.PrivacyActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
 
         <activity
             android:name=".ui.MainActivity"

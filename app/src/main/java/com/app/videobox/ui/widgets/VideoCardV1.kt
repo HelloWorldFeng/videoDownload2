@@ -137,9 +137,12 @@ fun VideoCardV1(
                         )
 
                         Spacer(Modifier.width(30.dp))
-//                        Text(
-//                            text =
-//                        )
+                        if (downloadState is Task.DownloadState.Running){
+                            Text(
+                                text = downloadState.speed,
+                                color = Color(0xFF898989)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.weight(1f))
                         AnimatedVisibility(
