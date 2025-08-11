@@ -1,4 +1,4 @@
-package com.app.videobox.ad.base
+package com.app.videobox.ad.callback
 
 interface AdCallBack {
 

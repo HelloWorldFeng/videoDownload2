@@ -1,32 +1,40 @@
 package com.app.videobox.ad.base
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
-import com.app.videobox.App
-import com.app.videobox.ad.AdmobManager
-import com.app.videobox.ad.InnerAd
-import com.app.videobox.ad.adLoaders.NavAd
-import com.app.videobox.ad.afEventLog
+import com.app.videobox.BuildConfig
+import com.app.videobox.ad.AdManager
+import com.app.videobox.ad.adLoaders.NavAdmobAdLoader
 import com.appsflyer.AFInAppEventParameterName
 import com.appsflyer.AFInAppEventType
+import com.blankj.utilcode.util.SPStaticUtils
 import com.facebook.appevents.AppEventsConstants
 import com.facebook.appevents.AppEventsLogger
+import com.google.android.gms.ads.AdValue
 import com.google.android.gms.ads.appopen.AppOpenAd
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.nativead.NativeAd
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.analytics
+import com.google.firebase.analytics.logEvent
+import com.app.videobox.App
+import com.app.videobox.utils.EventReportUtils
+import org.json.JSONObject
 import java.math.BigDecimal
 
 
 class AdUnitWrapper(
     var openBtn: Boolean,
     var type: String ="",
-    var adNumber:String,
+    var adNumberId:String,
 
     var innerAdList: List<InnerAd>, //这条id用于的广告场景
     var adLoading: Boolean = false, //广告位上 广告加载状态
 
-    var weight: Int = 0,
     var time:Long = 0
 ) {
 
@@ -41,40 +49,46 @@ class AdUnitWrapper(
         when (mAdInstance) {
             is InterstitialAd -> {
                 (mAdInstance as InterstitialAd).setOnPaidEventListener {adValue->
-                    uploadAdjustAdValue(
+                    uploadFacebookAdValue(
                         valueMicros = adValue.valueMicros,
-                        id = adNumber,
+                        id = adNumberId,
                         type = type,
-                        scene = AdmobManager.nowShowAdScene,
+                        scene = AdManager.nowShowAdScene,
                         precision = adValue.precisionType,
                         currency = adValue.currencyCode
                     )
+                    uploadFirebaseAdValue(adValue)
+                    impressionEvent(adValue,adNumberId,type)
                 }
             }
 
             is AppOpenAd -> {
                 (mAdInstance as AppOpenAd).setOnPaidEventListener {adValue->
-                    uploadAdjustAdValue(
+                    uploadFacebookAdValue(
                         valueMicros = adValue.valueMicros,
-                        id = adNumber,
-                        scene = AdmobManager.nowShowAdScene,
+                        id = adNumberId,
                         type = type,
+                        scene = AdManager.nowShowAdScene,
                         precision = adValue.precisionType,
                         currency = adValue.currencyCode
                     )
+                    uploadFirebaseAdValue(adValue)
+                    impressionEvent(adValue,adNumberId,type)
                 }
             }
 
             is NativeAd -> {
                 (mAdInstance as NativeAd).setOnPaidEventListener {adValue->
-                    uploadAdjustAdValue(
+                    uploadFacebookAdValue(
                         valueMicros = adValue.valueMicros,
-                        id = adNumber,
-                        scene = AdmobManager.nowShowAdScene,
+                        id = adNumberId,
                         type = type,
+                        scene = AdManager.nowShowAdScene,
                         precision = adValue.precisionType,
                         currency = adValue.currencyCode
                     )
+                    uploadFirebaseAdValue(adValue)
+                    impressionEvent(adValue,adNumberId,type)
                 }
             }
 
@@ -87,14 +101,25 @@ class AdUnitWrapper(
     }
 
     fun setAdSourceId(id:String) {
-        this.adNumber = id
+        this.adNumberId = id
     }
 
     fun getAdSourceId(): String {
-        return this.adNumber
+        return this.adNumberId
     }
 
-    fun showFullAd(activity: Activity) {
+    fun showAdSmall(activity: Context, viewGroup: ViewGroup) {
+        when (mAdInstance) {
+            is NativeAd -> {
+                viewGroup.removeAllViews()
+                NavAdmobAdLoader.fillNavMaterial(activity, viewGroup, mAdInstance as NativeAd)
+            }
+            else ->{}
+
+        }
+    }
+
+    fun showAdFull(activity: Activity) {
         when (mAdInstance) {
             is InterstitialAd -> {
                 (mAdInstance as InterstitialAd).show(activity)
@@ -107,18 +132,7 @@ class AdUnitWrapper(
         }
     }
 
-    fun showSmallAd(activity: Activity, viewGroup: ViewGroup,bigStyle:Boolean = true) {
-        when (mAdInstance) {
-            is NativeAd -> {
-                viewGroup.removeAllViews()
-                NavAd.fillNavMaterial(activity, viewGroup, mAdInstance as NativeAd,bigStyle)
-            }
-            else ->{}
-
-        }
-    }
-
-    fun uploadAdjustAdValue(
+    fun uploadFacebookAdValue(
         valueMicros: Long,
         id: String,
         scene: String? = null,
@@ -126,6 +140,7 @@ class AdUnitWrapper(
         precision: Int,
         currency: String,
     ) {
+
         //把原来的千分值转换成0.001
         val value = valueMicros.toBigDecimal().divide(BigDecimal("1000000.0")).toDouble()
 
@@ -143,12 +158,13 @@ class AdUnitWrapper(
             params.putString(AppEventsConstants.EVENT_PARAM_DESCRIPTION,it)
         }
         //当用户将商品添加到购物车时记录此事件。传递给 logEvent 的 valueToSum 应该是商品的价格。
-        logger.logEvent(
-            AppEventsConstants.EVENT_NAME_PURCHASED,
-            value,
-            params)
+        if (type != AD_TYPE_NAV) {
+            //原生不上报Facebook
+            logger.logEvent(AppEventsConstants.EVENT_NAME_PURCHASED, value, params)
 
-        afEventLog(eventName = "ud_ad_action_impression", mutableMapOf<String, Any>().apply {
+        }
+
+        EventReportUtils.afEventLog(eventName = "ud_ad_action_impression", mutableMapOf<String, Any>().apply {
             put("ad_action",31)
             put("ad_format",type)
             put("ad_unit_id",id)
@@ -160,7 +176,7 @@ class AdUnitWrapper(
             put("currency",currency)
         })
 
-        afEventLog(eventName = "ud_ad_impression", mutableMapOf<String, Any>().apply {
+        EventReportUtils.afEventLog(eventName = "ud_ad_impression", mutableMapOf<String, Any>().apply {
             put("ad_format",type)
             put("ad_unit_id",id)
             scene?.let {
@@ -179,8 +195,70 @@ class AdUnitWrapper(
             AFInAppEventParameterName.CONTENT_TYPE to "IAA",
             AFInAppEventParameterName.CONTENT_ID to id,
         )
-        afEventLog(AFInAppEventType.PURCHASE, param)
+        EventReportUtils.afEventLog(AFInAppEventType.PURCHASE, param)
+    }
 
+    fun uploadFirebaseAdValue(adValue: AdValue) {
+        //firebase
+        Firebase.analytics.logEvent("Ad_Impression_Revenue") {
+            val currentImpressionRevenue = adValue.valueMicros / 1000000.0
+            param(FirebaseAnalytics.Param.VALUE, currentImpressionRevenue)
+            param(FirebaseAnalytics.Param.CURRENCY, "USD")
+
+            val precisionType: String = when (adValue.precisionType) {
+                0 -> "UNKNOWN"
+                1 -> "ESTIMATED"
+                2 -> "PUBLISHER_PROVIDED"
+                3 -> "PRECISE"
+                else -> "Invalid"
+            }
+            param("precisionType", precisionType)
+        }
+        Log.e("zzz", "Ad_Impression_Revenue =  ")
+
+        totalRevenueEvent(adValue)
+    }
+
+    fun impressionEvent(adValue: AdValue, unitId: String, format: String) {
+        Firebase.analytics.logEvent(FirebaseAnalytics.Event.AD_IMPRESSION) {
+            val currentImpressionRevenue = adValue.valueMicros / 1000000.0
+            param(FirebaseAnalytics.Param.AD_PLATFORM, "adMob")
+            param(FirebaseAnalytics.Param.AD_UNIT_NAME, unitId)
+            param(FirebaseAnalytics.Param.AD_FORMAT, format)
+            param(FirebaseAnalytics.Param.AD_SOURCE, "")
+            param(FirebaseAnalytics.Param.VALUE, currentImpressionRevenue)
+            param(FirebaseAnalytics.Param.CURRENCY, "USD")
+        }
+        Log.e("zzz", "AD_IMPRESSION =  ")
+    }
+
+    private fun totalRevenueEvent(adValue: AdValue?, valueMicros: Double? = null) {
+        adValue?.apply {
+            val lastValue = SPStaticUtils.getFloat("AD_VALUE_SURPLUS", 0.0f)
+            val currentValue = if (BuildConfig.DEBUG) 0.02 else lastValue + this.valueMicros / 1000000.0
+
+            if (currentValue >= 0.01) {
+                Firebase.analytics.logEvent("Total_Ads_Revenue_001") {
+                    param(FirebaseAnalytics.Param.VALUE, currentValue)
+                    param(FirebaseAnalytics.Param.CURRENCY, "USD")
+
+                }
+
+                val tdParams = JSONObject(
+                    mapOf(
+                        FirebaseAnalytics.Param.VALUE to currentValue,
+                        FirebaseAnalytics.Param.CURRENCY to "USD",
+                    )
+                )
+
+                Log.e("zzz", "Total_Ads_Revenue_001.param =  $tdParams")
+                SPStaticUtils.put("AD_VALUE_SURPLUS", 0.0f)
+            } else {
+                SPStaticUtils.put("AD_VALUE_SURPLUS", currentValue.toFloat())
+            }
+            return
+        }
 
     }
+
 }

@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.AdManager
 import kotlinx.coroutines.delay
 
 @Composable
@@ -43,7 +43,7 @@ fun LinearProgress(
             for (i in 0..99) {
                 progressLinear += 0.01f
                 delay(mLaunchTime * 10L)
-                if (AdmobManager.canSpeedAnim() && boolean) {
+                if (AdManager.canSpeedAnim() && boolean) {
                     boolean = false
                     mLaunchTime = 1
                 }

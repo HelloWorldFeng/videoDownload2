@@ -80,4 +80,14 @@
     <string name="share">Share</string>
     <string name="cancel">Cancel</string>
     <string name="download">Download</string>
+    <string name="why_do_we_need_permission">Why do we need permission?</string>
+    <string name="to_keep_an_eye_on_your_download_progress_in_your_notifications">to keep an eye on your download progress in your notifications, just allow the Stream Box to send you notifications.</string>
+    <string name="grant">Grant</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="update_settings">Update Settings</string>
+    <string name="to_downlaod_files_you_need_to">To downlaod files, you need to:</string>
+    <string name="open_settings_tap_permission">Open settings,tap permission</string>
+    <string name="turn_on_notification">Turn on notification</string>
+    <string name="video_download_complete">video download complete</string>
+    <string name="click_to_view">click to view</string>
 </resources>

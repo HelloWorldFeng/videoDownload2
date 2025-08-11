@@ -304,7 +304,7 @@ private fun TaskListContent(
 
         AnimatedVisibility(
             modifier = Modifier
-                .padding(bottom = 50.dp)
+                .padding(bottom = 80.dp)
                 .align(Alignment.BottomCenter),
             visible = uiState.isSelectModeEnabled,
             enter = scaleIn(),
@@ -320,6 +320,7 @@ private fun TaskListContent(
                         onActionPost(it, DownloadListViewModel.TaskAction.Cancel)
                         onActionPost(it, DownloadListViewModel.TaskAction.Delete)
                     }
+                    selectedCallback.invoke(true)
                 })
         }
     }

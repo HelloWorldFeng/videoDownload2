@@ -46,7 +46,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
-import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.manager.RemoteConfigManager
@@ -100,27 +100,10 @@ class HotScreen: Screen {
                         CoilImage(
                             modifier = Modifier.Companion
                                 .singClick {
-                                    AdmobManager.getFullAdFromPool(
+                                    AdManager.getFullAdFromPool(
                                         context,
                                         adType = "int",
                                         adScene = "play_int",
-                                        emptyAction = {
-                                            context.lifecycleScope.launch {
-                                                context.showLoadingDialog()
-                                                delay(RemoteConfigManager.adLoadingTime)
-                                                AdmobManager.touchFinishBlock()
-                                            }
-                                        },
-                                        finishLoadAction = { hasAdInstance ->
-                                            context.hideLoadingDialog()
-                                            AdmobManager.getFullAdFromPool(
-                                                context,
-                                                adType = "int",
-                                                adScene = "play_int",
-                                                closeAction = {
-
-                                                })
-                                        },
                                         closeAction = {
 
                                         })
@@ -168,7 +151,7 @@ class HotScreen: Screen {
         if (context.isShowLoading()) {
             return
         }
-        AdmobManager.getFullAdFromPool(
+        AdManager.getFullAdFromPool(
             context,
             adType = "int",
             adScene = "back_int",

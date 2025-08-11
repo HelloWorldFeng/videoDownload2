@@ -11,6 +11,7 @@ composeBom = "2025.07.00"
 constraintlayout = "2.2.1"
 cardview = "1.0.0"
 koin = "4.1.0"
+firebaseMessagingKtx = "24.1.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +35,7 @@ koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = 
 koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
 #图标库
 androidx-compose-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended" }
+firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -45,7 +45,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
-import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ext.formatDuration
@@ -102,27 +102,10 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     items(dataList){fileInfo->
                         ListItemView(fileInfo,
                             onClick = {
-                                AdmobManager.getFullAdFromPool(
+                                AdManager.getFullAdFromPool(
                                     context,
                                     adType = "int",
                                     adScene = "play_int",
-                                    emptyAction = {
-                                        context.lifecycleScope.launch {
-                                            context.showLoadingDialog()
-                                            delay(RemoteConfigManager.adLoadingTime)
-                                            AdmobManager.touchFinishBlock()
-                                        }
-                                    },
-                                    finishLoadAction = { hasAdInstance ->
-                                        context.hideLoadingDialog()
-                                        AdmobManager.getFullAdFromPool(
-                                            context,
-                                            adType = "int",
-                                            adScene = "play_int",
-                                            closeAction = {
-
-                                            })
-                                    },
                                     closeAction = {
 
                                     })
@@ -135,43 +118,14 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     }
                 }
 
-                var nativeState by remember {
-                    mutableStateOf<AdUnitWrapper?>(null)
-                }
-                val lifecycleOwner = LocalLifecycleOwner.current
-                DisposableEffect(key1 = lifecycleOwner) {
-                    val observer = object : LifecycleObserver {
-                        @OnLifecycleEvent(Lifecycle.Event.ON_START)
-                        fun onStart() {
-                            AdmobManager.getSmallAdFromPool(
-                                adType = "nav",
-                                adScene = "function_nav"
-                            ){
-                                nativeState = it
-                            }
-
-                        }
-
-                        @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
-                        fun onStop() {
-                            nativeState = null
-                        }
-                    }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
-                    }
-
-                }
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Spacer(modifier = Modifier.weight(1f))
                 NativeAdsView(
-                    adUnitWrapper = nativeState,
                     modifier = Modifier
-                        .navigationBarsPadding()
+                        .padding(top = 15.dp)
                         .fillMaxWidth(1f),
-                    bigStyle = false
+                    adScene = "n_home"
                 )
             }
 
@@ -203,7 +157,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         if (context.isShowLoading()) {
             return
         }
-        AdmobManager.getFullAdFromPool(
+        AdManager.getFullAdFromPool(
             context,
             adType = "int",
             adScene = "back_int",

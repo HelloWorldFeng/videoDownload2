@@ -161,31 +161,39 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
         task.restartImpl()
     }
 
-    private var Task.state: Task.State
-        get() = taskStateMap[this]!!
+    private var Task.state: Task.State?
+        get() = taskStateMap[this]
         set(value) {
-            taskStateMap[this] = value
+            if (value != null) {
+                taskStateMap[this] = value
+            }
         }
 
-    private var Task.downloadState: DownloadState
-        get() = state.downloadState
+    private var Task.downloadState: DownloadState?
+        get() = state?.downloadState
         set(value) {
             val prevState = state
-            taskStateMap[this] = prevState.copy(downloadState = value)
+            if (prevState != null && value != null) {
+                taskStateMap[this] = prevState.copy(downloadState = value)
+            }
         }
 
-    private var Task.info: VideoInfo
-        get() = state.videoInfo
+    private var Task.info: VideoInfo?
+        get() = state?.videoInfo
         set(value) {
             val prevState = state
-            taskStateMap[this] = prevState.copy(videoInfo = value)
+            if (prevState != null && value != null) {
+                taskStateMap[this] = prevState.copy(videoInfo = value)
+            }
         }
 
-    private var Task.viewState: Task.ViewState
-        get() = state.viewState
+    private var Task.viewState: Task.ViewState?
+        get() = state?.viewState
         set(value) {
             val prevState = state
-            taskStateMap[this] = prevState.copy(viewState = value)
+            if (prevState != null && value != null) {
+                taskStateMap[this] = prevState.copy(viewState = value)
+            }
         }
 
     private val Task.notificationId: Int
@@ -225,10 +233,16 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
     }
 
     private fun Task.executeMP4() {
+        val taskInfo = info
+        if (taskInfo == null) {
+            Log.w("下载", "任务信息为空，无法开始下载")
+            return
+        }
+        
         scope.launch(Dispatchers.Default) {
             DownloadUtil.downloadMP4Video(
                 context = context,
-                videoInfo = info,
+                videoInfo = taskInfo,
                 taskId = id,
                 progressCallback = { progressPercentage, long, text ->
                     Log.d("下载", "下载进度::${progressPercentage}，${long},${text} ")
@@ -238,8 +252,10 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                             val speedText = Formatter.formatFileSize(context,long)
                             downloadState = preState.copy(progress = progress, speed = speedText)
                         }
-
-                        else -> {}
+                        else -> {
+                            // 任务可能已被删除，忽略进度更新
+                            Log.d("下载", "任务状态异常或已被删除，忽略进度更新")
+                        }
                     }
                 },
             )
@@ -256,8 +272,13 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
     }
 
     private fun Task.cancelImpl(): Boolean {
-        when (val preState = downloadState) {
-
+        val preState = downloadState
+        if (preState == null) {
+            Log.w("下载", "任务状态为空，可能已被删除")
+            return false
+        }
+        
+        when (preState) {
             is DownloadState.Cancelable, -> {
                 preState.job.cancel()
                 val progress = if (preState is Running) preState.progress else null
@@ -277,7 +298,13 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
     }
 
     private fun Task.restartImpl() {
-        when (val preState = downloadState) {
+        val preState = downloadState
+        if (preState == null) {
+            Log.w("下载", "任务状态为空，无法重启")
+            return
+        }
+        
+        when (preState) {
             is DownloadState.Restartable -> {
                 // 重启任务时，统一设置为空闲状态，等待调度器重新开始下载
                 downloadState = Idle
@@ -295,14 +322,21 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
      * @see TypeInfo.M3U8
      */
     private fun Task.executeM3U8() {
-        check(downloadState == Idle)
+        val currentState = downloadState
+        check(currentState == Idle) { "任务状态必须为Idle才能开始M3U8下载，当前状态: $currentState" }
         check(type is TypeInfo.M3U8)
+        
+        val taskInfo = info
+        if (taskInfo == null) {
+            Log.w("下载", "任务信息为空，无法开始M3U8下载")
+            return
+        }
         
         scope.launch(Dispatchers.Default) {
             DownloadUtil.downloadM3U8Video(
                 context = context,
-                videoInfo = info,
-                title = info.title.ifEmpty { "HD_video:${System.currentTimeMillis()}" },
+                videoInfo = taskInfo,
+                title = taskInfo.title.ifEmpty { "HD_video:${System.currentTimeMillis()}" },
                 progressCallback = { progressPercentage, long, text ->
                     val progress = progressPercentage / 100f
                     when (val preState = downloadState) {
@@ -312,7 +346,10 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                             Log.d("下载", "M3U8下载中-----> :${progress},----speedText:${speedText}")
                             downloadState = preState.copy(progress = progress, speed = speedText)
                         }
-                        else -> {}
+                        else -> {
+                            // 任务可能已被删除，忽略进度更新
+                            Log.d("下载", "M3U8任务状态异常或已被删除，忽略进度更新")
+                        }
                     }
                 }
             )

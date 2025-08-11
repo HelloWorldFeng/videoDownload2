@@ -123,6 +123,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.cardview)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -182,4 +183,9 @@ dependencies {
     implementation("androidx.paging:paging-runtime:3.3.6")
     implementation("androidx.paging:paging-runtime-ktx:3.3.6")
     implementation("androidx.paging:paging-compose:3.3.6")
+    //af
+    implementation("com.appsflyer:af-android-sdk:6.17.0")
+    // 数数分析平台
+    implementation("cn.thinkingdata.android:ThinkingAnalyticsSDK:3.0.1")
+    implementation("cn.thinkingdata.android:TAThirdParty:2.0.0")
 }

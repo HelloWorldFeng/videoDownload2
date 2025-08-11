@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -31,7 +32,6 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
-import com.app.videobox.ad.AdmobManager
 import com.app.videobox.ad.UmpHelper
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ad.base.AD_TYPE_NAV
@@ -48,15 +48,42 @@ import com.blankj.utilcode.util.SPStaticUtils
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.ad.AdManager
+import com.app.videobox.service.DownloadService
+import com.app.videobox.ui.dialogs.NotifyDialog
+import com.hjq.permissions.OnPermissionCallback
+import com.hjq.permissions.Permission
+import com.hjq.permissions.XXPermissions
+
 class SplashActivity : BaseActivity() {
 
+    companion object{
+        var interType = "normal"
+    }
 
     private var launchTime = if(BuildConfig.DEBUG) 1 else SPStaticUtils.getInt("launchTime",10)
     private var startPlay = mutableStateOf(value = false)
+    // 控制 NotifyDialog 是否显示的状态
+    private var showNotifyDialog by mutableStateOf(false)
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             super.onStart(owner)
+            if (XXPermissions.isGranted(this@SplashActivity,
+                    Permission.POST_NOTIFICATIONS).not()) {
+                //没有通知权限-展示自定义样式弹窗
+                showNotifyDialog = true
+            }
+            else{
+                //有通知权限-不展示弹窗
+                showNotifyDialog = false
+                startPlay.value = true
+            }
+
             handleAppLaunch()
         }
     }
@@ -68,6 +95,7 @@ class SplashActivity : BaseActivity() {
             this.safeStartActivity(PrivacyActivity::class.java)
             return
         }
+
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
         
@@ -81,19 +109,56 @@ class SplashActivity : BaseActivity() {
             }
 
             SplashView()
+
+            if (showNotifyDialog) {
+                NotifyDialog(
+                    onDismissRequest = {
+                        showNotifyDialog = false
+                        startPlay.value = true
+                    },
+                    onClick = {
+                        showNotifyDialog = false
+                        XXPermissions
+                            .with(this)
+                            .permission(Permission.POST_NOTIFICATIONS)
+                            .request(object : OnPermissionCallback{
+                                override fun onGranted(
+                                    permissions: List<String?>,
+                                    allGranted: Boolean
+                                ) {
+                                    // 权限获取后启动 LaunchedEffect
+                                    startPlay.value = true
+                                    DownloadService.startService(this@SplashActivity)
+                                }
+
+                                override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {
+                                    super.onDenied(permissions, doNotAskAgain)
+                                    // 即使权限被拒绝也启动 LaunchedEffect
+                                    startPlay.value = true
+                                }
+                            })
+                    }
+                )
+            }
         }
     }
 
     @Composable
     fun SplashView() {
+        val lottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_splash_logo.json"))
+
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.weight(6f))
-            CoilImage(modifier = Modifier.size(100.dp), data = R.mipmap.icon_logo)
+            LottieAnimation(
+                composition = lottie,
+                iterations = LottieConstants.IterateForever,
+                modifier = Modifier.size(100.dp),
+                contentScale = ContentScale.None
+            )
             Spacer(modifier = Modifier.height(24.dp))
-            TextTitle(text = stringResource(id = R.string.app_name), fontSize = 38.sp,color = Color.White)
             Spacer(modifier = Modifier.weight(1f))
             LinearProgress(
                 modifier = Modifier
@@ -113,7 +178,7 @@ class SplashActivity : BaseActivity() {
 
     private fun navNextStep() {
         if (SPStaticUtils.getBoolean("chooseLanguage", true)) {
-            AdmobManager.getFullAdFromPool(
+            AdManager.getFullAdFromPool(
                 this,
                 adType = "open",
                 adScene = "cold_start",
@@ -123,7 +188,7 @@ class SplashActivity : BaseActivity() {
                 })
 
         }else{
-            AdmobManager.getFullAdFromPool(
+            AdManager.getFullAdFromPool(
                 this,
                 adType = "open",
                 adScene = if (!AppManager.isInitialized) "cold_start" else "hot_start",
@@ -147,14 +212,12 @@ class SplashActivity : BaseActivity() {
 
     private fun initForColdLaunch() {
         UmpHelper.requestUmp(this) {
-            startPlay.value = true
-            AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
+            AdManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
         }
     }
 
     private fun initForWarmLaunch() {
-        startPlay.value = true
-        AdmobManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
+        AdManager.loadAdmobInstance(AD_TYPE_START, AD_TYPE_NAV, AD_TYPE_INT)
     }
 
     override fun onDestroy() {

@@ -50,11 +50,6 @@ fun ModalBottomSheetV3(
     ) {
         Column(
             modifier = Modifier.background(Color(0xFF2E2F30))
-                .border(
-                    width = 3.dp,
-                    color = Color.Gray.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                )
                 .padding(contentPadding)
                 .fillMaxWidth()
         ) {

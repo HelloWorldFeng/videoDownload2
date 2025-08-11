@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:gravity="center_vertical"
+    android:weightSum="2"
+    android:id="@+id/root"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="11dp"
+            android:background="@drawable/bg_notify">
+            <TextView
+                android:id="@+id/content_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#7D8185"
+                android:gravity="center_vertical"
+                android:text="Search or paste video link here"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentBottom="true"/>
+
+            <ImageView
+                android:id="@+id/logo_iv"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@mipmap/icon_logo"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentBottom="true"/>
+        </RelativeLayout>
+    </LinearLayout>
+</LinearLayout>

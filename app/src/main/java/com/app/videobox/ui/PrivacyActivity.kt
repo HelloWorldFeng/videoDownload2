@@ -29,7 +29,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
-import com.app.videobox.ad.AdmobManager
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.UmpHelper
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ad.base.AD_TYPE_NAV

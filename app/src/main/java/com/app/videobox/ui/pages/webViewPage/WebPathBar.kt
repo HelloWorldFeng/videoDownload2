@@ -84,7 +84,7 @@ fun WebPathBar(
                     adState.value = !adState.value
                     onAd.invoke()
                 },
-            model = if (adState.value) R.drawable.icon_ad else R.drawable.icon_ad,
+            model = if (adState.value) R.drawable.icon_ad else R.drawable.icon_ad_not,
             contentDescription = null
         )
     }

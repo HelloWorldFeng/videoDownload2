@@ -8,6 +8,8 @@ import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
+import com.app.videobox.service.DownloadService
+import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.utils.FileUtils
 import kotlinx.coroutines.launch
@@ -36,7 +38,14 @@ class MainActivity : BaseActivity() {
             BackHandler {}
             Navigator(NewHomeScreen())
             LoadingAdDialog()
+            NotifyHomeDialog(
+                onDismissRequest = {},
+                onClick = {}
+            )
         }
+
+        DownloadService.startService(this)
+
     }
 }
 

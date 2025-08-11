@@ -1,5 +1,7 @@
 package com.app.videobox.ad.base
 
+import com.app.videobox.ad.callback.AdCallBack
+
 
 abstract class BaseAd {
 
@@ -7,12 +9,14 @@ abstract class BaseAd {
 
     abstract fun loadingAd(id: String,type:String)
 
+    fun getAdCallBackInstance(): AdCallBack {
+        return adCallBack
+    }
+
     fun setAdCallBackInstance(adCallBack: AdCallBack) {
         this.adCallBack = adCallBack
     }
 
-    fun getAdCallBackInstance(): AdCallBack {
-        return adCallBack
-    }
+
 
 }

@@ -3,6 +3,7 @@ package com.app.videobox.network
 import android.content.Context
 import android.util.Log
 import com.app.videobox.App
+import com.app.videobox.lastPushMessageDetailId
 import com.google.gson.Gson
 import com.app.videobox.network.model.HomeUrlModel
 import com.app.videobox.network.model.MediaVideo
@@ -10,6 +11,7 @@ import com.app.videobox.network.model.BaseResponse
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.utils.DeviceUtils
 import com.appsflyer.AppsFlyerLib
+import com.blankj.utilcode.util.SPStaticUtils
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -156,4 +158,23 @@ object DataRepository {
         }
     }
 
+
+
+    suspend fun GetSceneEventPushMessageData(sceneType: Int = 1) = withContext(Dispatchers.IO){
+        try {
+            val lastPushMessageDetailId = SPStaticUtils.getInt(lastPushMessageDetailId,0)
+
+            val paramsMap = mutableMapOf(
+                "lastPushMessageDetailId" to lastPushMessageDetailId,
+                "scenceType" to sceneType
+            )
+            val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams,paramsMap)
+            val result = service.GetSceneEventPushMessageData(params)
+            SPStaticUtils.put(com.app.videobox.lastPushMessageDetailId,result.model.id)
+            return@withContext result
+        }catch (e: Exception){
+            e.printStackTrace()
+            return@withContext null
+        }
+    }
 }

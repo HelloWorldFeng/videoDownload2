@@ -1,15 +1,16 @@
 package com.app.videobox.ad.adLoaders
 
 
-import com.app.videobox.App
+import android.util.Log
 import com.app.videobox.ad.base.BaseAd
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.appopen.AppOpenAd
+import com.app.videobox.App
 
-class OpenAd: BaseAd() {
+class OpenAdmobAdLoader: BaseAd() {
     override fun loadingAd(id: String,type:String) {
         val request = AdManagerAdRequest.Builder().build()
         AppOpenAd.load(
@@ -23,6 +24,7 @@ class OpenAd: BaseAd() {
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                    Log.d("AdLog", "${loadAdError.message}")
                     getAdCallBackInstance().loadFail(loadAdError.code,loadAdError.message)
                 }
             }

@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.app.videobox.App
 import com.app.videobox.R
 import com.app.videobox.ad.base.BaseAd
 import com.google.android.gms.ads.AdListener
@@ -15,8 +14,9 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdView
+import com.app.videobox.App
 
-class NavAd : BaseAd() {
+class NavAdmobAdLoader : BaseAd() {
     override fun loadingAd(id: String,  type: String) {
         val loader = AdLoader.Builder(App.appContext(), id)
             .forNativeAd { nativeAd ->
@@ -43,30 +43,22 @@ class NavAd : BaseAd() {
 
     companion object {
 
-        fun fillNavMaterial(context: Context, viewGroup: ViewGroup, nativeAd: NativeAd,bigStyle:Boolean = true) {
+        fun fillNavMaterial(context: Context, viewGroup: ViewGroup, nativeAd: NativeAd) {
             val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            val adView =
-                if (bigStyle) {
-                    inflater.inflate(R.layout.nav_layout_big, null) as NativeAdView
-                }else{
-                    inflater.inflate(R.layout.nav_layout_small, null) as NativeAdView
-                }
+            val adView = inflater.inflate(R.layout.nav_layout, null) as NativeAdView
             val adTitle = adView.findViewById<TextView>(R.id.ad_title)
             val adContent = adView.findViewById<TextView>(R.id.ad_content)
             val adIcon = adView.findViewById<ImageView>(R.id.ad_icon)
             val install = adView.findViewById<TextView>(R.id.ad_call)
 
-            if (bigStyle) {
-                adView.mediaView = adView.findViewById(R.id.media_view)
-            }
 
-            adTitle.text = nativeAd.headline
             adContent.text = nativeAd.body
+            adTitle.text = nativeAd.headline
+            install.text = nativeAd.callToAction
             nativeAd.icon?.let {
                 adIcon.setImageDrawable(it.drawable)
                 adIcon.setBackgroundColor(Color.TRANSPARENT)
             }
-            install.text = nativeAd.callToAction
 
             adView.headlineView = adTitle
             adView.bodyView = adContent

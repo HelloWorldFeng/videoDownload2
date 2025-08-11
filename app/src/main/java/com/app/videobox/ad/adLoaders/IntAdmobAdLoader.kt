@@ -1,7 +1,6 @@
 package com.app.videobox.ad.adLoaders
 
 
-import com.app.videobox.App
 import com.app.videobox.ad.base.BaseAd
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -9,8 +8,9 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.app.videobox.App
 
-class IntAd : BaseAd() {
+class IntAdmobAdLoader : BaseAd() {
 
     override fun loadingAd(id: String,  type: String) {
         val adRequest = AdRequest.Builder().build()

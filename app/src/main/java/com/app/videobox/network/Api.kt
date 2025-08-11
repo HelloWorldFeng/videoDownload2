@@ -6,6 +6,7 @@ import com.app.videobox.network.model.MediaVideo
 import com.app.videobox.network.model.BaseResponse
 import com.app.videobox.network.model.JbLikeModel
 import com.app.videobox.network.model.MediaClass
+import com.app.videobox.network.model.NotifyModel
 import retrofit2.http.Body
 import retrofit2.http.POST
 
@@ -28,6 +29,10 @@ interface Api {
 
     @POST("/V1/Init/InitWork")
     suspend fun initWork(@Body map: Map<String, @JvmSuppressWildcards Any>): JsonElement
+
+
+    @POST("/V1/PushMessage/GetSceneEventPushMessageData")
+    suspend fun GetSceneEventPushMessageData(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<NotifyModel>
 
 
 }
