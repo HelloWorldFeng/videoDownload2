@@ -119,8 +119,18 @@ class SplashActivity : BaseActivity() {
                     onDismissRequest = {
                         showNotifyDialog = false
                         startPlay.value = true
+
+                        EventReportUtils.reportTDParams("permission_pop_click", params = mutableMapOf(
+                            "click_type" to "start",
+                            "action" to "close"
+                        ), desc = "新通知权限引导弹窗点击")
                     },
                     onClick = {
+                        EventReportUtils.reportTDParams("permission_pop_click", params = mutableMapOf(
+                            "click_type" to "start",
+                            "action" to "grant"
+                        ), desc = "新通知权限引导弹窗点击")
+
                         showNotifyDialog = false
                         XXPermissions
                             .with(this)
@@ -214,6 +224,7 @@ class SplashActivity : BaseActivity() {
                 putString("imageUrl", imageUrl)
             }
             MainActivity.start(this, extras = extras)
+            finish()
             return
         }
 
@@ -223,9 +234,11 @@ class SplashActivity : BaseActivity() {
                 putString("videoUrl", videoUrl)
             }
             MainActivity.start(this, extras = extras)
+            finish()
             return
         }
         MainActivity.start(this)
+        finish()
     }
 
 

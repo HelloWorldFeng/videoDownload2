@@ -53,8 +53,11 @@ import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
+import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.NavBarV2
+import com.app.videobox.utils.EventReportUtils
+import com.blankj.utilcode.util.SPStaticUtils
 
 /**
  * 新主页 - 基于Figma设计稿实现
@@ -127,12 +130,30 @@ class NewHomeScreen : Screen {
 fun HomeScreen(onMenuClick: () -> Unit = {}){
     val navigator = LocalNavigator.currentOrThrow
 
+    LaunchedEffect(Unit) {
+        if (SPStaticUtils.getBoolean("browser_show",true)){
+            SPStaticUtils.put("browser_show",false)
+            EventReportUtils.reportTDParams("browser_show",
+                params = mutableMapOf(
+                    "type" to "first"
+                ), desc = "应用内浏览器展示")
+        }else{
+            EventReportUtils.reportTDParams("browser_show",
+                params = mutableMapOf(
+                    "type" to "nofirst"
+                ), desc = "应用内浏览器展示")
+        }
+    }
+
     Box(Modifier.fillMaxSize()){
         AsyncImageImpl(
             modifier = Modifier.fillMaxWidth(),
             model = R.drawable.bg_comm
         )
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding())
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding())
         {
             // 状态栏区域
             StatusBarSection(onMenuClick = onMenuClick)
@@ -171,7 +192,9 @@ fun PopularVideoSection(navigator: Navigator) {
     // 只有当分类数据可用时才展示分类列表
     if (videoClasses.isNotEmpty()) {
         Column(
-            modifier = Modifier.padding(bottom = 90.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(bottom = 90.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // 遍历所有分类，为每个分类创建独立的视频列表
@@ -208,6 +231,7 @@ private fun CategoryVideoSection(
     category: MediaClass,
     navigator: Navigator
 ) {
+    val context = LocalContext.current
     // 为每个分类创建独立的分页器
     val pager = remember(category.id) {
         Pager(
@@ -238,7 +262,7 @@ private fun CategoryVideoSection(
                 Spacer(
                     Modifier
                         .padding(end = 4.dp)
-                        .size(4.dp,14.dp)
+                        .size(4.dp, 14.dp)
                         .background(color = Color(0xFFFF5C7F), shape = RoundedCornerShape(3.dp))
                 )
                 Text(
@@ -273,7 +297,13 @@ private fun CategoryVideoSection(
                         video = video,
                         onClick = {
                             // 点击视频跳转到WebView页面播放
-                            navigator.push(WebViewScreen(video.videoURL))
+                            WebViewActivity.start(context,video.videoURL)
+
+                            EventReportUtils.reportTDParams("browser_click",
+                                params = mutableMapOf(
+                                    "action" to "recommend",
+                                    "webname" to video.videoURL
+                                ), desc = "应用内浏览器点击")
                         }
                     )
                 }
@@ -507,6 +537,7 @@ private fun WebsiteGridRow(
     websites: List<WebsiteItem>,
     navigator: Navigator
 ) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -519,7 +550,13 @@ private fun WebsiteGridRow(
                 website = website,
                 onClick = {
                     // 点击网站图标跳转到WebView页面
-                    navigator.push(WebViewScreen(website.url))
+                    WebViewActivity.start(context,website.url)
+
+                    EventReportUtils.reportTDParams("browser_click",
+                        params = mutableMapOf(
+                            "action" to "web",
+                            "webname" to website.url
+                        ), desc = "应用内浏览器点击")
                 }
             )
         }
@@ -547,7 +584,9 @@ private fun WebsiteItemCard(
     ) {
         // 使用AsyncImageImpl显示网站图标
         AsyncImageImpl(
-            modifier = Modifier.size(42.dp).clip(CircleShape),
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape),
             model = website.icon,
             contentScale = ContentScale.FillBounds,
         )
@@ -650,14 +689,19 @@ private fun handleSearch(
     navigator: Navigator
 ) {
     if (searchText.isBlank()) {
-        ToastUtils.showShort("请输入搜索内容或URL链接")
+        ToastUtils.showShort(context.getString(R.string.please_enter_the_search_content_or_url_link))
         return
     }
+    EventReportUtils.reportTDParams("browser_click",
+        params = mutableMapOf(
+            "action" to "search",
+            "webname" to searchText
+        ), desc = "应用内浏览器点击")
     //(WebView浏览)
     if (searchText.startsWith("http")) {
-        navigator.push(WebViewScreen(searchText))
+        WebViewActivity.start(context,searchText)
     }else{
-        navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
+        WebViewActivity.start(context,"https://google.com/search?q=${searchText}")
     }
 
 }

@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import com.videodownloader.module.api.DownloadUtil
+import com.videodownloader.module.api.DlEvtBridge
 import com.videodownloader.module.download.Task.DownloadState
 import com.videodownloader.module.download.Task.DownloadState.Canceled
 import com.videodownloader.module.download.Task.DownloadState.Completed
@@ -259,9 +260,15 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                     }
                 },
             )
-                .onSuccess { pathList ->
-                    Log.d("下载", "下载成功::${pathList} ")
-                    downloadState = Completed(pathList)
+                .onSuccess { outputPath ->
+                    Log.d("下载", "下载成功::${outputPath} ")
+                    downloadState = Completed(outputPath)
+                    // 回调给 app 模块监听（MP4下载成功）
+                    try {
+                        DlEvtBridge.notifyMp4Success(id, listOf(outputPath))
+                    } catch (e: Throwable) {
+                        Log.e("下载", "触发MP4成功回调异常: ${e.message}", e)
+                    }
                 }
                 .onFailure { throwable ->
                     Log.d("下载", "下载失败::${throwable.message} ")
@@ -357,6 +364,12 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                     Log.d("下载", "FFmpeg---> 下载成功::${pathList} ")
 
                     downloadState = Completed(pathList)
+                    // 回调给 app 模块监听（任务下载完成，不区分类型）
+                    try {
+                        DlEvtBridge.notifyMp4Success(id, listOf(pathList))
+                    } catch (e: Throwable) {
+                        Log.e("下载", "触发任务完成回调异常: ${e.message}", e)
+                    }
                 }
                 .onFailure { throwable ->
                     Log.d("下载", "FFmpeg--->下载失败::${throwable.message} ")

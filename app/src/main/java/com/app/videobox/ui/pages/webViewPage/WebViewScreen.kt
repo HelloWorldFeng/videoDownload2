@@ -32,15 +32,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.app.videobox.BuildConfig
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.ModalBottomSheetV3
@@ -57,6 +55,7 @@ import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.utils.DefaultBrowserUtils
+import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.videodownloader.module.download.DownloaderV2
@@ -127,8 +126,12 @@ fun WebPageScreen(
                 closeAction = {
                     context.finish()
                 })
-
         }
+
+        EventReportUtils.reportTDParams("browser_search_click",
+            params = mutableMapOf(
+                "action" to "back",
+            ), desc = "搜索页面点击")
     }
     BackHandler {
         backAction.invoke()
@@ -164,9 +167,16 @@ fun WebPageScreen(
                 },
                 onHome = {
                     context.finish()
+                    EventReportUtils.reportTDParams("browser_search_click",
+                        params = mutableMapOf(
+                            "action" to "home",
+                        ), desc = "搜索页面点击")
                 },
                 onAd = {
-
+                    EventReportUtils.reportTDParams("browser_search_click",
+                        params = mutableMapOf(
+                            "action" to "adremove",
+                        ), desc = "搜索页面点击")
                 }
             )
 
@@ -227,6 +237,12 @@ fun WebPageScreen(
                     )
                 }
                 downloader.enqueue(task)
+                val host = info.url.toUri().host
+                EventReportUtils.reportTDParams("download_pop_click", params = mutableMapOf(
+                    "action" to "download",
+                    "URL" to (host?:info.url)
+                ), desc = "视频下载弹窗点击")
+
                 //旧方法-创建下载任务
 //                handleVideoResourceDownload(videoUrl = "videoUrl", videoTitle = "test")
             }
@@ -235,6 +251,7 @@ fun WebPageScreen(
         //空信息弹窗
         EmptyResolveDialog(
             viewModel = viewModel,
+            currentUrl = currentUrl,
             onDismissRequest = {
                 viewModel.postAction(WebViewModel.Action.HideEmptyResolveDialog)
             },
@@ -326,10 +343,19 @@ fun ResolveInfoDialog(
 
         is WebViewModel.DialogState.Showing -> {
             if (state is WebViewModel.ResolveVideoState.ResolveSuccess){
+                EventReportUtils.reportTDParams("download_pop_show", params = mutableMapOf(
+                    "download_type" to "success"
+                ), desc = "视频下载弹窗展示")
+
                 ResolveDialog(
                     state = state,
                     onClickDownload = onClickDownload,
-                    onDismissRequest = { viewModel.postAction(WebViewModel.Action.HideResolveDialog) },
+                    onDismissRequest = {
+                        viewModel.postAction(WebViewModel.Action.HideResolveDialog)
+                        EventReportUtils.reportTDParams("download_pop_click", params = mutableMapOf(
+                            "action" to "close",
+                        ), desc = "视频下载弹窗点击")
+                                       },
                 )
             }
 
@@ -343,13 +369,22 @@ fun ResolveInfoDialog(
 private fun EmptyResolveDialog(
     viewModel: WebViewModel,
     onDismissRequest: () -> Unit,
-    onClick:()-> Unit,
+    onClick: () -> Unit,
+    currentUrl: String,
 ){
     val resolveDialogState = viewModel.resolveEmptyDialogStateFlow.collectAsStateWithLifecycle().value
 
     when (resolveDialogState) {
         WebViewModel.DialogState.Hidden -> {}
         WebViewModel.DialogState.Showing -> {
+            EventReportUtils.reportTDParams("download_pop_show", params = mutableMapOf(
+                "download_type" to "fail"
+            ), desc = "视频下载弹窗展示")
+
+            EventReportUtils.reportTDParams("browser_nodownload_click", params = mutableMapOf(
+                "web" to currentUrl
+            ), desc = "下载按钮点击-无内容弹窗展示")
+
             val sheetStateV3 = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             LaunchedEffect(Unit) { sheetStateV3.show() }
             val scope = rememberCoroutineScope()
@@ -585,6 +620,11 @@ private fun FloatingVideoButton(
                     .size(56.dp)
                     .singClick {
                         viewModel.postAction(WebViewModel.Action.ShowEmptyResolveDialog)
+
+                        EventReportUtils.reportTDParams("browser_download_click",
+                            params = mutableMapOf(
+                                "click_type" to "none",
+                            ), desc = "下载按钮点击")
                     },
                 model = R.drawable.icon_resolve_not,
                 contentDescription = null
@@ -621,7 +661,10 @@ private fun FloatingVideoButton(
                             closeAction = {
                                 viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
                             })
-
+                        EventReportUtils.reportTDParams("browser_download_click",
+                            params = mutableMapOf(
+                                "click_type" to "content",
+                            ), desc = "下载按钮点击")
                     }
                 ,
                 contentScale = ContentScale.FillWidth

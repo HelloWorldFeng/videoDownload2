@@ -32,6 +32,7 @@ import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.ModalBottomSheetV3
 import com.app.videobox.ui.widgets.singClick
+import com.app.videobox.utils.EventReportUtils
 import kotlinx.coroutines.launch
 
 
@@ -43,7 +44,11 @@ fun NotifyHomeDialog(
     onClick:()->Unit
 ){
     val sheetStateV3 = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    LaunchedEffect(Unit) { sheetStateV3.show() }
+    LaunchedEffect(Unit) {
+        EventReportUtils.reportTDParams("permission_pop_show", params = mutableMapOf(
+            "show_type" to "home"
+        ), desc = "新通知权限引导弹窗展示")
+        sheetStateV3.show() }
     val scope = rememberCoroutineScope()
     BackHandler { scope.launch { sheetStateV3.hide() }.invokeOnCompletion { onDismissRequest() } }
 

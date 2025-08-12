@@ -82,4 +82,5 @@
     <string name="more">More</string>
     <string name="search_or_type_url">Search or type URL</string>
     <string name="no_content_at_the_moment">no content at the moment</string>
+    <string name="please_enter_the_search_content_or_url_link">Please enter the search content or URL link</string>
 </resources>

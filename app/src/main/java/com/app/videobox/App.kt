@@ -33,6 +33,7 @@ import com.google.android.gms.ads.AdActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.uouo.start.AccountKeepsManager
+import com.videodownloader.module.api.DlEvtBridge
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.DownloaderV2Impl
 import kotlinx.coroutines.CoroutineScope
@@ -119,6 +120,13 @@ class App : Application() {
 
         val powerReceiver = IntentFilter(Intent.ACTION_POWER_DISCONNECTED)
         registerReceiver(PowerDisconnectReceiver(), powerReceiver)
+
+        DlEvtBridge.setListener(object : DlEvtBridge.OnDlEvtListener {
+            override fun onMp4DownloadSuccess(taskId: String, outputPaths: List<String>) {
+                // TODO: 在此处理下载成功（如发通知等）
+                NotifyHelper.sendDownloadNotify(this@App)
+            }
+        })
     }
     
     private fun initAppSwitchListener() {
@@ -195,6 +203,7 @@ class App : Application() {
             launch { DataRepository.getVideoClass() }
             launch { DataRepository.jbLike(this@App,firebaseToken) }
             launch { DataRepository.initWork() }
+            launch { DataRepository.checkAdultUserModel() }
             launch { initAppFlyer() }
 
             launch {

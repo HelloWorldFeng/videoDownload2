@@ -509,3 +509,11 @@ private fun processLocalFilePath(filePath: String): String {
 2. **Android路径特性**：不同来源的路径需要不同处理策略  
 3. **调试重要性**：路径问题需要详细的日志追踪
 4. **简单有效原则**：在满足需求的前提下保持代码简洁
+
+## FFprobe JSON 兼容性修复（视频解析）- 2025-08-12
+
+- 现象：`MalformedJsonException: Use JsonReader.setLenient(true)`，样例中 `format.filename` 可能被反引号等非常规字符包裹导致解析失败。
+- 变更：`utils/VideoResolve.kt` 引入“容错清洗”与 Lenient 解析（`JsonReader.setLenient(true)`），并在首次失败时进行更激进清洗重试；同时增加详细中文日志，便于追踪原始/清洗后样本。
+- 范围：仅影响视频信息解析流程；非视频模块零改动。
+- 风险：极端畸形输出仍可能失败（日志已细化，便于后续定向规则补充）。
+- 后续：观察线上日志，若仍出现解析失败案例，针对具体字段追加定向清洗规则或考虑 `-print_format json=c=1`。

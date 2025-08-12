@@ -2,6 +2,7 @@ package com.app.videobox.network
 
 import android.content.Context
 import android.util.Log
+import cn.thinkingdata.analytics.TDAnalytics
 import com.app.videobox.App
 import com.app.videobox.BuildConfig
 import com.app.videobox.ad.UserHelper
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.util.Calendar
 import java.util.TimeZone
 
@@ -182,6 +184,16 @@ object DataRepository {
         }catch (e: Exception){
             e.printStackTrace()
             return@withContext null
+        }
+    }
+
+    suspend fun checkAdultUserModel() = withContext(Dispatchers.IO){
+        try {
+            val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams)
+            val result = service.checkAdultUserModel(params).model.isAdult
+            TDAnalytics.userSet(JSONObject(mapOf("user_jb" to if (result) "18_jb" else "normal_jb")))
+        }catch (e:Exception){
+            e.printStackTrace()
         }
     }
 }

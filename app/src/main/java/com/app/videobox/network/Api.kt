@@ -1,5 +1,6 @@
 package com.app.videobox.network
 
+import com.app.videobox.network.model.AdultModel
 import com.google.gson.JsonElement
 import com.app.videobox.network.model.HomeUrlModel
 import com.app.videobox.network.model.MediaVideo
@@ -8,7 +9,9 @@ import com.app.videobox.network.model.JbLikeModel
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.NotifyModel
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.QueryMap
 
 interface Api {
 
@@ -35,4 +38,8 @@ interface Api {
     suspend fun GetSceneEventPushMessageData(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<NotifyModel>
 
 
+    @GET("/V1/User/CheckUser")
+    suspend fun checkAdultUserModel(
+        @QueryMap map: Map<String, @JvmSuppressWildcards Any>
+    ): BaseResponse<AdultModel>
 }

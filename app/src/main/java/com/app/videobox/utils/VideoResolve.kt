@@ -5,8 +5,10 @@ import androidx.core.net.toUri
 import com.arthenica.mobileffmpeg.Config
 import com.arthenica.mobileffmpeg.FFprobe
 import com.google.gson.JsonParser
+import com.google.gson.stream.JsonReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.StringReader
 
 object VideoResolve {
     
@@ -132,34 +134,45 @@ object VideoResolve {
     }
 
     /**
-     * 清理和验证FFprobe的JSON输出
+     * 清理和验证FFprobe的JSON输出（容错清洗版）
+     * 1) 截取第一个'{'到最后一个'}'之间的内容
+     * 2) 移除反引号、零宽字符、非法控制字符
+     * 3) 修补常见的轻微格式问题（如 filename 被包裹反引号）
      */
     private fun cleanJsonOutput(jsonOutput: String): String {
         if (jsonOutput.isBlank()) {
             throw IllegalArgumentException("FFprobe输出为空")
         }
-        
-        // 查找JSON开始位置（第一个{）
-        val jsonStart = jsonOutput.indexOf('{')
-        if (jsonStart == -1) {
-            throw IllegalArgumentException("未找到有效的JSON内容")
-        }
-        
-        // 查找JSON结束位置（最后一个}）
-        val jsonEnd = jsonOutput.lastIndexOf('}')
-        if (jsonEnd == -1 || jsonEnd <= jsonStart) {
+
+        val sIdx = jsonOutput.indexOf('{')
+        val eIdx = jsonOutput.lastIndexOf('}')
+        if (sIdx == -1 || eIdx == -1 || eIdx <= sIdx) {
             throw IllegalArgumentException("JSON格式不完整")
         }
-        
-        // 提取JSON部分
-        val jsonContent = jsonOutput.substring(jsonStart, jsonEnd + 1)
-        
-        // 检查是否包含必要的字段
-        if (!jsonContent.contains("\"format\"") && !jsonContent.contains("\"streams\"")) {
-            Log.w("VideoResolve", "JSON内容可能不完整: $jsonContent")
+
+        var content = jsonOutput.substring(sIdx, eIdx + 1)
+
+        // 1) 移除反引号、零宽字符、非常用控制字符
+        content = content
+            .replace("`", "") // 去除反引号（常见于外层UI拦截/复制时产生）
+            .replace(Regex("[\\u200B-\\u200F\\u202A-\\u202E]"), "") // 零宽/方向控制字符
+            .replace(Regex("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]"), "") // 非法控制字符
+
+        // 2) 特殊字段定向修补：filename 若被错误反引号包裹，去掉它们
+        //   形如: "filename": "`https://...`"  → "filename": "https://..."
+        content = content.replace(
+            Regex("(\"filename\"\\s*:\\s*\")`+"),
+            "$1"
+        ).replace(
+            Regex("`+\"\\s*(,|})"),
+            "\"$1"
+        )
+
+        // 3) 轻描淡写的结构校验提示
+        if (!content.contains("\"format\"") && !content.contains("\"streams\"")) {
+            Log.w("VideoResolve", "JSON内容可能不完整(容错后): $content")
         }
-        
-        return jsonContent
+        return content
     }
 
     /**
@@ -175,13 +188,25 @@ object VideoResolve {
         // 清理和验证JSON输出
         val cleanedJson = cleanJsonOutput(jsonOutput)
         
+        // 使用Lenient模式解析，提升对轻微异常JSON的容错能力
         val jsonElement = try {
-            JsonParser.parseString(cleanedJson)
+            val reader = JsonReader(StringReader(cleanedJson)).apply { isLenient = true }
+            JsonParser.parseReader(reader)
         } catch (e: Exception) {
-            Log.e("VideoResolve", "JSON解析失败: ${e.message}")
-            Log.e("VideoResolve", "原始输出: $jsonOutput")
-            Log.e("VideoResolve", "清理后输出: $cleanedJson")
-            throw e
+            Log.e("VideoResolve", "JSON第一次解析失败(已容错清洗): ${e.message}")
+            Log.e("VideoResolve", "原始输出样本: ${jsonOutput.take(512)}")
+            Log.e("VideoResolve", "清洗后样本: ${cleanedJson.take(512)}")
+
+            // 兜底：再次做一遍更激进的清洗后重试一次
+            val alt = cleanedJson
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+                .replace(Regex(",\\s*}"), "}") // 尾随逗号修补
+                .replace(Regex(",\\s*]"), "]")
+
+            val reader2 = JsonReader(StringReader(alt)).apply { isLenient = true }
+            JsonParser.parseReader(reader2)
         }
         
         val jsonObject = jsonElement.asJsonObject

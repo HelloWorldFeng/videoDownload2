@@ -18,6 +18,7 @@ import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
+import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.FileUtils
 import com.app.videobox.utils.NotifyHelper
 import com.blankj.utilcode.util.SPStaticUtils
@@ -35,7 +36,6 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private var navigator: Navigator?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +47,20 @@ class MainActivity : BaseActivity() {
                 fetchPhoneVideo(this@MainActivity)
             }
         }
+        if (SPStaticUtils.getBoolean("enter_home_first",true)){
+            SPStaticUtils.put("enter_home_first",false)
+            EventReportUtils.reportTDParams("enter_home_first",
+                params = mutableMapOf(), desc = "首次进入主页")
+        }
+
+        if (NotifyHelper.checkNotificationPermission(this)){
+            EventReportUtils.reportTDParams("push_permission_agree",
+                params = mutableMapOf(), desc = "已同意通知权限（主页）")
+        }else{
+            EventReportUtils.reportTDParams("push_permission_no_agree",
+                params = mutableMapOf(), desc = "没有通知权限（主页）")
+        }
+
         setContent {
             BackHandler {}
             Navigator(NewHomeScreen())
@@ -57,8 +71,18 @@ class MainActivity : BaseActivity() {
                     Permission.POST_NOTIFICATIONS).not()){
                 SPStaticUtils.put("showHomeNotify",false)
                 NotifyHomeDialog(
-                    onDismissRequest = {},
+                    onDismissRequest = {
+                        EventReportUtils.reportTDParams("permission_pop_click", params = mutableMapOf(
+                            "click_type" to "home",
+                            "action" to "close"
+                        ), desc = "新通知权限引导弹窗点击")
+
+                    },
                     onClick = {
+                        EventReportUtils.reportTDParams("permission_pop_click", params = mutableMapOf(
+                            "click_type" to "home",
+                            "action" to "grant"
+                        ), desc = "新通知权限引导弹窗点击")
                         notLaunchHot = true
                         NotifyHelper.openNotificationSettings(this)
                     }

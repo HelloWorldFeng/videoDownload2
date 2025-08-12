@@ -35,6 +35,7 @@ import com.app.videobox.ui.theme.gradientColor
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.DefaultBrowserUtils
+import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.LanguageUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import org.koin.androidx.compose.koinViewModel
@@ -53,6 +54,13 @@ class WebViewActivity: BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val url = intent.getStringExtra("web_url")?:""
+
+        EventReportUtils.reportTDParams("browser_search_show",
+            params = mutableMapOf(
+                "web" to url,
+            ), desc = "搜索页面展示")
+
+
         setContent {
             Content(url)
         }

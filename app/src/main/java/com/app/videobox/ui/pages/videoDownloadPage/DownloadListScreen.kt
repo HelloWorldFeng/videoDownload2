@@ -37,6 +37,7 @@ import com.app.videobox.ui.widgets.ProgressLinear
 
 import com.app.videobox.ui.widgets.VideoCardV1
 import com.app.videobox.ui.widgets.singClick
+import com.app.videobox.utils.EventReportUtils
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.Task
 import kotlinx.coroutines.flow.collectLatest
@@ -66,7 +67,12 @@ fun DownloadListScreen(
     
     // ViewModel状态
     val uiState by viewModel.uiState.collectAsState()
-    
+
+    LaunchedEffect(Unit) {
+        EventReportUtils.reportTDParams("download_show", params = mutableMapOf(), desc = "下载列表-页面展示")
+
+    }
+
     // 处理副作用事件
     LaunchedEffect(Unit) {
         viewModel.effects.collectLatest { effect ->
@@ -75,6 +81,9 @@ fun DownloadListScreen(
                     // 显示Toast消息
                 }
                 is DownloadListViewModel.Effect.NavigateToPlayer -> {
+                    EventReportUtils.reportTDParams("download_click", params = mutableMapOf(
+                        "action" to "play"
+                    ), desc = "下载列表-点击")
                     AdManager.getFullAdFromPool(
                         context,
                         adType = AD_TYPE_INT,
