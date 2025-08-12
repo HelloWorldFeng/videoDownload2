@@ -67,6 +67,10 @@ class App : Application() {
     }
     override fun onCreate() {
         super.onCreate()
+        // 初始化语言设置（必须在其他初始化之前）
+        com.app.videobox.utils.LanguageUtils.initializeLanguageIfNeeded()
+        setAppLanguage(this)
+        
         NotifyHelper.initNotify(this)
         initTdSdk()
         initFirebase()
@@ -291,7 +295,12 @@ class App : Application() {
 
 
     override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
+        // 在attachBaseContext中设置语言
+        val context = base?.let { 
+            com.app.videobox.utils.LanguageUtils.initializeLanguageIfNeeded()
+            com.app.videobox.utils.LanguageUtils.getAttachBaseContext(it) 
+        } ?: base
+        super.attachBaseContext(context)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

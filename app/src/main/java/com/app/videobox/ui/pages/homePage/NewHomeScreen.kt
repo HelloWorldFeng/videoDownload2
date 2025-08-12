@@ -51,10 +51,12 @@ import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ext.openGooglePlayStore
+import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
+import com.app.videobox.ui.LanguageActivity
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
@@ -682,7 +684,8 @@ private fun SettingDrawerContent(
             DrawerMenuItem(
                 icon = R.drawable.icon_language,
                 title = stringResource(R.string.language),
-                onClick = { 
+                onClick = {
+                    context.safeStartActivity(LanguageActivity::class.java)
                     scope.launch { drawerState.close() }
                 }
             )

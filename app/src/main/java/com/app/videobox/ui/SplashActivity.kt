@@ -203,7 +203,7 @@ class SplashActivity : BaseActivity() {
                 adType = "open",
                 adScene = "oa_cold_start",
                 closeAction = {
-                    goNextType()
+                    this.safeStartActivity(LanguageActivity::class.java)
                 })
 
         }else{

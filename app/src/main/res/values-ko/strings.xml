@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">SteamBox</string>
+    <string name="module_name">비디오 다운로더</string>
+
+    <!-- 单位 -->
+    <string name="unit_kb">KB</string>
+    <string name="unit_mb">MB</string>
+    <string name="unit_gb">GB</string>
+    <string name="unit_tb">TB</string>
+    <string name="unit_bps">B/s</string>
+    <string name="unit_kbps">KB/s</string>
+    <string name="unit_mbps">MB/s</string>
+    <string name="unit_gbps">GB/s</string>
+    
+    <!-- 质量选项 -->
+    <string name="quality_4k">4K (2160p)</string>
+    <string name="quality_2k">2K (1440p)</string>
+    <string name="quality_1080p">1080p</string>
+    <string name="quality_720p">720p</string>
+    <string name="quality_480p">480p</string>
+    <string name="quality_360p">360p</string>
+    <string name="quality_240p">240p</string>
+    <string name="quality_144p">144p</string>
+    
+    <!-- 格式选项 -->
+    <string name="format_mp4">MP4</string>
+    <string name="format_webm">WebM</string>
+    <string name="format_mkv">MKV</string>
+    <string name="format_avi">AVI</string>
+    <string name="format_mov">MOV</string>
+    <string name="format_mp3">MP3</string>
+    <string name="format_aac">AAC</string>
+    <string name="format_wav">WAV</string>
+    <string name="format_flac">FLAC</string>
+    <string name="format_ogg">OGG</string>
+
+    <string name="hot_video">인기 비디오</string>
+    <string name="language">언어</string>
+    <string name="local_video">로컬 비디오</string>
+    <string name="next">다음</string>
+    <string name="privacy_policy">개인정보 보호정책</string>
+    <string name="rate_us">평가하기</string>
+    <string name="share_the_app">앱 공유하기</string>
+    <string name="version_update">버전 업데이트</string>
+
+    <string name="filesize_mb">%.2f MB</string>
+    <string name="filesize_gb">%.2f GB</string>
+    <string name="thumbnail">썸네일</string>
+    <string name="download_list">다운로드 목록</string>
+    <string name="select_all">모두 선택</string>
+    <string name="cancel_select_all">모두 취소</string>
+    <string name="here_are_the_popular_videos">인기 비디오들입니다</string>
+    <string name="video">%1$d 비디오</string>
+    <string name="there_is_no_video_please_go_to_add_it">비디오가 없습니다. 추가하러 가세요</string>
+    <string name="start_download_task">다운로드 작업 시작</string>
+    <string name="play_video_before_downloading">다운로드 전에 비디오 재생</string>
+    <string name="please_play_the_video_you_want_to_download">"다운로드하고 싶은 비디오를 재생해 주세요. "</string>
+    <string name="this_helps_us_detect_the_video_source_and_activate_the_download_button">"이것은 비디오 소스를 감지하고 다운로드 버튼을 활성화하는 데 도움이 됩니다. "</string>
+    <string name="some_websites_may_not_support_downloading">일부 웹사이트는 다운로드를 지원하지 않을 수 있습니다.</string>
+    <string name="got_it">알겠습니다</string>
+    <string name="terms_of_service">서비스 약관</string>
+    <string name="feedback">피드백</string>
+    <string name="continues">계속</string>
+    <string name="unknown">알 수 없음</string>
+    <string name="share">공유</string>
+    <string name="cancel">취소</string>
+    <string name="download">다운로드</string>
+    <string name="why_do_we_need_permission">왜 권한이 필요한가요?</string>
+    <string name="to_keep_an_eye_on_your_download_progress_in_your_notifications">알림에서 다운로드 진행 상황을 확인하려면 Stream Box가 알림을 보낼 수 있도록 허용하기만 하면 됩니다.</string>
+    <string name="grant">허용</string>
+    <string name="permission_required">권한 필요</string>
+    <string name="update_settings">설정 업데이트</string>
+    <string name="to_download_files_you_need_to">파일을 다운로드하려면 다음이 필요합니다:</string>
+    <string name="open_settings_tap_permission">설정 열기, 권한 탭</string>
+    <string name="turn_on_notification">알림 켜기</string>
+    <string name="video_download_complete">비디오 다운로드 완료</string>
+    <string name="click_to_view">보려면 클릭</string>
+    <string name="more">더보기</string>
+    <string name="search_or_type_url">검색 또는 URL 입력</string>
+    <string name="no_content_at_the_moment">현재 콘텐츠가 없습니다</string>
+</resources>

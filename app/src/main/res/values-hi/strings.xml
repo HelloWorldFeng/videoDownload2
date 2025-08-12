@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">SteamBox</string>
+    <string name="module_name">वीडियो डाउनलोडर</string>
+
+    <!-- 单位 -->
+    <string name="unit_kb">KB</string>
+    <string name="unit_mb">MB</string>
+    <string name="unit_gb">GB</string>
+    <string name="unit_tb">TB</string>
+    <string name="unit_bps">B/s</string>
+    <string name="unit_kbps">KB/s</string>
+    <string name="unit_mbps">MB/s</string>
+    <string name="unit_gbps">GB/s</string>
+    
+    <!-- 质量选项 -->
+    <string name="quality_4k">4K (2160p)</string>
+    <string name="quality_2k">2K (1440p)</string>
+    <string name="quality_1080p">1080p</string>
+    <string name="quality_720p">720p</string>
+    <string name="quality_480p">480p</string>
+    <string name="quality_360p">360p</string>
+    <string name="quality_240p">240p</string>
+    <string name="quality_144p">144p</string>
+    
+    <!-- 格式选项 -->
+    <string name="format_mp4">MP4</string>
+    <string name="format_webm">WebM</string>
+    <string name="format_mkv">MKV</string>
+    <string name="format_avi">AVI</string>
+    <string name="format_mov">MOV</string>
+    <string name="format_mp3">MP3</string>
+    <string name="format_aac">AAC</string>
+    <string name="format_wav">WAV</string>
+    <string name="format_flac">FLAC</string>
+    <string name="format_ogg">OGG</string>
+
+    <string name="hot_video">लोकप्रिय वीडियो</string>
+    <string name="language">भाषा</string>
+    <string name="local_video">स्थानीय वीडियो</string>
+    <string name="next">अगला</string>
+    <string name="privacy_policy">गोपनीयता नीति</string>
+    <string name="rate_us">हमें रेट करें</string>
+    <string name="share_the_app">ऐप साझा करें</string>
+    <string name="version_update">संस्करण अपडेट</string>
+
+    <string name="filesize_mb">%.2f MB</string>
+    <string name="filesize_gb">%.2f GB</string>
+    <string name="thumbnail">थंबनेल</string>
+    <string name="download_list">डाउनलोड सूची</string>
+    <string name="select_all">सभी चुनें</string>
+    <string name="cancel_select_all">सभी रद्द करें</string>
+    <string name="here_are_the_popular_videos">यहाँ लोकप्रिय वीडियो हैं</string>
+    <string name="video">%1$d वीडियो</string>
+    <string name="there_is_no_video_please_go_to_add_it">कोई वीडियो नहीं है, कृपया जाकर इसे जोड़ें</string>
+    <string name="start_download_task">डाउनलोड कार्य शुरू करें</string>
+    <string name="play_video_before_downloading">डाउनलोड करने से पहले वीडियो चलाएं</string>
+    <string name="please_play_the_video_you_want_to_download">"कृपया वह वीडियो चलाएं जिसे आप डाउनलोड करना चाहते हैं। "</string>
+    <string name="this_helps_us_detect_the_video_source_and_activate_the_download_button">"यह हमें वीडियो स्रोत का पता लगाने और डाउनलोड बटन को सक्रिय करने में मदद करता है। "</string>
+    <string name="some_websites_may_not_support_downloading">कुछ वेबसाइटें डाउनलोडिंग का समर्थन नहीं कर सकती हैं।</string>
+    <string name="got_it">समझ गया</string>
+    <string name="terms_of_service">सेवा की शर्तें</string>
+    <string name="feedback">प्रतिक्रिया</string>
+    <string name="continues">जारी रखें</string>
+    <string name="unknown">अज्ञात</string>
+    <string name="share">साझा करें</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="download">डाउनलोड</string>
+    <string name="why_do_we_need_permission">हमें अनुमति की आवश्यकता क्यों है?</string>
+    <string name="to_keep_an_eye_on_your_download_progress_in_your_notifications">अपनी सूचनाओं में अपनी डाउनलोड प्रगति पर नज़र रखने के लिए, बस Stream Box को आपको सूचनाएं भेजने की अनुमति दें।</string>
+    <string name="grant">अनुदान</string>
+    <string name="permission_required">अनुमति आवश्यक</string>
+    <string name="update_settings">सेटिंग्स अपडेट करें</string>
+    <string name="to_download_files_you_need_to">फाइलें डाउनलोड करने के लिए, आपको चाहिए:</string>
+    <string name="open_settings_tap_permission">सेटिंग्स खोलें, अनुमतियों पर टैप करें</string>
+    <string name="turn_on_notification">सूचना चालू करें</string>
+    <string name="video_download_complete">वीडियो डाउनलोड पूरा</string>
+    <string name="click_to_view">देखने के लिए क्लिक करें</string>
+    <string name="more">और</string>
+    <string name="search_or_type_url">खोजें या URL टाइप करें</string>
+    <string name="no_content_at_the_moment">इस समय कोई सामग्री नहीं</string>
+</resources>

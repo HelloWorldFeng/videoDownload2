@@ -62,12 +62,7 @@ object LanguageUtils {
      * Activity 更新语言资源
      */
     fun getAttachBaseContext(context: Context): Context {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return setAppLanguageApi24(context)
-        } else {
-            setAppLanguage(context)
-        }
-        return context
+        return setAppLanguageApi24(context)
     }
 
     /**
@@ -80,11 +75,7 @@ object LanguageUtils {
         val configuration = resources.configuration
         // 获取当前系统语言，默认设置跟随系统
         val locale = getAppLocale()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            configuration.setLocale(locale);
-        } else {
-            configuration.locale = locale;
-        }
+        configuration.setLocale(locale);
         resources.updateConfiguration(configuration, displayMetrics)
     }
 
@@ -106,7 +97,110 @@ object LanguageUtils {
     /**
      * 获取 App 当前语言
      */
-    private fun getAppLocale() = list[SPStaticUtils.getInt("selectLanguageIndex", 0)].locale
+    private fun getAppLocale(): Locale {
+        try {
+            val savedIndex = SPStaticUtils.getInt("selectLanguageIndex", -1)
+            
+            // 如果用户没有手动设置过语言（-1表示未设置），则尝试匹配系统语言
+            if (savedIndex == -1) {
+                val systemLocale = Locale.getDefault()
+                val matchedIndex = findMatchingLanguageIndex(systemLocale)
+                if (matchedIndex != -1) {
+                    // 找到匹配的语言，保存并返回
+                    SPStaticUtils.put("selectLanguageIndex", matchedIndex)
+                    return list[matchedIndex].locale
+                } else {
+                    // 没找到匹配的语言，使用默认英语但不保存（让用户选择）
+                    return list[0].locale
+                }
+            }
+            
+            // 用户已手动设置过语言，直接返回
+            return list[savedIndex].locale
+        } catch (e: Exception) {
+            // 如果出现异常（比如SharedPreferences未初始化），返回默认语言
+            e.printStackTrace()
+            return list[0].locale
+        }
+    }
+    
+    /**
+     * 查找与系统语言匹配的语言索引
+     */
+    private fun findMatchingLanguageIndex(systemLocale: Locale): Int {
+        val systemLanguage = systemLocale.language
+        val systemCountry = systemLocale.country
+        
+        // 首先尝试精确匹配（语言+国家）
+        for (i in list.indices) {
+            val locale = list[i].locale
+            if (locale.language == systemLanguage && locale.country == systemCountry) {
+                return i
+            }
+        }
+        
+        // 如果精确匹配失败，尝试只匹配语言
+        for (i in list.indices) {
+            val locale = list[i].locale
+            if (locale.language == systemLanguage) {
+                return i
+            }
+        }
+        
+        // 没有找到匹配的语言
+        return -1
+    }
+    
+    /**
+     * 检查是否需要初始化语言设置
+     */
+    fun initializeLanguageIfNeeded() {
+        try {
+            // 触发getAppLocale()来执行自动语言检测和设置
+            getAppLocale()
+        } catch (e: Exception) {
+            // 如果在attachBaseContext阶段出现异常，忽略并在onCreate中重试
+            e.printStackTrace()
+        }
+    }
+    
+    /**
+     * 应用启动时检测并设置系统语言
+     * 返回true表示已自动设置了系统语言，false表示需要用户手动选择
+     */
+    fun detectAndSetSystemLanguage(): Boolean {
+        try {
+            val savedIndex = SPStaticUtils.getInt("selectLanguageIndex", -1)
+            
+            // 如果已经设置过语言，直接返回true
+            if (savedIndex != -1) {
+                return true
+            }
+            
+            // 尝试匹配系统语言
+            val systemLocale = Locale.getDefault()
+            val matchedIndex = findMatchingLanguageIndex(systemLocale)
+            
+            if (matchedIndex != -1) {
+                // 找到匹配的语言，保存并返回true
+                SPStaticUtils.put("selectLanguageIndex", matchedIndex)
+                return true
+            }
+            
+            // 没找到匹配的语言，返回false让用户选择
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+    
+    /**
+     * 获取当前选中的语言索引
+     */
+    fun getCurrentLanguageIndex(): Int {
+        return SPStaticUtils.getInt("selectLanguageIndex", 0)
+    }
 
 
 

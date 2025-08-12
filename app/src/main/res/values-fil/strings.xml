@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">SteamBox</string>
+    <string name="module_name">Video Downloader</string>
+
+    <!-- 单位 -->
+    <string name="unit_kb">KB</string>
+    <string name="unit_mb">MB</string>
+    <string name="unit_gb">GB</string>
+    <string name="unit_tb">TB</string>
+    <string name="unit_bps">B/s</string>
+    <string name="unit_kbps">KB/s</string>
+    <string name="unit_mbps">MB/s</string>
+    <string name="unit_gbps">GB/s</string>
+    
+    <!-- 质量选项 -->
+    <string name="quality_4k">4K (2160p)</string>
+    <string name="quality_2k">2K (1440p)</string>
+    <string name="quality_1080p">1080p</string>
+    <string name="quality_720p">720p</string>
+    <string name="quality_480p">480p</string>
+    <string name="quality_360p">360p</string>
+    <string name="quality_240p">240p</string>
+    <string name="quality_144p">144p</string>
+    
+    <!-- 格式选项 -->
+    <string name="format_mp4">MP4</string>
+    <string name="format_webm">WebM</string>
+    <string name="format_mkv">MKV</string>
+    <string name="format_avi">AVI</string>
+    <string name="format_mov">MOV</string>
+    <string name="format_mp3">MP3</string>
+    <string name="format_aac">AAC</string>
+    <string name="format_wav">WAV</string>
+    <string name="format_flac">FLAC</string>
+    <string name="format_ogg">OGG</string>
+
+    <string name="hot_video">Sikat na Video</string>
+    <string name="language">Wika</string>
+    <string name="local_video">Lokal na Video</string>
+    <string name="next">Susunod</string>
+    <string name="privacy_policy">Patakaran sa Privacy</string>
+    <string name="rate_us">I-rate Kami</string>
+    <string name="share_the_app">I-share ang App</string>
+    <string name="version_update">Update ng Bersyon</string>
+
+    <string name="filesize_mb">%.2f MB</string>
+    <string name="filesize_gb">%.2f GB</string>
+    <string name="thumbnail">Thumbnail</string>
+    <string name="download_list">Listahan ng Download</string>
+    <string name="select_all">Piliin Lahat</string>
+    <string name="cancel_select_all">Kanselahin Lahat</string>
+    <string name="here_are_the_popular_videos">Narito ang mga sikat na video</string>
+    <string name="video">%1$d Video</string>
+    <string name="there_is_no_video_please_go_to_add_it">Walang video, pumunta at magdagdag</string>
+    <string name="start_download_task">Simulan ang Download Task</string>
+    <string name="play_video_before_downloading">I-play ang video bago mag-download</string>
+    <string name="please_play_the_video_you_want_to_download">"Pakiplay ang video na gusto mong i-download. "</string>
+    <string name="this_helps_us_detect_the_video_source_and_activate_the_download_button">"Tumutulong ito sa amin na makita ang source ng video at ma-activate ang download button. "</string>
+    <string name="some_websites_may_not_support_downloading">Ang ilang website ay hindi sumusuporta sa pag-download.</string>
+    <string name="got_it">Nakuha Ko</string>
+    <string name="terms_of_service">Mga Tuntunin ng Serbisyo</string>
+    <string name="feedback">Feedback</string>
+    <string name="continues">Magpatuloy</string>
+    <string name="unknown">Hindi Kilala</string>
+    <string name="share">I-share</string>
+    <string name="cancel">Kanselahin</string>
+    <string name="download">I-download</string>
+    <string name="why_do_we_need_permission">Bakit kailangan namin ng permission?</string>
+    <string name="to_keep_an_eye_on_your_download_progress_in_your_notifications">para bantayan ang progress ng inyong download sa inyong notifications, payagan lang ang Stream Box na magpadala ng notifications.</string>
+    <string name="grant">Bigyan</string>
+    <string name="permission_required">Kailangan ang Permission</string>
+    <string name="update_settings">I-update ang Settings</string>
+    <string name="to_download_files_you_need_to">Para mag-download ng files, kailangan mo:</string>
+    <string name="open_settings_tap_permission">Buksan ang settings, i-tap ang permissions</string>
+    <string name="turn_on_notification">I-on ang notification</string>
+    <string name="video_download_complete">tapos na ang video download</string>
+    <string name="click_to_view">i-click para tingnan</string>
+    <string name="more">Higit Pa</string>
+    <string name="search_or_type_url">Maghanap o mag-type ng URL</string>
+    <string name="no_content_at_the_moment">walang content sa ngayon</string>
+</resources>
