@@ -54,6 +54,7 @@ import com.app.videobox.manager.FileManager
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
+import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
@@ -102,13 +103,11 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     items(dataList){fileInfo->
                         ListItemView(fileInfo,
                             onClick = {
-                                AdManager.getFullAdFromPool(
-                                    context,
-                                    adType = "int",
-                                    adScene = "play_int",
-                                    closeAction = {
-
-                                    })
+                                VideoPlayActivity.start(
+                                    context = context,
+                                    videoUrl = fileInfo.file.absolutePath,
+                                    title = fileInfo.titleName
+                                )
 
                             },
                             onClickMore = {

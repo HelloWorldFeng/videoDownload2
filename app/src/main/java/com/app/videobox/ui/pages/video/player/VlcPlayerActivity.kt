@@ -842,7 +842,7 @@ fun ModernVlcPlayerScreen(
                                     
                                     // 调用音量变更回调
                                     onVolumeChange(newVolumeLevel)
-                                    act.gestureIndicatorText.value = "音量 ${(newVolumeLevel * 100 / maxVolume)}%"
+                                    act.gestureIndicatorText.value = "volume ${(newVolumeLevel * 100 / maxVolume)}%"
                                     act.gestureIndicatorVisible.value = true
                                     Log.v("ModernVlcPlayerScreen", "音量手势: 新音量=$newVolumeLevel")
                                 }
@@ -859,7 +859,7 @@ fun ModernVlcPlayerScreen(
                                         layoutParams.screenBrightness = newBrightnessLevel
                                         window.attributes = layoutParams
                                         
-                                        act.gestureIndicatorText.value = "亮度 ${(newBrightnessLevel * 100).toInt()}%"
+                                        act.gestureIndicatorText.value = "brightness ${(newBrightnessLevel * 100).toInt()}%"
                                         act.gestureIndicatorVisible.value = true
                                         Log.v("ModernVlcPlayerScreen", "亮度手势: 新亮度=$newBrightnessLevel")
                                     } catch (e: Exception) {

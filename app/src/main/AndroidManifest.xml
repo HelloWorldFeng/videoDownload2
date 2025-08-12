@@ -99,14 +99,8 @@
 
         <activity android:name=".ui.pages.video.playerV2.VideoPlayActivity"
             android:exported="true"
-            />
-        <!-- VLC视频播放Activity - VlcPlayerActivity -->
-        <activity android:name=".ui.pages.video.player.VlcPlayerActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:screenOrientation="landscape"
-            android:exported="true"
-            android:launchMode="singleTop">
+            android:screenOrientation="portrait">
             <!-- 支持视频文件播放 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -147,6 +141,15 @@
                 <data android:pathPattern=".*\\.3gp" />
                 <data android:pathPattern=".*\\.m3u8" />
             </intent-filter>
+        </activity>
+        <!-- VLC视频播放Activity - VlcPlayerActivity -->
+        <activity android:name=".ui.pages.video.player.VlcPlayerActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:screenOrientation="landscape"
+            android:exported="true"
+            android:launchMode="singleTop">
+
         </activity>
 
 

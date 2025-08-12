@@ -113,7 +113,7 @@ dependencies {
     implementation(project(":video-downloader-module"))
     
     // VLC Player support
-    implementation("org.videolan.android:libvlc-all:4.0.0-eap20")
+    implementation("org.videolan.android:libvlc-all:3.6.2")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

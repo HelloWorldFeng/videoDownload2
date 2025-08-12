@@ -37,7 +37,7 @@ class VideoPlayActivity : ComponentActivity() {
         private const val EXTRA_TITLE = "extra_title"
         private const val EXTRA_VIDEO_URL = "extra_video_url"
         private const val VIDEO_ACTIVITY_TAG = "VideoPlayActivity"
-        
+
         /**
          * 启动视频播放Activity
          * @param context 上下文
@@ -76,11 +76,11 @@ class VideoPlayActivity : ComponentActivity() {
      */
     private fun handleIntent(intent: Intent): Pair<String, String> {
         Log.d(VIDEO_ACTIVITY_TAG, "处理Intent - Action: ${intent.action}")
-        
+
         // 首先检查是否是内部 Intent
         val internalTitle = intent.getStringExtra(EXTRA_TITLE)
         val internalVideoUrl = intent.getStringExtra(EXTRA_VIDEO_URL)
-        
+
         if (!internalTitle.isNullOrEmpty() && !internalVideoUrl.isNullOrEmpty()) {
             Log.d(VIDEO_ACTIVITY_TAG, "内部Intent - 原始URL: $internalVideoUrl")
             // 处理内部 Intent，返回处理后的URL（修复bug：之前返回的是原始URL）
@@ -106,11 +106,11 @@ class VideoPlayActivity : ComponentActivity() {
         Log.w(VIDEO_ACTIVITY_TAG, "无效Intent，使用默认值")
         return Pair("Video Play", "")
     }
-    
+
     /**
      * 视频URL路径处理器 - 专门解决VLC播放本地文件的URI格式问题
      * 确保本地文件路径能正确播放，特别是包含中文字符和特殊字符的文件名
-     * 
+     *
      * VLC要求：
      * 1. 本地文件必须使用file://协议
      * 2. 文件路径必须正确编码，特别是中文字符
@@ -118,32 +118,32 @@ class VideoPlayActivity : ComponentActivity() {
      */
     private fun processVideoUrl(videoUrl: String): String {
         Log.d(VIDEO_ACTIVITY_TAG, "开始处理视频URL: $videoUrl")
-        
+
         return when {
             // 处理本地文件路径（以 /storage 开头）
             videoUrl.startsWith("/storage") -> {
                 Log.d(VIDEO_ACTIVITY_TAG, "检测到本地存储路径")
                 processLocalFilePath(videoUrl)
             }
-            
+
             // 处理已有的 file:// URI
             videoUrl.startsWith("file://") -> {
                 Log.d(VIDEO_ACTIVITY_TAG, "检测到file://协议URI")
                 processFileUri(videoUrl)
             }
-            
+
             // 处理 content:// URI（Android内容提供者）
             videoUrl.startsWith("content://") -> {
                 Log.d(VIDEO_ACTIVITY_TAG, "检测到content://协议URI，尝试转换为真实路径")
                 processContentUri(videoUrl)
             }
-            
+
             // 处理网络URL（http/https）
             videoUrl.startsWith("http://") || videoUrl.startsWith("https://") -> {
                 Log.d(VIDEO_ACTIVITY_TAG, "检测到网络URL，直接返回")
                 videoUrl // 网络URL直接返回
             }
-            
+
             // 其他情况尝试作为本地路径处理
             else -> {
                 Log.d(VIDEO_ACTIVITY_TAG, "未知格式，尝试作为本地路径处理")
@@ -151,101 +151,34 @@ class VideoPlayActivity : ComponentActivity() {
             }
         }
     }
-    
+
     /**
      * 处理本地文件路径，转换为VLC兼容的file:// URI格式
      * 专门解决中文文件名和特殊字符的编码问题，支持URL编码路径解码
-     * 
-     * 🔧 修复说明：为应用私有目录文件跳过复杂处理，避免路径被破坏
-     * 私有目录文件直接返回原始路径，公共目录文件才进行复杂的URL解码和转换
      */
     private fun processLocalFilePath(filePath: String): String {
-        try {
-            // 🎯 关键修复：检测是否为应用私有目录文件
-            if (isInAppPrivateDirectory(this, filePath)) {
-                Log.d(VIDEO_ACTIVITY_TAG, "检测到应用私有目录文件，使用简化处理: $filePath")
-                
-                // 🔧 重要修复：私有目录文件也需要转换为file://格式
-                // 但跳过复杂的URL解码处理，直接使用File对象确保路径正确性
-                val file = File(filePath)
-                if (file.exists()) {
-                    val uri = Uri.fromFile(file)
-                    val uriString = uri.toString()
-                    Log.d(VIDEO_ACTIVITY_TAG, "私有目录文件URI转换: $filePath -> $uriString")
-                    return uriString
-                } else {
-                    Log.w(VIDEO_ACTIVITY_TAG, "私有目录文件不存在，返回原始路径: $filePath")
-                    return filePath
-                }
-            }
-            
-            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件，执行标准路径处理: $filePath")
-            
-            // 对于公共目录文件，执行原有的复杂处理逻辑
-            return processPublicFilePath(filePath)
-            
-        } catch (e: Exception) {
-            Log.e(VIDEO_ACTIVITY_TAG, "处理本地文件路径时发生错误: ${e.message}", e)
-            return filePath // 发生异常时返回原始路径
-        }
-    }
-    
-    /**
-     * 检测视频文件是否位于应用私有目录
-     * 
-     * 应用私有目录包括：
-     * - /Android/data/包名/ (应用私有数据目录)
-     * - /Android/obb/包名/ (应用私有OBB目录)
-     * - 内部存储文件目录 (context.filesDir)
-     * - 内部存储缓存目录 (context.cacheDir)
-     * - 外部存储缓存目录 (context.externalCacheDir)
-     */
-    private fun isInAppPrivateDirectory(context: Context, videoPath: String): Boolean {
-        val appPrivatePatterns = listOf(
-            "/Android/data/${context.packageName}/",     // 应用私有数据目录
-            "/Android/obb/${context.packageName}/",      // 应用私有OBB目录
-            context.filesDir.absolutePath,               // 内部存储文件目录
-            context.cacheDir.absolutePath,               // 内部存储缓存目录
-            context.externalCacheDir?.absolutePath ?: "", // 外部存储缓存目录
-        )
-        
-        val isPrivate = appPrivatePatterns.any { pattern ->
-            pattern.isNotEmpty() && videoPath.contains(pattern)
-        }
-        
-        Log.d(VIDEO_ACTIVITY_TAG, "文件位置检测 - 路径: $videoPath")
-        Log.d(VIDEO_ACTIVITY_TAG, "文件位置检测 - 是否为应用私有目录: $isPrivate")
-        
-        return isPrivate
-    }
-    
-    /**
-     * 处理公共目录文件路径的复杂逻辑
-     * 包含URL解码、文件验证、URI转换等处理
-     */
-    private fun processPublicFilePath(filePath: String): String {
         try {
             // 检查路径是否包含URL编码字符（%字符）
             val decodedPath = if (filePath.contains("%")) {
                 try {
                     val decoded = URLDecoder.decode(filePath, "UTF-8")
-                    Log.d(VIDEO_ACTIVITY_TAG, "URL解码公共目录路径: $filePath -> $decoded")
+                    Log.d(VIDEO_ACTIVITY_TAG, "URL解码本地路径: $filePath -> $decoded")
                     decoded
                 } catch (e: Exception) {
-                    Log.w(VIDEO_ACTIVITY_TAG, "公共目录路径URL解码失败，使用原始路径: ${e.message}")
+                    Log.w(VIDEO_ACTIVITY_TAG, "本地路径URL解码失败，使用原始路径: ${e.message}")
                     filePath
                 }
             } else {
                 filePath
             }
-            
+
             val file = File(decodedPath)
-            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件存在检查: ${file.exists()}, 文件路径: ${file.absolutePath}")
-            
+            Log.d(VIDEO_ACTIVITY_TAG, "文件存在检查: ${file.exists()}, 文件路径: ${file.absolutePath}")
+
             if (!file.exists()) {
                 // 如果解码后的文件不存在，尝试原始路径
                 if (decodedPath != filePath) {
-                    Log.w(VIDEO_ACTIVITY_TAG, "解码后的公共目录文件不存在，尝试原始路径")
+                    Log.w(VIDEO_ACTIVITY_TAG, "解码后的文件不存在，尝试原始路径")
                     val originalFile = File(filePath)
                     if (originalFile.exists()) {
                         Log.d(VIDEO_ACTIVITY_TAG, "使用原始路径: $filePath")
@@ -253,24 +186,24 @@ class VideoPlayActivity : ComponentActivity() {
                         return uri.toString()
                     }
                 }
-                Log.w(VIDEO_ACTIVITY_TAG, "公共目录文件不存在: 解码路径=$decodedPath, 原始路径=$filePath")
+                Log.w(VIDEO_ACTIVITY_TAG, "文件不存在: 解码路径=$decodedPath, 原始路径=$filePath")
                 return filePath // 文件不存在时返回原始路径
             }
-            
+
             // 使用Uri.fromFile()创建正确的file:// URI
             // 这个方法会自动处理特殊字符的编码
             val uri = Uri.fromFile(file)
             val uriString = uri.toString()
-            
-            Log.d(VIDEO_ACTIVITY_TAG, "公共目录文件URI转换: $filePath -> $uriString")
+
+            Log.d(VIDEO_ACTIVITY_TAG, "本地文件URI转换: $filePath -> $uriString")
             return uriString
-            
+
         } catch (e: Exception) {
-            Log.e(VIDEO_ACTIVITY_TAG, "处理公共目录文件路径时发生错误: ${e.message}", e)
+            Log.e(VIDEO_ACTIVITY_TAG, "处理本地文件路径时发生错误: ${e.message}", e)
             return filePath // 发生异常时返回原始路径
         }
     }
-    
+
     /**
      * 处理已有的file:// URI，确保格式正确
      * 重新验证并规范化URI格式，解决URL编码的中文文件名问题
@@ -279,10 +212,10 @@ class VideoPlayActivity : ComponentActivity() {
         try {
             val uri = Uri.parse(fileUri)
             val path = uri.path
-            
+
             if (path != null) {
                 Log.d(VIDEO_ACTIVITY_TAG, "从file:// URI提取路径: $path")
-                
+
                 // URL解码处理，解决中文文件名被编码的问题
                 val decodedPath = try {
                     URLDecoder.decode(path, "UTF-8")
@@ -290,9 +223,9 @@ class VideoPlayActivity : ComponentActivity() {
                     Log.w(VIDEO_ACTIVITY_TAG, "URL解码失败，使用原始路径: ${e.message}")
                     path
                 }
-                
+
                 Log.d(VIDEO_ACTIVITY_TAG, "URL解码结果: $path -> $decodedPath")
-                
+
                 // 验证解码后的文件是否存在
                 val file = File(decodedPath)
                 if (file.exists()) {
@@ -315,10 +248,10 @@ class VideoPlayActivity : ComponentActivity() {
                     }
                 }
             }
-            
+
             // 如果无法处理，返回原始URI
             return fileUri
-            
+
         } catch (e: Exception) {
             Log.e(VIDEO_ACTIVITY_TAG, "处理file:// URI时发生错误: ${e.message}", e)
             return fileUri
@@ -334,7 +267,7 @@ class VideoPlayActivity : ComponentActivity() {
         return try {
             val uri = Uri.parse(contentUri)
             Log.d(VIDEO_ACTIVITY_TAG, "开始处理content URI: $uri")
-            
+
             // 优先方案：复制到临时文件（避免分区存储权限问题）
             Log.d(VIDEO_ACTIVITY_TAG, "优先尝试复制到临时文件，避免分区存储权限问题")
             val tempFilePath = copyContentToTempFile(uri)
@@ -342,13 +275,13 @@ class VideoPlayActivity : ComponentActivity() {
                 Log.d(VIDEO_ACTIVITY_TAG, "成功复制到临时文件: $tempFilePath")
                 return processLocalFilePath(tempFilePath)
             }
-            
+
             // 备用方案：尝试获取真实文件路径（仅适用于Android 9及以下）
             Log.d(VIDEO_ACTIVITY_TAG, "临时文件复制失败，尝试真实路径访问")
             val realPath = getRealPathFromContentUri(uri)
             if (realPath != null && File(realPath).exists()) {
                 Log.d(VIDEO_ACTIVITY_TAG, "成功获取真实路径: $realPath")
-                
+
                 // 检查是否是外部存储路径，如果是则可能有权限问题
                 if (realPath.startsWith("/storage/emulated/0/") || realPath.contains("Download")) {
                     Log.w(VIDEO_ACTIVITY_TAG, "检测到外部存储路径，可能存在分区存储权限限制")
@@ -359,20 +292,20 @@ class VideoPlayActivity : ComponentActivity() {
                         return processLocalFilePath(forceTemp)
                     }
                 }
-                
+
                 return processLocalFilePath(realPath)
             }
-            
+
             // 最后方案：返回原始URI
             Log.w(VIDEO_ACTIVITY_TAG, "所有转换方法失败，返回原始content URI")
             contentUri
-            
+
         } catch (e: Exception) {
             Log.e(VIDEO_ACTIVITY_TAG, "处理content URI时发生错误: ${e.message}", e)
             contentUri // 发生异常时返回原始URI
         }
     }
-    
+
     /**
      * 从content URI获取真实文件路径
      * 支持不同的content provider
@@ -385,13 +318,13 @@ class VideoPlayActivity : ComponentActivity() {
                     Log.d(VIDEO_ACTIVITY_TAG, "处理Documents Provider URI")
                     getRealPathFromDocumentUri(uri)
                 }
-                
+
                 // MediaStore Provider
                 uri.authority == "media" -> {
                     Log.d(VIDEO_ACTIVITY_TAG, "处理MediaStore Provider URI")
                     getRealPathFromMediaStore(uri)
                 }
-                
+
                 // 其他Provider
                 else -> {
                     Log.d(VIDEO_ACTIVITY_TAG, "处理其他Provider URI")
@@ -403,7 +336,7 @@ class VideoPlayActivity : ComponentActivity() {
             null
         }
     }
-    
+
     /**
      * 从Documents Provider获取真实路径
      */
@@ -411,7 +344,7 @@ class VideoPlayActivity : ComponentActivity() {
         return try {
             val docId = DocumentsContract.getDocumentId(uri)
             Log.d(VIDEO_ACTIVITY_TAG, "Document ID: $docId")
-            
+
             when (uri.authority) {
                 "com.android.providers.downloads.documents" -> {
                     // Downloads Provider
@@ -419,12 +352,12 @@ class VideoPlayActivity : ComponentActivity() {
                         // 直接的文件路径
                         return docId.substring(4)
                     }
-                    
+
                     // 尝试构建下载文件路径
                     val fileName = getDisplayNameFromUri(uri)
                     if (fileName != null) {
-                        val downloadsDir = Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_DOWNLOADS
+                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
+                            android.os.Environment.DIRECTORY_DOWNLOADS
                         )
                         val file = File(downloadsDir, fileName)
                         if (file.exists()) {
@@ -433,25 +366,25 @@ class VideoPlayActivity : ComponentActivity() {
                     }
                     null
                 }
-                
+
                 "com.android.providers.media.documents" -> {
                     // Media Provider
                     val split = docId.split(":")
                     if (split.size >= 2) {
                         val type = split[0]
                         val id = split[1]
-                        
+
                         val contentUri = when (type) {
                             "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
                             "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
                             else -> MediaStore.Files.getContentUri("external")
                         }
-                        
+
                         return getRealPathFromMediaStore(contentUri, "_id=?", arrayOf(id))
                     }
                     null
                 }
-                
+
                 else -> {
                     Log.w(VIDEO_ACTIVITY_TAG, "未知的Documents Provider: ${uri.authority}")
                     null
@@ -462,7 +395,7 @@ class VideoPlayActivity : ComponentActivity() {
             null
         }
     }
-    
+
     /**
      * 从MediaStore获取真实路径
      */
@@ -482,7 +415,7 @@ class VideoPlayActivity : ComponentActivity() {
             null
         }
     }
-    
+
     /**
      * 从通用URI获取真实路径
      */
@@ -506,7 +439,7 @@ class VideoPlayActivity : ComponentActivity() {
             null
         }
     }
-    
+
     /**
      * 从URI获取显示名称
      */
@@ -529,7 +462,7 @@ class VideoPlayActivity : ComponentActivity() {
             null
         }
     }
-    
+
     /**
      * 将content URI的内容复制到临时文件
      * 专门解决分区存储权限问题的可靠方案
@@ -539,42 +472,42 @@ class VideoPlayActivity : ComponentActivity() {
             // 获取文件名，去除特殊字符避免文件系统问题
             val originalFileName = getDisplayNameFromUri(uri) ?: "temp_video_${System.currentTimeMillis()}.mp4"
             val safeFileName = sanitizeFileName(originalFileName)
-            
-            val tempDir = File(cacheDir, "video_temp").apply { 
-                if (!exists()) mkdirs() 
+
+            val tempDir = File(cacheDir, "video_temp").apply {
+                if (!exists()) mkdirs()
             }
             val targetFile = File(tempDir, safeFileName)
-            
+
             // 如果文件已存在且大小合理，直接返回
             if (targetFile.exists() && targetFile.length() > 1024) {
                 Log.d(VIDEO_ACTIVITY_TAG, "临时文件已存在，直接使用: ${targetFile.absolutePath}")
                 return targetFile.absolutePath
             }
-            
+
             Log.d(VIDEO_ACTIVITY_TAG, "开始复制content到临时文件: ${targetFile.absolutePath}")
-            
+
             contentResolver.openInputStream(uri)?.use { inputStream ->
                 FileOutputStream(targetFile).use { outputStream ->
                     // 使用缓冲区提高复制效率
                     val buffer = ByteArray(8192)
                     var totalBytes = 0L
                     var bytesRead: Int
-                    
+
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                         outputStream.write(buffer, 0, bytesRead)
                         totalBytes += bytesRead
-                        
+
                         // 每复制1MB输出一次进度日志
                         if (totalBytes % (1024 * 1024) == 0L) {
                             Log.d(VIDEO_ACTIVITY_TAG, "复制进度: ${totalBytes / (1024 * 1024)}MB")
                         }
                     }
-                    
+
                     outputStream.flush()
                     Log.d(VIDEO_ACTIVITY_TAG, "复制完成，总大小: ${totalBytes} bytes")
                 }
             }
-            
+
             if (targetFile.exists() && targetFile.length() > 0) {
                 Log.d(VIDEO_ACTIVITY_TAG, "复制成功，文件: ${targetFile.absolutePath}, 大小: ${targetFile.length()} bytes")
                 targetFile.absolutePath
@@ -582,13 +515,13 @@ class VideoPlayActivity : ComponentActivity() {
                 Log.e(VIDEO_ACTIVITY_TAG, "复制失败，文件不存在或大小为0")
                 null
             }
-            
+
         } catch (e: Exception) {
             Log.e(VIDEO_ACTIVITY_TAG, "复制content到临时文件时发生错误: ${e.message}", e)
             null
         }
     }
-    
+
     /**
      * 清理文件名中的特殊字符，确保文件系统兼容性
      */

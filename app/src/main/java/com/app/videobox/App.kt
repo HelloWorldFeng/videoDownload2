@@ -19,6 +19,7 @@ import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
 import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
+import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
@@ -107,7 +108,10 @@ class App : Application() {
                     return
                 }
 
-                if (activity is SplashActivity || activity is PrivacyActivity || activity is AdActivity || notLaunchHot) {
+                if (activity is SplashActivity || activity is PrivacyActivity
+                    || activity is AdActivity || notLaunchHot
+                    || activity is VideoPlayActivity
+                ) {
                     notLaunchHot = false
                     return
                 }

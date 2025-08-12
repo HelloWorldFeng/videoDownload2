@@ -55,7 +55,7 @@ object DownloadUtil {
         taskId: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，在其下创建应用专属目录
+        // 使用私有目录，在其下创建应用专属目录
         val baseDownloadDir = context.getExternalFilesDir("Downloads")
         val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
         val publicDownloadDir = File(baseDownloadDir, appName)
@@ -79,7 +79,7 @@ object DownloadUtil {
             }
         }
 
-        // 在公共下载目录中创建输出文件
+        // 在私有下载目录中创建输出文件
         val outputFile = File(publicDownloadDir, "${safeFileName}.mp4")
         Log.d(TAG, "输出文件路径: ${outputFile.absolutePath}")
         
@@ -145,12 +145,26 @@ object DownloadUtil {
             inputStream.close()
             outputStream.close()
             Log.d(TAG, "下载数据流处理完成，总下载: ${totalBytesRead}字节")
-            
-            // 最终进度回调
-            progressCallback?.invoke(100f, 0L, "下载完成")
-            
-            Log.d(TAG, "视频下载成功完成: 文件=${outputFile.absolutePath}, 大小=${outputFile.length()}字节")
-            return Result.success(outputFile.absolutePath)
+            //下载完成后移动到公共目录下
+
+            // 尝试移动文件到公共下载目录
+            val moveResult = moveFilesToPublicDirectory(context, listOf(outputFile.absolutePath))
+
+            return if (moveResult.isSuccess) {
+                // 移动成功，记录下载历史
+                val publicPaths = moveResult.getOrThrow()
+                val finalPaths = insertInfoIntoDownloadHistory(publicPaths)
+                val finalPath = finalPaths.firstOrNull() ?: publicPaths.first()
+                Log.d(TAG, "下载任务完成，文件已移动到公共目录: $finalPath")
+                progressCallback?.invoke(100f, 0L, "下载完成")
+                Log.d(TAG, "视频下载成功完成: 文件=${finalPath}, 大小=${outputFile.length()}字节")
+                Result.success(finalPath)
+            } else {
+                // 移动失败，下载任务标记为失败
+                val error = moveResult.exceptionOrNull() ?: Exception("文件移动到公共目录失败")
+                Log.e(TAG, "下载任务失败：文件无法移动到公共目录", error)
+                Result.failure(error)
+            }
             
         } catch (e: Exception) {
             Log.e(TAG, "下载过程中发生未知错误: ${e.message}", e)
@@ -197,7 +211,7 @@ object DownloadUtil {
         title: String,
         progressCallback: ((Float, Long, String) -> Unit)?
     ): Result<String> {
-        // 使用外部存储的公共下载目录，在其下创建应用专属目录
+        // 使用私有下载目录，在其下创建应用专属目录
         val baseDownloadDir = context.getExternalFilesDir("Downloads")
         val appName = context.getString(context.applicationInfo.labelRes).ifEmpty { "VideoDownloader" }
         val publicDownloadDir = File(baseDownloadDir, appName)
@@ -284,11 +298,26 @@ object DownloadUtil {
                 // 清理临时文件
                 Log.d(TAG, "步骤5: 清理临时文件")
                 cleanupTempFiles(tempDir)
+                //下载完成后移动到公共目录下
 
-                
-                progressCallback?.invoke(100f, 0L, "下载完成")
-                Log.d(TAG, "M3U8下载成功完成: 文件=${outputFile.absolutePath}, 大小=${outputFile.length()}字节")
-                return Result.success(outputFile.absolutePath)
+                // 尝试移动文件到公共下载目录
+                val moveResult = moveFilesToPublicDirectory(context, listOf(outputFile.absolutePath))
+
+                return if (moveResult.isSuccess) {
+                    // 移动成功，记录下载历史
+                    val publicPaths = moveResult.getOrThrow()
+                    val finalPaths = insertInfoIntoDownloadHistory(publicPaths)
+                    val finalPath = finalPaths.firstOrNull() ?: publicPaths.first()
+                    Log.d(TAG, "下载任务完成，文件已移动到公共目录: $finalPath")
+                    progressCallback?.invoke(100f, 0L, "下载完成")
+                    Log.d(TAG, "M3U8下载成功完成: 文件=${finalPath}, 大小=${outputFile.length()}字节")
+                    Result.success(finalPath)
+                } else {
+                    // 移动失败，下载任务标记为失败
+                    val error = moveResult.exceptionOrNull() ?: Exception("文件移动到公共目录失败")
+                    Log.e(TAG, "下载任务失败：文件无法移动到公共目录", error)
+                    Result.failure(error)
+                }
             } else {
                 throw Exception("TS分片合并失败")
             }
@@ -419,5 +448,306 @@ object DownloadUtil {
         }
     }
 
+
+        /**
+     * 将下载完成的文件从私有目录移动到公共下载目录
+     * 使用MediaStore API兼容Android 10+的分区存储限制
+     * @param context 应用上下文，用于访问ContentResolver和存储目录
+     * @param privatePaths 私有目录下的文件路径列表
+     * @return Result<List<String>> 移动成功返回公共目录路径列表，失败返回错误
+     */
+    private fun moveFilesToPublicDirectory(context: Context, privatePaths: List<String>): Result<List<String>> {
+        val publicPaths = mutableListOf<String>()
+        var hasFailure = false
+        var lastException: Exception? = null
+        
+        privatePaths.forEach { privatePath ->
+            try {
+                val privateFile = File(privatePath)
+                if (!privateFile.exists()) {
+                    val error = Exception("私有目录文件不存在: $privatePath")
+                    Log.w(TAG, "私有目录文件不存在: $privatePath")
+                    hasFailure = true
+                    lastException = error
+                    return@forEach
+                }
+                
+                // 使用MediaStore API保存到公共下载目录
+                val publicPath = moveFileUsingMediaStore(context, privateFile)
+                if (publicPath != null) {
+                    publicPaths.add(publicPath)
+                    // 移动成功，删除私有目录原文件
+                    val deleted = privateFile.delete()
+                    if (deleted) {
+                        Log.d(TAG, "文件移动成功并删除原文件: $publicPath")
+                    } else {
+                        Log.w(TAG, "文件移动成功但删除原文件失败: $privatePath")
+                    }
+                } else {
+                    val error = Exception("使用MediaStore移动文件失败: $privatePath")
+                    Log.e(TAG, "使用MediaStore移动文件失败: $privatePath")
+                    hasFailure = true
+                    lastException = error
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "移动文件异常: $privatePath", e)
+                hasFailure = true
+                lastException = e
+            }
+        }
+        
+        return if (hasFailure) {
+            // 如果有任何文件移动失败，返回失败结果
+            val error = lastException ?: Exception("文件移动到公共目录失败")
+            Result.failure(error)
+        } else {
+            // 所有文件都移动成功
+            Log.d(TAG, "所有文件成功移动到公共目录: $publicPaths")
+            Result.success(publicPaths)
+        }
+    }
+
+    /**
+     * 使用MediaStore API将文件保存到公共下载目录
+     * @param context 应用上下文，用于访问ContentResolver
+     * @param sourceFile 源文件
+     * @return 公共目录中的文件路径，失败时返回null
+     */
+    private fun moveFileUsingMediaStore(context: Context, sourceFile: File): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ 使用MediaStore API
+                moveFileUsingMediaStoreAPI(context, sourceFile)
+            } else {
+                // Android 9及以下使用传统File API
+                moveFileUsingFileAPI(sourceFile)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "移动文件失败", e)
+            null
+        }
+    }
+
+    /**
+     * Android 10+ 使用MediaStore API移动文件
+     * @param context 应用上下文，用于访问ContentResolver
+     * @param sourceFile 源文件
+     */
+    private fun moveFileUsingMediaStoreAPI(context: Context, sourceFile: File): String? {
+        return try {
+            // 处理文件名，确保在Downloads目录中唯一
+            val originalName = sourceFile.name
+            val timeStamp = System.currentTimeMillis()
+            val finalFileName = if (isFileExistsInDownloads(context, originalName)) {
+                val nameWithoutExt = sourceFile.nameWithoutExtension
+                val extension = sourceFile.extension
+                "${nameWithoutExt}_$timeStamp.$extension"
+            } else {
+                originalName
+            }
+            
+            Log.d(TAG, "开始使用MediaStore移动文件: ${sourceFile.absolutePath} -> Downloads/$finalFileName")
+            
+            // 准备ContentValues
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, finalFileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, getMimeType(sourceFile.extension))
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            
+            // 插入到MediaStore
+            val resolver = context.contentResolver
+            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            } else {
+                // Android 9及以下，使用Files表
+                resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+            }
+            
+            if (uri != null) {
+                // 写入文件内容
+                resolver.openOutputStream(uri)?.use { outputStream ->
+                    sourceFile.inputStream().use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                
+                // 获取实际的文件路径
+                val publicPath = getFilePathFromUri(context, uri) ?: "/storage/emulated/0/Download/$finalFileName"
+                Log.d(TAG, "MediaStore移动文件成功: $publicPath")
+                return publicPath
+            } else {
+                Log.e(TAG, "MediaStore插入失败，uri为null")
+                return null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaStore移动文件异常", e)
+            null
+        }
+    }
+
+    /**
+     * Android 9及以下使用传统File API移动文件
+     */
+    private fun moveFileUsingFileAPI(sourceFile: File): String? {
+        return try {
+            val publicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            
+            // 确保公共下载目录存在
+            if (!publicDirectory.exists()) {
+                publicDirectory.mkdirs()
+            }
+            
+            // 构建公共目录的目标文件路径
+            val publicFile = File(publicDirectory, sourceFile.name)
+            
+            // 确保目标文件名唯一（如果存在同名文件，添加时间戳）
+            val finalPublicFile = if (publicFile.exists()) {
+                val nameWithoutExt = sourceFile.nameWithoutExtension
+                val extension = sourceFile.extension
+                val timestamp = System.currentTimeMillis()
+                File(publicDirectory, "${nameWithoutExt}_$timestamp.$extension")
+            } else {
+                publicFile
+            }
+            
+            Log.d(TAG, "开始使用File API移动文件: ${sourceFile.absolutePath} -> ${finalPublicFile.absolutePath}")
+            
+            // 复制文件到公共目录
+            sourceFile.copyTo(finalPublicFile, overwrite = true)
+            
+            // 验证复制成功
+            if (finalPublicFile.exists() && finalPublicFile.length() == sourceFile.length()) {
+                Log.d(TAG, "File API移动文件成功: ${finalPublicFile.absolutePath}")
+                return finalPublicFile.absolutePath
+            } else {
+                Log.e(TAG, "File API文件复制验证失败")
+                return null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "File API移动文件异常", e)
+            null
+        }
+    }
+
+    /**
+     * 检查文件是否已存在于Downloads目录
+     * @param context 应用上下文，用于访问ContentResolver
+     * @param fileName 要检查的文件名
+     */
+    private fun isFileExistsInDownloads(context: Context, fileName: String): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ 使用MediaStore查询
+                val resolver = context.contentResolver
+                val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
+                val selection = "${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+                val selectionArgs = arrayOf(fileName)
+                
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                } else {
+                    MediaStore.Files.getContentUri("external")
+                }
+                
+                resolver.query(
+                    uri,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null
+                )?.use { cursor ->
+                    cursor.count > 0
+                } ?: false
+            } else {
+                // Android 9及以下使用File.exists()检查
+                val publicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                val file = File(publicDirectory, fileName)
+                file.exists()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "检查文件是否存在时异常", e)
+            false
+        }
+    }
+
+    /**
+     * 从Uri获取实际文件路径
+     * Android 10+由于分区存储限制，可能无法获取真实路径，会返回估计路径
+     * @param context 应用上下文，用于访问ContentResolver
+     * @param uri 要获取路径的Uri
+     */
+    private fun getFilePathFromUri(context: Context, uri: android.net.Uri): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ 尝试获取真实路径，如果失败则使用估计路径
+                val resolver = context.contentResolver
+                
+                // 尝试获取文件名
+                val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
+                val fileName = resolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+                        if (columnIndex >= 0) cursor.getString(columnIndex) else null
+                    } else {
+                        null
+                    }
+                }
+                
+                // 构建估计的文件路径
+                if (fileName != null) {
+                    "/storage/emulated/0/Download/$fileName"
+                } else {
+                    // 从Uri中提取文件名作为最后的回退
+                    val lastSegment = uri.lastPathSegment
+                    if (lastSegment != null) {
+                        "/storage/emulated/0/Download/$lastSegment"
+                    } else {
+                        "/storage/emulated/0/Download/downloaded_file"
+                    }
+                }
+            } else {
+                // Android 9及以下，尝试获取真实路径
+                val resolver = context.contentResolver
+                val projection = arrayOf(MediaStore.MediaColumns.DATA)
+                
+                resolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
+                        cursor.getString(columnIndex)
+                    } else {
+                        null
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "从Uri获取文件路径失败", e)
+            // 提供默认路径作为回退
+            "/storage/emulated/0/Download/downloaded_file"
+        }
+    }
+
+    /**
+     * 根据文件扩展名获取MIME类型
+     */
+    private fun getMimeType(extension: String): String {
+        return when (extension.lowercase()) {
+            "mp4" -> "video/mp4"
+            "avi" -> "video/x-msvideo"
+            "mkv" -> "video/x-matroska"
+            "mov" -> "video/quicktime"
+            "wmv" -> "video/x-ms-wmv"
+            "flv" -> "video/x-flv"
+            "webm" -> "video/webm"
+            "m4v" -> "video/x-m4v"
+            "3gp" -> "video/3gpp"
+            else -> "video/*"
+        }
+    }
+
+    private fun insertInfoIntoDownloadHistory(
+        filePaths: List<String>,
+    ): List<String> = filePaths.onEach { it }
 
 }
