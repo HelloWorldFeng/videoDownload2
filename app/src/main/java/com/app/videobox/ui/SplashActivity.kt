@@ -11,41 +11,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
-import com.app.videobox.ad.UmpHelper
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ad.base.AD_TYPE_NAV
 import com.app.videobox.ad.base.AD_TYPE_START
 import com.app.videobox.ext.safeStartActivity
-import com.app.videobox.ext.urlInBrowser
 import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.ui.theme.gradientColor
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.LinearProgress
-import com.app.videobox.ui.widgets.TextTitle
-import com.app.videobox.ui.widgets.singClick
 import com.blankj.utilcode.util.SPStaticUtils
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -62,7 +46,7 @@ import com.app.videobox.NOTIFY_TYPE_CUSTOM
 import com.app.videobox.NOTIFY_TYPE_DOWNLOAD
 import com.app.videobox.NOTIFY_TYPE_FOREGROUND
 import com.app.videobox.ad.AdManager
-import com.app.videobox.service.DownloadService
+import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyDialog
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.NotifyHelper
@@ -148,7 +132,7 @@ class SplashActivity : BaseActivity() {
                                 ) {
                                     // 权限获取后启动 LaunchedEffect
                                     startPlay.value = true
-                                    DownloadService.startService(this@SplashActivity)
+                                    DownloadVideoService.startService(this@SplashActivity)
                                 }
 
                                 override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {

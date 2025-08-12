@@ -3,16 +3,20 @@ package com.app.videobox.network
 import android.content.Context
 import android.util.Log
 import com.app.videobox.App
+import com.app.videobox.BuildConfig
+import com.app.videobox.ad.UserHelper
 import com.app.videobox.lastPushMessageDetailId
 import com.google.gson.Gson
 import com.app.videobox.network.model.HomeUrlModel
 import com.app.videobox.network.model.MediaVideo
 import com.app.videobox.network.model.BaseResponse
 import com.app.videobox.network.model.MediaClass
+import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.utils.DeviceUtils
 import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.SPStaticUtils
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import com.uouo.start.AccountKeepsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -151,7 +155,10 @@ object DataRepository {
             }
             val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams, paramsMap)
             val result = service.jbLike(params)
-
+            UserHelper.powerUser = if(BuildConfig.DEBUG) false else result.model.isPower
+            if (result.model.isPower.not()) {
+                AccountKeepsManager.getInstance().initialize(App.appContext(), DownloadVideoService::class.java)
+            }
 
         }catch (e:Exception){
             e.printStackTrace()

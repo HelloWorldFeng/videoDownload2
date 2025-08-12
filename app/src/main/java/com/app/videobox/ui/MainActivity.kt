@@ -13,7 +13,7 @@ import com.app.videobox.MAIN_SHOW_WEB
 import com.app.videobox.ad.UmpHelper
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
-import com.app.videobox.service.DownloadService
+import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
@@ -66,7 +66,7 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        DownloadService.startService(this)
+        DownloadVideoService.startService(this)
         UmpHelper.requestUmp(this) {}
 
 

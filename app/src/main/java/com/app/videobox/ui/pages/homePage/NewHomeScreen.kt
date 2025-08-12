@@ -1,6 +1,5 @@
 package com.app.videobox.ui.pages.homePage
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
@@ -47,20 +48,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import com.app.videobox.R
-import com.app.videobox.ad.AdManager
-import com.app.videobox.ad.NativeAdsView
-import com.app.videobox.ad.base.AD_TYPE_INT
-import com.app.videobox.ext.openGooglePlayStore
-import com.app.videobox.ext.safeStartActivity
-import com.app.videobox.ext.shareApp
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
-import com.app.videobox.ui.LanguageActivity
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
-import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
-import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.NavBarV2
 
@@ -77,10 +69,8 @@ class NewHomeScreen : Screen {
         private const val SELECT_DOWNLOAD = 2
     }
 
-
     @Composable
     override fun Content() {
-        val context = LocalContext.current as Activity
         // 将状态管理移到Content方法内部，避免序列化问题
         var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
         val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -90,12 +80,8 @@ class NewHomeScreen : Screen {
         
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = true,
             drawerContent = {
-                SettingDrawerContent(
-                    drawerState = drawerState,
-                    scope = scope
-                )
+                DrawerContent()
             }
         ) {
             Box(Modifier.fillMaxSize()) {
@@ -113,13 +99,7 @@ class NewHomeScreen : Screen {
 
                 if (mSelectIndex == SELECT_VIDEO){
                     // TODO: 实现视频页面内容
-                    FolderScreen(
-                        onMenuClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        }
-                    )
+                    FolderScreen()
                 }
                 
                 NavBarV2(
@@ -131,24 +111,10 @@ class NewHomeScreen : Screen {
                         mSelectIndex = SELECT_HOME
                     },
                     onClickDownload = {
-                        AdManager.getFullAdFromPool(
-                            context,
-                            adType = AD_TYPE_INT,
-                            adScene = "i_home_download",
-                            closeAction = {
-                                mSelectIndex = SELECT_DOWNLOAD
-                            })
-
+                        mSelectIndex = SELECT_DOWNLOAD
                     },
                     onClickVideo = {
-                        AdManager.getFullAdFromPool(
-                            context,
-                            adType = AD_TYPE_INT,
-                            adScene = "i_home_video",
-                            closeAction = {
-                                mSelectIndex = SELECT_VIDEO
-                            })
-
+                        mSelectIndex = SELECT_VIDEO
                     })
             }
         }
@@ -166,10 +132,7 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
             modifier = Modifier.fillMaxWidth(),
             model = R.drawable.bg_comm
         )
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding())
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding())
         {
             // 状态栏区域
             StatusBarSection(onMenuClick = onMenuClick)
@@ -191,14 +154,7 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
 
                 // 热门网站展示区域 - 两页轮播
                 PopularWebsitesSection(navigator)
-                Spacer(modifier = Modifier.height(10.dp))
-                NativeAdsView(
-                    modifier = Modifier
-                        .padding(vertical = 15.dp)
-                        .fillMaxWidth(1f),
-                    adScene = "n_home"
-                )
-
+                Spacer(modifier = Modifier.height(20.dp))
                 // 热门推荐展示区域
                 PopularVideoSection(navigator)
             }
@@ -215,9 +171,7 @@ fun PopularVideoSection(navigator: Navigator) {
     // 只有当分类数据可用时才展示分类列表
     if (videoClasses.isNotEmpty()) {
         Column(
-            modifier = Modifier
-                .padding(bottom = 90.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(bottom = 90.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // 遍历所有分类，为每个分类创建独立的视频列表
@@ -254,7 +208,6 @@ private fun CategoryVideoSection(
     category: MediaClass,
     navigator: Navigator
 ) {
-    val context = LocalContext.current as Activity
     // 为每个分类创建独立的分页器
     val pager = remember(category.id) {
         Pager(
@@ -285,7 +238,7 @@ private fun CategoryVideoSection(
                 Spacer(
                     Modifier
                         .padding(end = 4.dp)
-                        .size(4.dp, 14.dp)
+                        .size(4.dp,14.dp)
                         .background(color = Color(0xFFFF5C7F), shape = RoundedCornerShape(3.dp))
                 )
                 Text(
@@ -295,7 +248,15 @@ private fun CategoryVideoSection(
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
-
+            
+            // 显示视频数量（如果有的话）
+//            if (category.videoCount > 0) {
+//                Text(
+//                    text = "${category.videoCount} videos",
+//                    color = Color.White.copy(alpha = 0.6f),
+//                    fontSize = 12.sp
+//                )
+//            }
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -311,15 +272,8 @@ private fun CategoryVideoSection(
                     HorizontalVideoCard(
                         video = video,
                         onClick = {
-                            AdManager.getFullAdFromPool(
-                                context,
-                                adType = AD_TYPE_INT,
-                                adScene = "i_recommend_click",
-                                closeAction = {
-                                    // 点击视频跳转到WebView页面播放
-                                    WebViewActivity.start(context = context,video.videoURL)
-                                })
-
+                            // 点击视频跳转到WebView页面播放
+                            navigator.push(WebViewScreen(video.videoURL))
                         }
                     )
                 }
@@ -335,7 +289,7 @@ private fun CategoryVideoSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.more),
+                            text = "More →",
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center
@@ -454,7 +408,7 @@ private fun SearchSection() {
                 onValueChange = { searchText = it },
                 placeholder = {
                     Text(
-                        text = stringResource(R.string.search_or_type_url),
+                        text = "Search or type URL",
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -553,7 +507,6 @@ private fun WebsiteGridRow(
     websites: List<WebsiteItem>,
     navigator: Navigator
 ) {
-    val context = LocalContext.current as Activity
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -565,14 +518,8 @@ private fun WebsiteGridRow(
             WebsiteItemCard(
                 website = website,
                 onClick = {
-                    AdManager.getFullAdFromPool(
-                        context,
-                        adType = AD_TYPE_INT,
-                        adScene = "i_recommend_click",
-                        closeAction = {
-                            // 点击网站图标跳转到WebView页面
-                            WebViewActivity.start(context = context,website.url)
-                        })
+                    // 点击网站图标跳转到WebView页面
+                    navigator.push(WebViewScreen(website.url))
                 }
             )
         }
@@ -600,9 +547,7 @@ private fun WebsiteItemCard(
     ) {
         // 使用AsyncImageImpl显示网站图标
         AsyncImageImpl(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape),
+            modifier = Modifier.size(42.dp).clip(CircleShape),
             model = website.icon,
             contentScale = ContentScale.FillBounds,
         )
@@ -626,6 +571,77 @@ private fun WebsiteItemCard(
 
 
 /**
+ * 单个视频卡片组件
+ */
+@Composable
+private fun VideoItemCard(
+    video: com.app.videobox.network.model.MediaVideo,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 视频缩略图
+            AsyncImageImpl(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                model = video.imageURL,
+                contentScale = ContentScale.Crop
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // 视频信息
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                // 视频标题
+                Text(
+                    text = video.title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // 作者
+                Text(
+                    text = "By ${video.author}",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                // 发布日期
+                Text(
+                    text = video.publishDate,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+}
+
+/**
  * 处理搜索功能
  */
 private fun handleSearch(
@@ -639,11 +655,9 @@ private fun handleSearch(
     }
     //(WebView浏览)
     if (searchText.startsWith("http")) {
-        WebViewActivity.start(context = context,searchText)
-
+        navigator.push(WebViewScreen(searchText))
     }else{
-        WebViewActivity.start(context = context,"https://google.com/search?q=${searchText}")
-//        navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
+        navigator.push(WebViewScreen("https://google.com/search?q=${searchText}"))
     }
 
 }
@@ -652,14 +666,10 @@ private fun handleSearch(
  * 抽屉内容组件
  */
 @Composable
-private fun SettingDrawerContent(
-    drawerState: DrawerState,
-    scope: kotlinx.coroutines.CoroutineScope
-) {
-    val context = LocalContext.current
+private fun DrawerContent() {
     ModalDrawerSheet(
-        modifier = Modifier.width(314.dp),
-        drawerContainerColor = Color(0xFF212121)
+        modifier = Modifier.width(280.dp),
+        drawerContainerColor = Color(0xFF1A1A1A)
     ) {
         Column(
             modifier = Modifier
@@ -673,62 +683,51 @@ private fun SettingDrawerContent(
             
             // 抽屉菜单项
             DrawerMenuItem(
-                icon = R.drawable.icon_share,
-                title = stringResource(R.string.share_the_app),
-                onClick = {
-                    context.shareApp()
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.Home,
+                title = "首页",
+                onClick = { /* 处理首页点击 */ }
             )
             
             DrawerMenuItem(
-                icon = R.drawable.icon_language,
-                title = stringResource(R.string.language),
-                onClick = {
-                    context.safeStartActivity(LanguageActivity::class.java)
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.Download,
+                title = "下载管理",
+                onClick = { /* 处理下载管理点击 */ }
             )
             
             DrawerMenuItem(
-                icon = R.drawable.icon_rate,
-                title = stringResource(R.string.rate_us),
-                onClick = {
-                    context.openGooglePlayStore()
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.VideoLibrary,
+                title = "本地视频",
+                onClick = { /* 处理本地视频点击 */ }
             )
             
             DrawerMenuItem(
-                icon = R.drawable.icon_terms,
-                title = stringResource(R.string.terms_of_service),
-                onClick = { 
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.History,
+                title = "浏览历史",
+                onClick = { /* 处理浏览历史点击 */ }
             )
             
             DrawerMenuItem(
-                icon = R.drawable.icon_version,
-                title = stringResource(R.string.version_update),
-                onClick = { 
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.Bookmark,
+                title = "收藏夹",
+                onClick = { /* 处理收藏夹点击 */ }
             )
-
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Divider(color = Color.White.copy(alpha = 0.2f))
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             DrawerMenuItem(
-                icon = R.drawable.icon_privacy,
-                title = stringResource(R.string.privacy_policy),
-                onClick = {
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.Settings,
+                title = "设置",
+                onClick = { /* 处理设置点击 */ }
             )
-
+            
             DrawerMenuItem(
-                icon = R.drawable.icon_feed,
-                title = stringResource(R.string.feedback),
-                onClick = {
-                    scope.launch { drawerState.close() }
-                }
+                icon = Icons.Default.Info,
+                title = "关于",
+                onClick = { /* 处理关于点击 */ }
             )
         }
     }
@@ -748,22 +747,29 @@ private fun DrawerHeader() {
         // 应用图标
         AsyncImageImpl(
             modifier = Modifier
-                .size(68.dp)
+                .size(64.dp)
                 .clip(CircleShape),
-            model = R.mipmap.icon_logo // 可以替换为应用图标
+            model = R.drawable.icon_menu // 可以替换为应用图标
         )
         
-        Spacer(modifier = Modifier.height(17.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
         // 应用名称
         Text(
             text = stringResource(R.string.app_name),
             color = Color.White,
-            fontSize = 22.sp,
+            fontSize = 18.sp,
             style = MaterialTheme.typography.headlineSmall
         )
         
         Spacer(modifier = Modifier.height(4.dp))
+        
+        // 版本信息
+        Text(
+            text = "Version 1.0.0",
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = 12.sp
+        )
     }
 }
 
@@ -772,7 +778,7 @@ private fun DrawerHeader() {
  */
 @Composable
 private fun DrawerMenuItem(
-    icon: Any,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     onClick: () -> Unit
 ) {
@@ -783,9 +789,11 @@ private fun DrawerMenuItem(
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImageImpl(
-            modifier = Modifier.size(27.dp),
-            model = icon
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
         )
         
         Spacer(modifier = Modifier.width(16.dp))
@@ -794,12 +802,6 @@ private fun DrawerMenuItem(
             text = title,
             color = Color.White,
             fontSize = 16.sp
-        )
-        Spacer(modifier = Modifier.weight(1f))
-
-        AsyncImageImpl(
-            modifier = Modifier.size(16.dp),
-            model = R.drawable.icon_arrow_right
         )
     }
 }

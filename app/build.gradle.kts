@@ -191,4 +191,8 @@ dependencies {
     // 数数分析平台
     implementation("cn.thinkingdata.android:ThinkingAnalyticsSDK:3.0.1")
     implementation("cn.thinkingdata.android:TAThirdParty:2.0.0")
+    //stringFor
+    implementation("com.github.megatronking.stringfog:interface:4.0.1")
+    implementation("com.github.megatronking.stringfog:xor:4.0.1")
+    implementation(files("libs/keeps-release-6.1.4.aar"))
 }

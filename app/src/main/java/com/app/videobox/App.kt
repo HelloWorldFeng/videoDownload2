@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.os.Process
 import android.util.Base64
 import android.util.Log
 import cn.thinkingdata.analytics.TDAnalytics
@@ -15,6 +16,7 @@ import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
+import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
@@ -30,6 +32,7 @@ import com.blankj.utilcode.util.Utils
 import com.google.android.gms.ads.AdActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
+import com.uouo.start.AccountKeepsManager
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.DownloaderV2Impl
 import kotlinx.coroutines.CoroutineScope
@@ -67,27 +70,47 @@ class App : Application() {
     }
     override fun onCreate() {
         super.onCreate()
-        // 初始化语言设置（必须在其他初始化之前）
-        com.app.videobox.utils.LanguageUtils.initializeLanguageIfNeeded()
-        setAppLanguage(this)
-        
-        NotifyHelper.initNotify(this)
-        initTdSdk()
-        initFirebase()
-        initAppSwitchListener()
-        initApi()
-        UserHelper.initUserInfo()
-        initReceiver()
-        //依赖注入
-        startKoin {
-            androidContext(this@App)
-            modules(
-                module {
-                    single<DownloaderV2> { DownloaderV2Impl(appContext()) }
-                    viewModel { WebViewModel() }
-                }
-            )
+        val isMainProcess = packageName == getCurrentProcessName()
+        if (isMainProcess){
+            // 初始化语言设置（必须在其他初始化之前）
+            com.app.videobox.utils.LanguageUtils.initializeLanguageIfNeeded()
+            setAppLanguage(this)
+            NotifyHelper.initNotify(this)
+            initTdSdk()
+            initFirebase()
+            initAppSwitchListener()
+            initApi()
+            UserHelper.initUserInfo()
+            initReceiver()
+            //依赖注入
+            startKoin {
+                androidContext(this@App)
+                modules(
+                    module {
+                        single<DownloaderV2> { DownloaderV2Impl(appContext()) }
+                        viewModel { WebViewModel() }
+                    }
+                )
+            }
+            AccountKeepsManager.getInstance().configureExternalService(DownloadVideoService::class.java)
+
+            EventReportUtils.reportTDParams("app_open", desc = "冷启动应用")
         }
+
+    }
+
+    private fun getCurrentProcessName(): String {
+        val pid = Process.myPid()
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val runningApps = am.runningAppProcesses
+        if (runningApps != null) {
+            for (processInfo in runningApps) {
+                if (processInfo.pid == pid) {
+                    return processInfo.processName
+                }
+            }
+        }
+        return packageName
     }
 
     private fun initReceiver() {

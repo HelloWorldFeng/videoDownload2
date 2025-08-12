@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.net.toUri
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import java.io.File
@@ -86,15 +87,19 @@ object DownloadUtil {
 
         
         try {
+            // 获取URL对应的请求头
+            val headers = addHeadersForUrl(url)
+            Log.d(TAG, "为URL添加请求头: url=$url, 请求头数量=${headers.size}")
+            
             // 创建网络连接
             Log.d(TAG, "建立网络连接: url=$url, 超时=${NETWORK_TIMEOUT_MS}ms")
             val connection = java.net.URL(url).openConnection()
             connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
             connection.readTimeout = NETWORK_TIMEOUT_MS.toInt()
             
-            // 设置User-Agent避免某些服务器拒绝请求
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:40.0) Gecko/40.0 Firefox/40.0")
-            Log.d(TAG, "设置User-Agent请求头")
+            // 设置请求头以避免403错误
+            setConnectionHeaders(connection, headers)
+            Log.d(TAG, "请求头设置完成")
             
             val inputStream = connection.getInputStream()
             val outputStream = outputFile.outputStream()
@@ -311,6 +316,7 @@ object DownloadUtil {
                     Log.d(TAG, "下载任务完成，文件已移动到公共目录: $finalPath")
                     progressCallback?.invoke(100f, 0L, "下载完成")
                     Log.d(TAG, "M3U8下载成功完成: 文件=${finalPath}, 大小=${outputFile.length()}字节")
+
                     Result.success(finalPath)
                 } else {
                     // 移动失败，下载任务标记为失败
@@ -334,10 +340,18 @@ object DownloadUtil {
      */
     private suspend fun downloadM3U8Playlist(url: String): String {
         Log.d(TAG, "下载M3U8播放列表: $url")
+        
+        // 获取URL对应的请求头
+        val headers = addHeadersForUrl(url)
+        Log.d(TAG, "为M3U8播放列表添加请求头: url=$url, 请求头数量=${headers.size}")
+        
         val connection = java.net.URL(url).openConnection()
         connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
         connection.readTimeout = NETWORK_TIMEOUT_MS.toInt()
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:40.0) Gecko/40.0 Firefox/40.0")
+        
+        // 设置请求头以避免403错误
+        setConnectionHeaders(connection, headers)
+        Log.d(TAG, "M3U8播放列表请求头设置完成")
         
         return connection.getInputStream().bufferedReader().use { it.readText() }
     }
@@ -374,10 +388,16 @@ object DownloadUtil {
      * 下载单个TS分片
      */
     private suspend fun downloadTSSegment(url: String, outputFile: File) {
+        // 获取URL对应的请求头
+        val headers = addHeadersForUrl(url)
+        Log.v(TAG, "为TS分片添加请求头: url=$url, 请求头数量=${headers.size}")
+        
         val connection = java.net.URL(url).openConnection()
         connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
         connection.readTimeout = NETWORK_TIMEOUT_MS.toInt()
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:40.0) Gecko/40.0 Firefox/40.0")
+        
+        // 设置请求头以避免403错误
+        setConnectionHeaders(connection, headers)
         
         connection.getInputStream().use { input ->
             outputFile.outputStream().use { output ->
@@ -750,4 +770,66 @@ object DownloadUtil {
         filePaths: List<String>,
     ): List<String> = filePaths.onEach { it }
 
+
+    /**
+     * 根据URL添加请求头以避免403错误
+     * @param url 目标URL
+     * @return 包含请求头的Map
+     */
+    private fun addHeadersForUrl(url: String): Map<String, String> {
+        val headers = mutableMapOf<String, String>()
+        val uri = url.toUri()
+        val host = uri.host ?: ""
+
+        // 基础请求头
+        headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        headers["Accept"] = "*/*"
+        headers["Accept-Encoding"] = "identity;q=1, *;q=0"
+        headers["Accept-Language"] = "zh-CN,zh;q=0.9,en;q=0.8"
+        headers["Cache-Control"] = "no-cache"
+        headers["Connection"] = "keep-alive"
+        headers["DNT"] = "1"
+        headers["Pragma"] = "no-cache"
+        headers["Priority"] = "i"
+        headers["Sec-Fetch-Dest"] = "video"
+        headers["Sec-Fetch-Mode"] = "no-cors"
+        headers["Sec-Fetch-Site"] = "cross-site"
+        headers["Sec-GPC"] = "1"
+        headers["Upgrade-Insecure-Requests"] = "1"
+
+        // 根据域名添加特定头
+        when {
+            host.contains("cdreader.com") -> {
+                headers["Referer"] = "https://cdreader.com/"
+                headers["Origin"] = "https://cdreader.com"
+            }
+            host.contains("phncdn.com") -> {
+                headers["Referer"] = "https://www.pornhub.com/"
+                headers["Origin"] = "https://www.pornhub.com"
+            }
+            host.contains("amazonaws.com") -> {
+                headers["X-Requested-With"] = "XMLHttpRequest"
+            }
+            else -> {
+                // 默认添加通用Referer
+                val scheme = uri.scheme ?: "https"
+                val referer = "$scheme://$host/"
+                headers["Referer"] = referer
+            }
+        }
+
+        return headers
+    }
+
+    /**
+     * 为HTTP连接设置请求头
+     * @param connection HTTP连接对象
+     * @param headers 请求头Map
+     */
+    private fun setConnectionHeaders(connection: java.net.URLConnection, headers: Map<String, String>) {
+        headers.forEach { (key, value) ->
+            connection.setRequestProperty(key, value)
+            Log.v(TAG, "设置请求头: $key = $value")
+        }
+    }
 }

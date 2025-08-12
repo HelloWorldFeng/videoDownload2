@@ -355,6 +355,7 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
             )
                 .onSuccess { pathList ->
                     Log.d("下载", "FFmpeg---> 下载成功::${pathList} ")
+
                     downloadState = Completed(pathList)
                 }
                 .onFailure { throwable ->
