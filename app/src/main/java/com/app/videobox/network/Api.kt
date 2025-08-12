@@ -27,19 +27,22 @@ interface Api {
     @POST("/V2/Video/GetHomeUrl")
     suspend fun getHomeWebUrl(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<HomeUrlModel>
 
-    @POST("https://center.vdownloaderhd.com/v1/Center/JbLike")
+    @POST("https://center.langtranspro.com/v1/Center/JbLike")
     suspend fun jbLike(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<JbLikeModel>
 
     @POST("/V1/Init/InitWork")
     suspend fun initWork(@Body map: Map<String, @JvmSuppressWildcards Any>): JsonElement
 
 
-    @POST("/V1/PushMessage/GetSceneEventPushMessageData")
-    suspend fun GetSceneEventPushMessageData(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<NotifyModel>
+    @POST("/V2/PushMessage/GetPushMessageData")
+    suspend fun GetPushMessageData(@Body map: Map<String, @JvmSuppressWildcards Any>): BaseResponse<NotifyModel>
 
 
     @GET("/V1/User/CheckUser")
     suspend fun checkAdultUserModel(
         @QueryMap map: Map<String, @JvmSuppressWildcards Any>
     ): BaseResponse<AdultModel>
+
+    @POST("/V2/Report/CallBack")
+    suspend fun feedbackApi(@Body map: Map<String, @JvmSuppressWildcards Any>): JsonElement
 }

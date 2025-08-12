@@ -48,10 +48,12 @@ import com.app.videobox.ui.widgets.webView.rememberWebViewState
 import com.app.videobox.utils.VideoResolve
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
+import com.app.videobox.ad.UserHelper
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.utils.DefaultBrowserUtils
@@ -111,7 +113,7 @@ fun WebPageScreen(
 
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    var currentUrl = inputUrl
+    var currentUrl by remember { mutableStateOf(inputUrl) }
     val webViewState = rememberWebViewState(currentUrl)
 
     val backAction = {
@@ -214,6 +216,7 @@ fun WebPageScreen(
             content = {
                 DraggableResolveButton(
                     viewModel = viewModel,
+                    currentUrl = currentUrl,
                     maxWidthPx = with(LocalDensity.current) { maxWidth.toPx() },
                     maxHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
                 )
@@ -268,7 +271,8 @@ fun WebPageScreen(
 fun DraggableResolveButton(
     viewModel: WebViewModel,
     maxWidthPx: Float,
-    maxHeightPx: Float
+    maxHeightPx: Float,
+    currentUrl: String
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -300,6 +304,7 @@ fun DraggableResolveButton(
 
     FloatingVideoButton(
         viewModel = viewModel,
+        currentUrl = currentUrl,
         modifier = Modifier
             .offset {
                 IntOffset(
@@ -606,11 +611,12 @@ private fun ResolveDialogImpl(
 @Composable
 private fun FloatingVideoButton(
     modifier: Modifier = Modifier,
-    viewModel: WebViewModel
+    viewModel: WebViewModel,
+    currentUrl: String
 ) {
     //解析任务状态
     val videoInfoState = viewModel.resolveStateFlow.collectAsStateWithLifecycle().value
-
+    val context = LocalContext.current as Activity
 
     when (videoInfoState) {
         is WebViewModel.ResolveVideoState.Idle -> {
@@ -619,6 +625,11 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
+                        if (RemoteConfigManager.checkUrlInBlackUrl(currentUrl) && UserHelper.powerUser) {
+                            ToastUtils.showLong(context.getString(R.string.due_to_legal))
+                            return@singClick
+                        }
+
                         viewModel.postAction(WebViewModel.Action.ShowEmptyResolveDialog)
 
                         EventReportUtils.reportTDParams("browser_download_click",
@@ -645,7 +656,7 @@ private fun FloatingVideoButton(
         }
 
         is WebViewModel.ResolveVideoState.ResolveSuccess -> {
-            val context = LocalContext.current as Activity
+
             val iconComposition by rememberLottieComposition(LottieCompositionSpec.Asset("resolve_success_btn.json"))
             LottieAnimation(
                 composition = iconComposition,
@@ -654,6 +665,11 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
+                        if (RemoteConfigManager.checkUrlInBlackUrl(currentUrl) && UserHelper.powerUser) {
+                            ToastUtils.showLong(context.getString(R.string.due_to_legal))
+                            return@singClick
+                        }
+
                         AdManager.getFullAdFromPool(
                             context,
                             adType = AD_TYPE_INT,

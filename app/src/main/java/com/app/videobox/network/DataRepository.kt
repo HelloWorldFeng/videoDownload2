@@ -178,7 +178,7 @@ object DataRepository {
                 "scenceType" to sceneType
             )
             val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams,paramsMap)
-            val result = service.GetSceneEventPushMessageData(params)
+            val result = service.GetPushMessageData(params)
             SPStaticUtils.put(com.app.videobox.lastPushMessageDetailId,result.model.id)
             return@withContext result
         }catch (e: Exception){
@@ -193,6 +193,19 @@ object DataRepository {
             val result = service.checkAdultUserModel(params).model.isAdult
             TDAnalytics.userSet(JSONObject(mapOf("user_jb" to if (result) "18_jb" else "normal_jb")))
         }catch (e:Exception){
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun feedbackApi(content: String) = withContext(Dispatchers.IO){
+        try {
+            val paramsMap = mutableMapOf(
+                "content" to content,
+                "score" to 0
+            )
+            val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams,paramsMap)
+            val result = service.feedbackApi(params)
+        }catch (e: Exception){
             e.printStackTrace()
         }
     }

@@ -7,6 +7,7 @@ import androidx.activity.compose.BackHandler
 import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
 import com.app.videobox.App.Companion.notLaunchHot
+import com.app.videobox.BuildConfig
 import com.app.videobox.MAIN_OPERATE
 import com.app.videobox.MAIN_SHOW_VIDEO
 import com.app.videobox.MAIN_SHOW_WEB
@@ -39,6 +40,7 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         lifecycleScope.launch {
             if (FileUtils.checkFilePermission(this@MainActivity).not()) {
                 return@launch

@@ -24,6 +24,7 @@ import com.app.videobox.ui.widgets.singClick
 fun WebPathBar(
     currentUrl: String,
     onUrlChanged: (String) -> Unit = {},
+    onUrlUpdate:(String) -> Unit = {},
     onRefresh:()-> Unit = {},
     onBack:()-> Unit = {},
     onHome:()-> Unit = {},
@@ -61,10 +62,12 @@ fun WebPathBar(
                     shape = RoundedCornerShape(26.dp)
                 ),
             onValueChange = {
+                onUrlUpdate.invoke(it)
                 searchText.value = it
             },
             onSearch = {
                 searchText.value = it
+                onUrlUpdate.invoke(it)
                 onUrlChanged.invoke(it)
             },
             onHome = {

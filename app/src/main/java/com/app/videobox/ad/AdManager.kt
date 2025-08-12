@@ -338,6 +338,8 @@ object AdManager {
             //广告池里 没有这个类型
             adConfigMap[adType]?.let {
                 if (it.openBtn) {
+                    loadAdmobInstance(adType)
+                } else {
                     EventReportUtils.afEventLog(eventName = "ud_ad_action_impression", mutableMapOf<String, Any>().apply {
                         put("ad_action",32)
                         put("error_code",10011)
@@ -345,8 +347,6 @@ object AdManager {
                         put("ad_scenes",adScene)
                         put("err_msg","$adType Btn Close")
                     })
-                    loadAdmobInstance(adType)
-                } else {
                     Log.d(TAG, "${adType}广告位关闭，不请求")
                     closeAction.invoke()
                     return

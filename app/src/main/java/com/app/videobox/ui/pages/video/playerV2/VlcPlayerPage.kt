@@ -1067,6 +1067,7 @@ private fun MediaStreamOrchestrator(
                             model = R.drawable.icon_screen_land
                         )
 
+                        Spacer(Modifier.width(10.dp))
                         // 全屏模式按钮
                         AsyncImageImpl(
                             modifier = Modifier.size(26.dp).singClick{

@@ -1,0 +1,29 @@
+{
+  "source": ["origin_user", "google_user", "facebook_user"],
+  "user_type": ["new_user", "old_user"],
+  "special_config": {
+    "open_show_count_one_hours": 7,
+    "int_show_count_one_hours": 7,
+
+    "open_show_interval_time": 5,
+    "int_show_interval_time": 5,
+
+    "open_show_count_one_day": 10,
+    "int_show_count_one_day": 10,
+    "open_request_count_one_day": 20,
+    "int_request_count_one_day": 20
+  },
+
+  "default_config": {
+    "open_show_count_one_hours": 7,
+    "int_show_count_one_hours": 7,
+
+    "open_show_interval_time": 5,
+    "int_show_interval_time": 5,
+
+    "open_show_count_one_day": 10,
+    "int_show_count_one_day": 10,
+    "open_request_count_one_day": 20,
+    "int_request_count_one_day": 20
+  }
+}

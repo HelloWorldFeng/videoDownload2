@@ -15,36 +15,63 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.app.videobox.R
+import com.app.videobox.network.DataRepository
+import com.app.videobox.ui.widgets.GradientButton
+import com.app.videobox.ui.widgets.singClick
+import com.blankj.utilcode.util.ToastUtils
+import kotlinx.coroutines.launch
 
+class FeedbackScreen : Screen{
+    @Composable
+    override fun Content() {
+        FeedbackContent()
+    }
+}
 /**
  * 反馈页面 - 基于Figma设计稿实现
  * 用户可以在此页面提交反馈意见
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeedbackScreen(
+fun FeedbackContent(
     onBackClick: () -> Unit = {}
 ) {
     // 反馈文本状态
+    val context = LocalContext.current
     var feedbackText by remember { mutableStateOf("") }
     val maxCharacters = 600
-    
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
+    val navigator = LocalNavigator.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .singClick {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            },
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 状态栏区域
-        StatusBarSection()
-        
-        // 导航栏区域
-        NavigationBarSection(onBackClick = onBackClick)
-        
+
         // 页面标题
         PageTitleSection()
         
@@ -52,9 +79,10 @@ fun FeedbackScreen(
         FeedbackInputSection(
             feedbackText = feedbackText,
             onTextChange = { newText ->
-                if (newText.length <= maxCharacters) {
-                    feedbackText = newText
+                if (newText.isEmpty()) {
+                    return@FeedbackInputSection
                 }
+                feedbackText = newText
             },
             currentCharacters = feedbackText.length,
             maxCharacters = maxCharacters
@@ -63,67 +91,20 @@ fun FeedbackScreen(
         Spacer(modifier = Modifier.weight(1f))
         
         // 提交按钮
-        SubmitButtonSection(
-            onSubmitClick = {
+        GradientButton(
+            onClick = {
                 // TODO: 处理提交反馈逻辑
                 // 可以在这里添加提交反馈到服务器的逻辑
+                coroutineScope.launch {
+                    ToastUtils.showLong(context.getString(R.string.submit_success))
+                    DataRepository.feedbackApi(feedbackText)
+                    navigator?.pop()
+                }
             },
-            isEnabled = feedbackText.isNotBlank()
+            text = stringResource(R.string.submit)
         )
         
         Spacer(modifier = Modifier.height(40.dp))
-    }
-}
-
-/**
- * 状态栏组件 - 模拟iPhone状态栏
- */
-@Composable
-private fun StatusBarSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 21.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 时间显示
-        Text(
-            text = "9:41",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
-            textAlign = TextAlign.Center
-        )
-        
-        // 右侧状态图标
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 信号强度
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "信号",
-                modifier = Modifier.size(16.dp),
-                tint = Color.Black
-            )
-            // WiFi
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "WiFi",
-                modifier = Modifier.size(15.dp),
-                tint = Color.Black
-            )
-            // 电池
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "电池",
-                modifier = Modifier.size(24.dp),
-                tint = Color.Black
-            )
-        }
     }
 }
 

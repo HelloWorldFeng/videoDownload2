@@ -35,6 +35,7 @@
                     android:textSize="15sp"
                     android:textColor="#21212B"
                     android:maxLines="1"
+                    android:visibility="gone"
                     android:ellipsize="end"/>
 
                 <TextView
