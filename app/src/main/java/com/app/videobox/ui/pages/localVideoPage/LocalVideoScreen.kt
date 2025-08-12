@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,36 +31,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
-import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
-import com.app.videobox.ad.NativeAdsView
-import com.app.videobox.ad.base.AdUnitWrapper
+import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ext.formatDuration
 import com.app.videobox.ext.shareVideo
 import com.app.videobox.manager.FileManager
-import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.dialogs.MoreDialog
-import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.FileUtils
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import java.io.File
 
 data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Screen{
     @Composable
@@ -103,11 +94,17 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                     items(dataList){fileInfo->
                         ListItemView(fileInfo,
                             onClick = {
-                                VideoPlayActivity.start(
-                                    context = context,
-                                    videoUrl = fileInfo.file.absolutePath,
-                                    title = fileInfo.titleName
-                                )
+                                AdManager.getFullAdFromPool(
+                                    context,
+                                    adType = AD_TYPE_INT,
+                                    adScene = "i_video_click",
+                                    closeAction = {
+                                        VlcPlayActivity.start(
+                                            context = context,
+                                            videoUrl = fileInfo.file.absolutePath,
+                                            title = fileInfo.titleName
+                                        )
+                                    })
 
                             },
                             onClickMore = {
@@ -151,13 +148,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         if (context.isShowLoading()) {
             return
         }
-        AdManager.getFullAdFromPool(
-            context,
-            adType = "int",
-            adScene = "back_int",
-            closeAction = {
-                navigator.pop()
-            })
+        navigator.pop()
     }
 }
 

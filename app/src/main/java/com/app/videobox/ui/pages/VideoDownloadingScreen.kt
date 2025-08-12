@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.videobox.R
 
 /**
  * 视频下载中页面 - 基于Figma设计稿实现
@@ -164,7 +166,7 @@ private fun SearchBarSection() {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Search or type URL",
+                text = stringResource(R.string.search_or_type_url),
                 color = Color.Gray.copy(alpha = 0.7f),
                 fontSize = 16.sp
             )

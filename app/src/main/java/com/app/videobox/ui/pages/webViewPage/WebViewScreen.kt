@@ -49,6 +49,8 @@ import com.app.videobox.ui.widgets.webView.WebViewWidget
 import com.app.videobox.ui.widgets.webView.rememberWebViewState
 import com.app.videobox.utils.VideoResolve
 import com.app.videobox.R
+import com.app.videobox.ad.AdManager
+import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
@@ -111,16 +113,25 @@ fun WebPageScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var currentUrl = inputUrl
-    var progress by remember { mutableStateOf(0) }
     val webViewState = rememberWebViewState(currentUrl)
 
-    BackHandler {
+    val backAction = {
         if (webViewState.canGoBack()) {
             viewModel.postAction(WebViewModel.Action.ResetResolve)
             webViewState.goBack()
         }else{
-            context.finish()
+            AdManager.getFullAdFromPool(
+                context,
+                adType = AD_TYPE_INT,
+                adScene = "i_search_back",
+                closeAction = {
+                    context.finish()
+                })
+
         }
+    }
+    BackHandler {
+        backAction.invoke()
     }
 
     Box(modifier = Modifier
@@ -149,13 +160,7 @@ fun WebPageScreen(
                     webViewState.reload()
                 },
                 onBack = {
-
-                    if (webViewState.canGoBack()) {
-                        viewModel.postAction(WebViewModel.Action.ResetResolve)
-                        webViewState.goBack()
-                    }else{
-                        context.finish()
-                    }
+                    backAction.invoke()
                 },
                 onHome = {
                     context.finish()
@@ -179,7 +184,7 @@ fun WebPageScreen(
                     viewModel.reportUrl(newUrl)
                 },
                 onProgressChanged = { newProgress ->
-                    progress = newProgress
+
                 },
                 onResolverUrl = { hlsUrl,title,imgUrl,ext->
                     viewModel.postAction(WebViewModel.Action.ResolveUrl(hlsUrl,title,imgUrl,ext))
@@ -600,6 +605,7 @@ private fun FloatingVideoButton(
         }
 
         is WebViewModel.ResolveVideoState.ResolveSuccess -> {
+            val context = LocalContext.current as Activity
             val iconComposition by rememberLottieComposition(LottieCompositionSpec.Asset("resolve_success_btn.json"))
             LottieAnimation(
                 composition = iconComposition,
@@ -608,7 +614,14 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
-                        viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_video_download",
+                            closeAction = {
+                                viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
+                            })
+
                     }
                 ,
                 contentScale = ContentScale.FillWidth

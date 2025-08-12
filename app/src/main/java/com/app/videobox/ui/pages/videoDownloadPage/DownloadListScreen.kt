@@ -1,54 +1,36 @@
 package com.app.videobox.ui.pages.videoDownloadPage
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
+import android.app.Activity
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
-import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.ui.widgets.TitleBar
-import com.videodownloader.module.api.*
-import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
-import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
+import com.app.videobox.ad.base.AD_TYPE_INT
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
+import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.DeleteBarWidget
 import com.app.videobox.ui.widgets.ProgressLinear
@@ -80,7 +62,7 @@ fun DownloadListScreen(
     downloader: DownloaderV2 = koinInject(),
     viewModel: DownloadListViewModel = viewModel(),
 ) {
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
     
     // ViewModel状态
     val uiState by viewModel.uiState.collectAsState()
@@ -93,15 +75,19 @@ fun DownloadListScreen(
                     // 显示Toast消息
                 }
                 is DownloadListViewModel.Effect.NavigateToPlayer -> {
-//                    VlcPlayerActivity.start(
-//                        context = context,
-//                        videoPath = effect.filePath,
-//                    )
-                    VideoPlayActivity.start(
-                        context = context,
-                        videoUrl = effect.filePath,
-                        title = "test"
-                    )
+                    AdManager.getFullAdFromPool(
+                        context,
+                        adType = AD_TYPE_INT,
+                        adScene = "i_video_click",
+                        closeAction = {
+                            VlcPlayActivity.start(
+                                context = context,
+                                videoUrl = effect.filePath,
+                                title = File(effect.filePath).name
+                            )
+
+                        })
+
                 }
                 is DownloadListViewModel.Effect.ShowError -> {
                     // 显示错误消息

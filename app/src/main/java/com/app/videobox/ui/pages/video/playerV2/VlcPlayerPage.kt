@@ -5,14 +5,11 @@ import android.content.pm.ActivityInfo
 import android.provider.Settings
 import android.util.Log
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.media.AudioManager
 import android.widget.FrameLayout
 import android.net.Uri
-import androidx.annotation.OptIn
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -32,8 +29,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -42,6 +37,7 @@ import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
 import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -51,9 +47,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.singClick
+import com.app.videobox.R
 
 // 媒体流协调器日志标签
 private const val MEDIA_ORCHESTRATOR_TAG = "MediaStreamOrchestrator"
@@ -894,33 +890,80 @@ private fun MediaStreamOrchestrator(
 
             // === 顶部导航栏区域 ===
             if (!interfaceLockState) {
-                Row(
+                Column(
                     Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(top = 16.dp, start = 8.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(top = 16.dp, start = 8.dp, end = 8.dp)
                 ) {
-                    // 返回按钮
-                    AsyncImageImpl(
-                        modifier = Modifier.size(34.dp).singClick {
-                            Log.d(MEDIA_ORCHESTRATOR_TAG, "顶部导航: 返回按钮点击")
-                            navigationCallback?.invoke()
-                        },
-                        model = com.app.videobox.R.drawable.icon_back_1,
-                        contentDescription = null
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     )
+                    {
+                        // 返回按钮
+                        AsyncImageImpl(
+                            modifier = Modifier.size(34.dp).singClick {
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "顶部导航: 返回按钮点击")
+                                navigationCallback?.invoke()
+                            },
+                            model = R.drawable.icon_back_1,
+                            contentDescription = null
+                        )
 
-                    // 视频标题显示
-                    Text(
-                        text = contentEntity.name,
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
+                        // 视频标题显示
+                        Text(
+                            text = contentEntity.name,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        // 播放速度选择器
+                        var speedMenuExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            AsyncImageImpl(
+                                modifier = Modifier.size(26.dp).singClick{
+                                    speedMenuExpanded = true
+                                    Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 播放速度菜单展开")
+                                },
+                                model = R.drawable.icon_speed_menu
+                            )
+                            DropdownMenu(
+                                expanded = speedMenuExpanded,
+                                onDismissRequest = { speedMenuExpanded = false }
+                            ) {
+                                listOf(0.5f, 1.0f, 1.5f, 2.0f).forEach { speedOption ->
+                                    DropdownMenuItem(
+                                        text = { Text("${speedOption}x") },
+                                        onClick = {
+                                            playbackVelocity = speedOption
+                                            speedMenuExpanded = false
+                                            Log.d(MEDIA_ORCHESTRATOR_TAG, "播放速度选择: ${speedOption}x")
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        // 界面锁定按钮
+                        AsyncImageImpl(
+                            modifier = Modifier.size(26.dp).singClick{
+                                interfaceLockState = true
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 界面锁定激活")
+                            },
+                            model = R.drawable.icon_lock
+                        )
+                    }
+
                 }
+
             }
 
             // === 中央控制按钮区域 ===
@@ -933,18 +976,16 @@ private fun MediaStreamOrchestrator(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     // 快退按钮
-                    IconButton(onClick = {
-                        val newPosition = (mediaCurrentPosition - 10000).coerceAtLeast(0L)
-                        vlcMediaPlayerCore.time = newPosition
-                        Log.d(MEDIA_ORCHESTRATOR_TAG, "中央控制: 快退10秒 -> ${newPosition}ms")
-                    }) {
-                        Icon(
-                            Icons.Default.FastRewind,
-                            contentDescription = "quick retreat",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
+                    AsyncImageImpl(
+                        modifier = Modifier.size(40.dp)
+                            .padding(5.dp)
+                            .singClick{
+                                val newPosition = (mediaCurrentPosition - 10000).coerceAtLeast(0L)
+                                vlcMediaPlayerCore.time = newPosition
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "中央控制: 快退10秒 -> ${newPosition}ms")
+                            },
+                        model = R.drawable.icon_quick_retreat,
+                    )
 
                     Spacer(Modifier.width(16.dp))
 
@@ -967,21 +1008,20 @@ private fun MediaStreamOrchestrator(
                         )
                     }
 
+
                     Spacer(Modifier.width(16.dp))
 
                     // 快进按钮
-                    IconButton(onClick = {
-                        val newPosition = (mediaCurrentPosition + 10000).coerceAtMost(mediaTotalDuration)
-                        vlcMediaPlayerCore.time = newPosition
-                        Log.d(MEDIA_ORCHESTRATOR_TAG, "中央控制: 快进10秒 -> ${newPosition}ms")
-                    }) {
-                        Icon(
-                            Icons.Default.FastForward,
-                            contentDescription = "fast forward",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
+                    AsyncImageImpl(
+                        modifier = Modifier.size(40.dp)
+                            .padding(5.dp)
+                            .singClick{
+                                val newPosition = (mediaCurrentPosition + 10000).coerceAtMost(mediaTotalDuration)
+                                vlcMediaPlayerCore.time = newPosition
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "中央控制: 快进10秒 -> ${newPosition}ms")
+                            },
+                        model = R.drawable.icon_quick_fast,
+                    )
                 }
             }
 
@@ -1011,6 +1051,32 @@ private fun MediaStreamOrchestrator(
                         .background(Color.Black.copy(alpha = 0.3f))
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
+                    // 底部功能按钮行
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    )
+                    {
+                        // 横竖屏切换按钮
+                        AsyncImageImpl(
+                            modifier = Modifier.size(26.dp).singClick{
+                                orientationLandscape = !orientationLandscape
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 屏幕方向切换 -> ${if (orientationLandscape) "横屏" else "竖屏"}")
+                            },
+                            model = R.drawable.icon_screen_land
+                        )
+
+                        // 全屏模式按钮
+                        AsyncImageImpl(
+                            modifier = Modifier.size(26.dp).singClick{
+                                screenDisplayMode = true
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 全屏模式切换")
+                            },
+                            model = R.drawable.icon_full_screen
+                        )
+
+                    }
                     // 进度条控制
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -1043,71 +1109,6 @@ private fun MediaStreamOrchestrator(
                     }
 
                     Spacer(Modifier.height(4.dp))
-
-                    // 底部功能按钮行
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // 播放速度选择器
-                        var speedMenuExpanded by remember { mutableStateOf(false) }
-                        Box {
-                            TextButton(onClick = {
-                                speedMenuExpanded = true
-                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 播放速度菜单展开")
-                            }) {
-                                Text("${playbackVelocity}x", color = Color.White)
-                            }
-                            DropdownMenu(
-                                expanded = speedMenuExpanded,
-                                onDismissRequest = { speedMenuExpanded = false }
-                            ) {
-                                listOf(0.5f, 1.0f, 1.5f, 2.0f).forEach { speedOption ->
-                                    DropdownMenuItem(
-                                        text = { Text("${speedOption}x") },
-                                        onClick = {
-                                            playbackVelocity = speedOption
-                                            speedMenuExpanded = false
-                                            Log.d(MEDIA_ORCHESTRATOR_TAG, "播放速度选择: ${speedOption}x")
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        // 横竖屏切换按钮
-                        IconButton(onClick = {
-                            orientationLandscape = !orientationLandscape
-                            Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 屏幕方向切换 -> ${if (orientationLandscape) "横屏" else "竖屏"}")
-                        }) {
-                            Icon(
-                                if (orientationLandscape) Icons.Default.ScreenLockLandscape else Icons.Default.ScreenLockPortrait,
-                                contentDescription = "屏幕方向",
-                                tint = Color.White
-                            )
-                        }
-
-                        // 全屏模式按钮
-                        IconButton(onClick = {
-                            screenDisplayMode = true
-                            Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 全屏模式切换")
-                        }) {
-                            Icon(
-                                Icons.Default.FullscreenExit,
-                                contentDescription = "全屏",
-                                tint = Color.White
-                            )
-                        }
-
-                        // 界面锁定按钮
-                        IconButton(onClick = {
-                            interfaceLockState = true
-                            Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 界面锁定激活")
-                        }) {
-                            Icon(Icons.Default.Lock, contentDescription = "锁定", tint = Color.White)
-                        }
-                    }
                 }
             }
 

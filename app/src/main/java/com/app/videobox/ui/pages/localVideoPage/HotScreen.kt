@@ -1,5 +1,6 @@
 package com.app.videobox.ui.pages.localVideoPage
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.AssetManager
 import android.text.format.Formatter
@@ -51,6 +52,7 @@ import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.base.BaseActivity
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.TitleBar
 import com.app.videobox.ui.widgets.singClick
@@ -65,14 +67,14 @@ class HotScreen: Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val context = LocalContext.current as BaseActivity
+        val context = LocalContext.current as Activity
         val list = remember {
             getVideoFilesFromAssets(context)
         }
 
 
         BackHandler {
-            backPopAd(context, navigator)
+            navigator.pop()
         }
         Column(
             Modifier.Companion
@@ -81,7 +83,7 @@ class HotScreen: Screen {
                 .navigationBarsPadding()
         ) {
             TitleBar(title = stringResource(R.string.hot_video)) {
-                backPopAd(context, navigator)
+                navigator.pop()
             }
 
             Spacer(modifier = Modifier.Companion.height(20.dp))
@@ -100,14 +102,11 @@ class HotScreen: Screen {
                         CoilImage(
                             modifier = Modifier.Companion
                                 .singClick {
-                                    AdManager.getFullAdFromPool(
-                                        context,
-                                        adType = "int",
-                                        adScene = "play_int",
-                                        closeAction = {
-
-                                        })
-
+                                    VlcPlayActivity.start(
+                                        context = context,
+                                        videoUrl = file.absolutePath,
+                                        title =  file.name
+                                    )
                                 }
                                 .fillMaxSize(),
                             contentScale = ContentScale.Companion.FillBounds,
@@ -144,21 +143,7 @@ class HotScreen: Screen {
     }
 
 
-    private fun backPopAd(
-        context: BaseActivity,
-        navigator: Navigator
-    ) {
-        if (context.isShowLoading()) {
-            return
-        }
-        AdManager.getFullAdFromPool(
-            context,
-            adType = "int",
-            adScene = "back_int",
-            closeAction = {
-                navigator.pop()
-            })
-    }
+
 
     fun copyAssetToFile(context: Context, assetFileName: String): File? {
         val assetManager: AssetManager = context.assets

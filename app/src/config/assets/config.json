@@ -6,13 +6,13 @@
     {
       "innerAdList": [
         {
-          "adScene": "cold_start",
+          "adScene": "oa_cold_start",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
         },
         {
-          "adScene": "hot_start",
+          "adScene": "oa_hot_launch",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
@@ -52,7 +52,37 @@
     {
       "innerAdList": [
         {
-          "adScene": "home_int",
+          "adScene": "i_search_back",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_recommend_click",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_video_download",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_video_click",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_home_download",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_home_video",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_video_player_close",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true

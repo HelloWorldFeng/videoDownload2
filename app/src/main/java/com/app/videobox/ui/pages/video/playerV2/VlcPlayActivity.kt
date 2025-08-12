@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -20,23 +19,23 @@ import java.net.URLDecoder
  * 视频播放Activity - 重构版本
  * 
  * 使用方法：
- * VideoPlayActivity.start(context, "视频标题", "视频URL")
+ * VlcPlayActivity.start(context, "视频标题", "视频URL")
  * 
  * 例如：
- * VideoPlayActivity.start(this, "测试视频", "file:///storage/emulated/0/Download/video.mp4")
- * VideoPlayActivity.start(this, "网络视频", "https://example.com/video.mp4")
+ * VlcPlayActivity.start(this, "测试视频", "file:///storage/emulated/0/Download/video.mp4")
+ * VlcPlayActivity.start(this, "网络视频", "https://example.com/video.mp4")
  * 
  * 支持外部Intent：
  * - 从文件管理器选择视频文件
  * - 从其他应用分享视频链接
  * - 直接打开视频文件
  */
-class VideoPlayActivity : ComponentActivity() {
+class VlcPlayActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_TITLE = "extra_title"
         private const val EXTRA_VIDEO_URL = "extra_video_url"
-        private const val VIDEO_ACTIVITY_TAG = "VideoPlayActivity"
+        private const val VIDEO_ACTIVITY_TAG = "VlcPlayActivity"
 
         /**
          * 启动视频播放Activity
@@ -45,7 +44,7 @@ class VideoPlayActivity : ComponentActivity() {
          * @param videoUrl 视频URL（支持本地文件和网络URL）
          */
         fun start(context: Context, title: String, videoUrl: String) {
-            val intent = Intent(context, VideoPlayActivity::class.java).apply {
+            val intent = Intent(context, VlcPlayActivity::class.java).apply {
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_VIDEO_URL, videoUrl)
             }
@@ -63,7 +62,7 @@ class VideoPlayActivity : ComponentActivity() {
 
         setContent {
             enableEdgeToEdge()
-            VideoPlayerPage(
+            VlcPlayerPage(
                 title = title,
                 videoUrl = videoUrl,
             )

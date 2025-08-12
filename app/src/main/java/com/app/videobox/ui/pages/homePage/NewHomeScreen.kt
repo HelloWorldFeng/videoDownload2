@@ -1,5 +1,6 @@
 package com.app.videobox.ui.pages.homePage
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,13 +47,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import com.app.videobox.R
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
+import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ext.openGooglePlayStore
 import com.app.videobox.ext.shareApp
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
@@ -74,6 +78,7 @@ class NewHomeScreen : Screen {
 
     @Composable
     override fun Content() {
+        val context = LocalContext.current as Activity
         // 将状态管理移到Content方法内部，避免序列化问题
         var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
         val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -124,10 +129,24 @@ class NewHomeScreen : Screen {
                         mSelectIndex = SELECT_HOME
                     },
                     onClickDownload = {
-                        mSelectIndex = SELECT_DOWNLOAD
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_home_download",
+                            closeAction = {
+                                mSelectIndex = SELECT_DOWNLOAD
+                            })
+
                     },
                     onClickVideo = {
-                        mSelectIndex = SELECT_VIDEO
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_home_video",
+                            closeAction = {
+                                mSelectIndex = SELECT_VIDEO
+                            })
+
                     })
             }
         }
@@ -233,7 +252,7 @@ private fun CategoryVideoSection(
     category: MediaClass,
     navigator: Navigator
 ) {
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
     // 为每个分类创建独立的分页器
     val pager = remember(category.id) {
         Pager(
@@ -290,8 +309,15 @@ private fun CategoryVideoSection(
                     HorizontalVideoCard(
                         video = video,
                         onClick = {
-                            // 点击视频跳转到WebView页面播放
-                            WebViewActivity.start(context = context,video.videoURL)
+                            AdManager.getFullAdFromPool(
+                                context,
+                                adType = AD_TYPE_INT,
+                                adScene = "i_recommend_click",
+                                closeAction = {
+                                    // 点击视频跳转到WebView页面播放
+                                    WebViewActivity.start(context = context,video.videoURL)
+                                })
+
                         }
                     )
                 }
@@ -307,7 +333,7 @@ private fun CategoryVideoSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "More →",
+                            text = stringResource(R.string.more),
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center
@@ -426,7 +452,7 @@ private fun SearchSection() {
                 onValueChange = { searchText = it },
                 placeholder = {
                     Text(
-                        text = "Search or type URL",
+                        text = stringResource(R.string.search_or_type_url),
                         fontSize = 14.sp,
                         color = Color.Gray
                     )
@@ -525,7 +551,7 @@ private fun WebsiteGridRow(
     websites: List<WebsiteItem>,
     navigator: Navigator
 ) {
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -537,8 +563,14 @@ private fun WebsiteGridRow(
             WebsiteItemCard(
                 website = website,
                 onClick = {
-                    // 点击网站图标跳转到WebView页面
-                    WebViewActivity.start(context = context,website.url)
+                    AdManager.getFullAdFromPool(
+                        context,
+                        adType = AD_TYPE_INT,
+                        adScene = "i_recommend_click",
+                        closeAction = {
+                            // 点击网站图标跳转到WebView页面
+                            WebViewActivity.start(context = context,website.url)
+                        })
                 }
             )
         }

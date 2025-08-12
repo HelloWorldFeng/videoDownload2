@@ -24,7 +24,7 @@
                 android:textSize="14sp"
                 android:textColor="#7D8185"
                 android:gravity="center_vertical"
-                android:text="Search or paste video link here"
+                android:text="@string/search_or_type_url"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentBottom="true"/>

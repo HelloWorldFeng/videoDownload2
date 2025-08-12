@@ -2,16 +2,11 @@ package com.app.videobox.ui
 
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.lifecycleScope
-import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import com.app.videobox.App
 import com.app.videobox.App.Companion.notLaunchHot
-import com.app.videobox.BuildConfig
 import com.app.videobox.MAIN_OPERATE
 import com.app.videobox.MAIN_SHOW_VIDEO
 import com.app.videobox.MAIN_SHOW_WEB
@@ -21,10 +16,8 @@ import com.app.videobox.manager.FileManager.fetchPhoneVideo
 import com.app.videobox.service.DownloadService
 import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
-import com.app.videobox.ui.pages.video.player.VlcPlayerActivity
-import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
-import com.app.videobox.ui.pages.webViewPage.WebViewScreen
 import com.app.videobox.utils.FileUtils
 import com.app.videobox.utils.NotifyHelper
 import com.blankj.utilcode.util.SPStaticUtils
@@ -105,7 +98,7 @@ class MainActivity : BaseActivity() {
 //                        videoPath = it,
 //                        videoTitle = title
 //                    )
-                    VideoPlayActivity.start(
+                    VlcPlayActivity.start(
                         context = this,
                         videoUrl = it,
                         title = title

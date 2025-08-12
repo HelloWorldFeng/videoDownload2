@@ -161,7 +161,7 @@ private fun processLocalFilePath(filePath: String): String {
 ### 代码变更
 - 🔧 `VideoPlayer.kt`: 大幅简化私有目录VLC配置
 - 🔧 `VideoPlayer.kt`: 优化降级策略配置
-- 🔧 `VideoPlayActivity.kt`: 修复私有目录路径处理
+- 🔧 `VlcPlayActivity.kt`: 修复私有目录路径处理
 - 📝 `fyi.md`: 更新文档记录
 
 ---

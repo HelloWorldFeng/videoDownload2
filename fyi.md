@@ -114,7 +114,7 @@ fun setVideoPath(videoPath: String, autoPlay: Boolean = false) {
 
 #### 2. PlayerV2 - 复杂路径处理 ❌
 ```kotlin
-// VideoPlayActivity.kt - processVideoUrl()
+// VlcPlayActivity.kt - processVideoUrl()
 private fun processVideoUrl(videoUrl: String): String {
     return when {
         videoUrl.startsWith("content://") -> processContentUri(videoUrl)
@@ -277,7 +277,7 @@ fun Surface(color: Color, shape: RoundedCornerShape, content: @Composable () -> 
 1. **问题识别**：PlayerV2对所有文件路径进行复杂的URL解码和格式转换，破坏了私有目录文件的特殊路径格式
 2. **修复策略**：在`processLocalFilePath`方法中添加私有目录检测，为私有目录文件跳过复杂处理
 3. **具体实现**：
-   - 在`VideoPlayActivity.kt`中添加`isInAppPrivateDirectory`函数
+   - 在`VlcPlayActivity.kt`中添加`isInAppPrivateDirectory`函数
    - 修改`processLocalFilePath`方法，优先检测私有目录文件
    - 私有目录文件直接返回原始路径，避免路径被破坏
    - 公共目录文件继续执行原有的复杂处理逻辑

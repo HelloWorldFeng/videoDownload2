@@ -37,25 +37,14 @@
     <string name="format_flac">FLAC</string>
     <string name="format_ogg">OGG</string>
 
-
-    
-    <!-- 缺失的字符串资源 -->
-    <string name="file_director">文件目录</string>
-    <string name="folder">文件夹</string>
     <string name="hot_video">Hot Video</string>
     <string name="language">Language</string>
     <string name="local_video">Local Video</string>
-    <string name="new_playlist">新建播放列表</string>
     <string name="next">Next</string>
-    <string name="no_content_at_the_moment">暂无内容</string>
-    <string name="no_related_files_found">未找到相关文件</string>
-    <string name="permission_needs_to_be_granted">需要授予权限</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="rate_us">Rate us</string>
-    <string name="rename">重命名</string>
     <string name="share_the_app">Share the app</string>
     <string name="version_update">Version update</string>
-    <string name="built_in_video">内置视频</string>
 
 
     <string name="filesize_mb">%.2f MB</string>
@@ -85,9 +74,12 @@
     <string name="grant">Grant</string>
     <string name="permission_required">Permission Required</string>
     <string name="update_settings">Update Settings</string>
-    <string name="to_downlaod_files_you_need_to">To downlaod files, you need to:</string>
+    <string name="to_download_files_you_need_to">To download files, you need to:</string>
     <string name="open_settings_tap_permission">Open settings,tap permission</string>
     <string name="turn_on_notification">Turn on notification</string>
     <string name="video_download_complete">video download complete</string>
     <string name="click_to_view">click to view</string>
+    <string name="more">More</string>
+    <string name="search_or_type_url">Search or type URL</string>
+    <string name="no_content_at_the_moment">no content at the moment</string>
 </resources>

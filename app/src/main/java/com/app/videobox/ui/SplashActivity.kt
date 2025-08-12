@@ -201,7 +201,7 @@ class SplashActivity : BaseActivity() {
             AdManager.getFullAdFromPool(
                 this,
                 adType = "open",
-                adScene = "cold_start",
+                adScene = "oa_cold_start",
                 closeAction = {
                     goNextType()
                 })
@@ -210,7 +210,7 @@ class SplashActivity : BaseActivity() {
             AdManager.getFullAdFromPool(
                 this,
                 adType = "open",
-                adScene = if (!AppManager.isInitialized) "cold_start" else "hot_start",
+                adScene = if (!AppManager.isInitialized) "oa_cold_start" else "oa_hot_launch",
                 closeAction = {
                     goNextType()
                 })

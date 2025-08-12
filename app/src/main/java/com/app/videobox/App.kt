@@ -8,18 +8,16 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.util.Base64
 import android.util.Log
-import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 import cn.thinkingdata.analytics.TDAnalytics
 import cn.thinkingdata.analytics.TDConfig
 import com.app.videobox.ad.UserHelper
-import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
 import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
-import com.app.videobox.ui.pages.video.playerV2.VideoPlayActivity
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
@@ -29,7 +27,6 @@ import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils
-import com.blankj.utilcode.util.Utils.OnAppStatusChangedListener
 import com.google.android.gms.ads.AdActivity
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
@@ -46,7 +43,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
-import java.io.File
 
 class App : Application() {
 
@@ -110,7 +106,7 @@ class App : Application() {
 
                 if (activity is SplashActivity || activity is PrivacyActivity
                     || activity is AdActivity || notLaunchHot
-                    || activity is VideoPlayActivity
+                    || activity is VlcPlayActivity
                 ) {
                     notLaunchHot = false
                     return
