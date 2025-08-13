@@ -47,6 +47,7 @@ import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.ui.widgets.webView.WebViewWidget
 import com.app.videobox.ui.widgets.webView.rememberWebViewState
 import com.app.videobox.utils.VideoResolve
+import com.app.videobox.utils.WebViewHttpContext
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.UserHelper
@@ -328,6 +329,7 @@ fun ResolveInfoDialog(
 
                 ResolveDialog(
                     state = state,
+                    viewModel = viewModel,
                     onClickDownload = onClickDownload,
                     onDismissRequest = {
                         viewModel.postAction(WebViewModel.Action.HideResolveDialog)
@@ -449,6 +451,7 @@ private fun ResolveDialog(
     state: WebViewModel.ResolveVideoState.ResolveSuccess,
     onDismissRequest: () -> Unit,
     onClickDownload:(videoUrl: VideoInfo)-> Unit,
+    viewModel: WebViewModel,
 ){
     val sheetStateV3 = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     LaunchedEffect(Unit) { sheetStateV3.show() }
@@ -465,6 +468,7 @@ private fun ResolveDialog(
         ResolveDialogImpl(
             modifier = modifier,
             info = state.info,
+            viewModel = viewModel,
             onClickDownload = onClickDownload,
             onNavigateBack = {
                 scope.launch { sheetStateV3.hide() }.invokeOnCompletion { onDismissRequest() }
@@ -476,6 +480,7 @@ private fun ResolveDialog(
 private fun ResolveDialogImpl(
     modifier: Modifier,
     info: VideoResolve.ResolveVideoInfo,
+    viewModel: WebViewModel,
     onNavigateBack: () -> Unit,
     onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {
@@ -603,6 +608,12 @@ private fun ResolveDialogImpl(
                     GradientButton(onClick = {
                         // 本地函数：执行下载逻辑
                         fun startDownload() {
+                            // 获取WebView的HTTP上下文信息
+                            val httpContext = WebViewHttpContext.getHttpContext(
+                                webView = viewModel.getCurrentWebView(),
+                                currentUrl = viewModel.getCurrentPageUrl()
+                            )
+
                             val newVideoInfo = VideoInfo(
                                 id = System.currentTimeMillis().toString(),
                                 title = info.title,
@@ -611,6 +622,11 @@ private fun ResolveDialogImpl(
                                 size = info.size,
                                 url = info.originUrl,
                                 ext = info.ext,
+                                // 传递WebView的HTTP上下文信息
+                                httpHeaders = httpContext.httpHeaders,
+                                cookies = httpContext.cookies,
+                                referer = httpContext.referer,
+                                userAgent = httpContext.userAgent
                             )
                             onClickDownload.invoke(newVideoInfo)
                             onNavigateBack.invoke()

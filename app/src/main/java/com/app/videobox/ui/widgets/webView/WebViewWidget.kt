@@ -45,6 +45,8 @@ fun WebViewWidget(
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
                 if (url.isNullOrEmpty()) return
+                // 设置WebView上下文信息
+                viewModel.setWebViewContext(view, url)
             }
 
             override fun shouldOverrideUrlLoading(

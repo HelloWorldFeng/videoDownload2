@@ -29,6 +29,10 @@ class WebViewModel : ViewModel() {
 
     private val mResolveEmptyDialogStateFlow:MutableStateFlow<DialogState> = MutableStateFlow(DialogState.Hidden)
     val resolveEmptyDialogStateFlow = mResolveEmptyDialogStateFlow.asStateFlow()
+    
+    // 存储WebView实例和当前URL，用于获取HTTP上下文信息
+    private var currentWebView: WebView? = null
+    private var currentPageUrl: String = ""
 
     sealed interface DialogState{
         data object Hidden: DialogState
@@ -89,6 +93,28 @@ class WebViewModel : ViewModel() {
         resolveVideoJob?.cancel()
         mResolveStateFlow.update { ResolveVideoState.Idle }
     }
+    
+    /**
+     * 设置当前WebView实例和页面URL
+     * @param webView WebView实例
+     * @param url 当前页面URL
+     */
+    fun setWebViewContext(webView: WebView?, url: String) {
+        currentWebView = webView
+        currentPageUrl = url
+    }
+    
+    /**
+     * 获取当前WebView实例
+     * @return WebView实例，可能为null
+     */
+    fun getCurrentWebView(): WebView? = currentWebView
+    
+    /**
+     * 获取当前页面URL
+     * @return 当前页面URL
+     */
+    fun getCurrentPageUrl(): String = currentPageUrl
 
     private fun resolveUrl(action: Action.ResolveUrl) {
         val url = action.url

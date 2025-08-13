@@ -35,25 +35,10 @@ object VideoResolve {
      * 
      * @param videoUrl 视频URL（支持m3u8、mp4等）
      * @param title 视频标题文案
-     * @return ResolveVideoInfo 视频信息
+     * @return VideoInfo 视频信息
      */
     suspend fun getVideoInfo(videoUrl: String, title: String? = null, imgUrl: String, ext: String): Result<ResolveVideoInfo> =
         withContext(Dispatchers.IO) {
-            val randomVideo = ResolveVideoInfo(
-                duration = 0f,
-                width = 1080,
-                height = 980,
-                resolution = "1080",
-                bitrate = 0L,
-                size = FileUtils.getRandomFileSize(),
-                format = "unknown",
-                codec = "unknown",
-                frameRate = "unknown",
-                title = title?:"unknown",
-                thumbnail = imgUrl,
-                originUrl = videoUrl,
-                ext = ext,
-            )
             try {
                 val command = mutableListOf<String>()
                 
@@ -78,7 +63,21 @@ object VideoResolve {
                 command.add(videoUrl)
                 
                 val rc = FFprobe.execute(command.toTypedArray())
-
+                val randomVideo = ResolveVideoInfo(
+                    duration = 0f,
+                    width = 1080,
+                    height = 980,
+                    resolution = "1080",
+                    bitrate = 0L,
+                    size = FileUtils.getRandomFileSize(),
+                    format = "unknown",
+                    codec = "unknown",
+                    frameRate = "unknown",
+                    title = title?:"unknown",
+                    thumbnail = imgUrl,
+                    originUrl = videoUrl,
+                    ext = ext,
+                )
                 if (rc == 0) {
                     val output = Config.getLastCommandOutput()
                     if (output.isNotEmpty()) {
@@ -91,7 +90,7 @@ object VideoResolve {
                     Result.success(randomVideo)
                 }
             } catch (e: Exception) {
-                Result.success(randomVideo)
+                Result.failure(e)
             }
         }
     
