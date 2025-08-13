@@ -193,7 +193,6 @@ fun WebPageScreen(
                         viewModel.postAction(WebViewModel.Action.ResetResolve)
                     }
                     currentUrl = newUrl
-                    viewModel.reportUrl(newUrl)
                 },
                 onProgressChanged = { newProgress ->
 

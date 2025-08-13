@@ -271,9 +271,6 @@ class WebViewModel : ViewModel() {
         }
     }
 
-    fun reportUrl(newUrl: String) {
-
-    }
 
 
 
