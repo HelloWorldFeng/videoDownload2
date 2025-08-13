@@ -80,4 +80,8 @@
     <string name="more">Altro</string>
     <string name="search_or_type_url">Cerca o digita URL</string>
     <string name="no_content_at_the_moment">nessun contenuto al momento</string>
+    <string name="please_enter_the_search_content_or_url_link">Per favore inserisci il contenuto di ricerca o il link URL</string>
+    <string name="due_to_legal">A causa di restrizioni legali, i video su questo sito non possono essere scaricati</string>
+    <string name="submit">Invia</string>
+    <string name="submit_success">Invio riuscito</string>
 </resources>

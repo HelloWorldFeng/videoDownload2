@@ -700,7 +700,8 @@ fun VideoInfoPreview(
 ) {
     Box(modifier = modifier
         .padding(top = 15.dp)
-        .wrapContentWidth()
+        .padding(horizontal = 40.dp)
+        .fillMaxWidth()
         .wrapContentHeight(Alignment.Top, unbounded = false)) {
         MediaImage(
             modifier = Modifier.align(Alignment.Center),
@@ -754,7 +755,7 @@ fun MediaImage(
     StateAsyncImageImpl(
         modifier = modifier
             .height(180.dp)
-            .aspectRatio(16f / 9f, matchHeightConstraintsFirst = true)
+            .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall),
         model = imageModel,
         contentDescription = contentDescription,

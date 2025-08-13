@@ -12,8 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
@@ -28,7 +26,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.ui.pages.webViewPage.WebViewScreen
 import com.blankj.utilcode.util.ToastUtils
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,6 +45,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
@@ -66,7 +64,8 @@ import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
-import com.app.videobox.ui.widgets.NavBarV2
+import com.app.videobox.ui.widgets.NavBarV3
+import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
 
@@ -127,7 +126,7 @@ class NewHomeScreen : Screen {
                     )
                 }
                 
-                NavBarV2(
+                NavBarV3(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 30.dp),
@@ -165,7 +164,8 @@ class NewHomeScreen : Screen {
 @Composable
 fun HomeScreen(onMenuClick: () -> Unit = {}){
     val navigator = LocalNavigator.currentOrThrow
-
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     LaunchedEffect(Unit) {
         if (SPStaticUtils.getBoolean("browser_show",true)){
             SPStaticUtils.put("browser_show",false)
@@ -189,7 +189,11 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
         Column(modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .navigationBarsPadding())
+            .navigationBarsPadding()
+            .singClick {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            })
         {
             // 状态栏区域
             StatusBarSection(onMenuClick = onMenuClick)
@@ -252,14 +256,14 @@ fun PopularVideoSection(navigator: Navigator) {
         // 显示加载状态
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
+                .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Loading video categories...",
+                text = stringResource(R.string.loading_video_categories),
                 color = Color.White,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
@@ -502,7 +506,10 @@ private fun SearchSection() {
             )
 
             AsyncImageImpl(
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier.size(50.dp).singClick{
+                    focusManager.clearFocus()
+                    handleSearch(searchText, context, navigator)
+                },
                 model = R.drawable.icon_search
             )
         }

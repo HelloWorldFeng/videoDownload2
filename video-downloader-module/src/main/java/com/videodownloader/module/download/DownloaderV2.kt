@@ -345,12 +345,13 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                 videoInfo = taskInfo,
                 title = taskInfo.title.ifEmpty { "HD_video:${System.currentTimeMillis()}" },
                 progressCallback = { progressPercentage, long, text ->
+                    Log.d("下载", "M3U8下载中-----> :${long},----speedText:${text}")
+
                     val progress = progressPercentage / 100f
                     when (val preState = downloadState) {
                         is Running -> {
                             val pattern2 = """\d+\.?\d*\s*[KMG]iB/s""".toRegex()
                             val speedText = pattern2.find(text)?.value?:""
-                            Log.d("下载", "M3U8下载中-----> :${progress},----speedText:${speedText}")
                             downloadState = preState.copy(progress = progress, speed = speedText)
                         }
                         else -> {

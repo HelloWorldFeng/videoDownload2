@@ -80,4 +80,8 @@
     <string name="more">और</string>
     <string name="search_or_type_url">खोजें या URL टाइप करें</string>
     <string name="no_content_at_the_moment">इस समय कोई सामग्री नहीं</string>
+    <string name="please_enter_the_search_content_or_url_link">कृपया खोज सामग्री या URL लिंक दर्ज करें</string>
+    <string name="due_to_legal">कानूनी प्रतिबंधों के कारण, इस साइट पर वीडियो डाउनलोड नहीं किए जा सकते</string>
+    <string name="submit">जमा करें</string>
+    <string name="submit_success">सफलतापूर्वक जमा किया गया</string>
 </resources>

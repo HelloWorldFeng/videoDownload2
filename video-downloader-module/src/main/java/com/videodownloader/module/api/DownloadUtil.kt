@@ -104,7 +104,7 @@ object DownloadUtil {
             val inputStream = connection.getInputStream()
             val outputStream = outputFile.outputStream()
             Log.d(TAG, "网络连接建立成功，开始读取数据流")
-            
+
             val buffer = ByteArray(BUFFER_SIZE)
             var totalBytesRead = 0L
             val contentLength = connection.contentLength.toLong()
@@ -142,7 +142,7 @@ object DownloadUtil {
                     lastProgressPercent = progressPercent
                     Log.d(TAG, "下载进度: ${progressPercent}%, 已下载: ${totalBytesRead}字节/${contentLength}字节, 速度: ${downloadSpeed}字节/秒")
                 }
-                
+
                 // 减少延迟，提高响应性
                 delay(100)
             }

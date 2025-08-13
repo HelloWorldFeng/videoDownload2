@@ -80,4 +80,8 @@
     <string name="more">Higit Pa</string>
     <string name="search_or_type_url">Maghanap o mag-type ng URL</string>
     <string name="no_content_at_the_moment">walang content sa ngayon</string>
+    <string name="please_enter_the_search_content_or_url_link">Pakitype ang search content o URL link</string>
+    <string name="due_to_legal">Dahil sa legal restrictions, hindi ma-download ang mga video sa site na ito</string>
+    <string name="submit">I-submit</string>
+    <string name="submit_success">Matagumpay na na-submit</string>
 </resources>

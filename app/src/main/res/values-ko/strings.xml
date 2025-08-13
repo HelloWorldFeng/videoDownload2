@@ -80,4 +80,8 @@
     <string name="more">더보기</string>
     <string name="search_or_type_url">검색 또는 URL 입력</string>
     <string name="no_content_at_the_moment">현재 콘텐츠가 없습니다</string>
+    <string name="please_enter_the_search_content_or_url_link">검색 내용이나 URL 링크를 입력해 주세요</string>
+    <string name="due_to_legal">법적 제한으로 인해 이 사이트의 비디오는 다운로드할 수 없습니다</string>
+    <string name="submit">제출</string>
+    <string name="submit_success">제출 성공</string>
 </resources>

@@ -174,7 +174,7 @@ object NotifyHelper {
         title: String,
         content: String
     ): RemoteViews {
-        return RemoteViews(context.packageName, R.layout.layout_nofity_back_small).apply {
+        return RemoteViews(context.packageName, R.layout.layout_notify_for_small).apply {
             // 使用布局文件的默认内容，不设置文本
         }
     }
@@ -187,7 +187,7 @@ object NotifyHelper {
         title: String,
         content: String
     ): RemoteViews {
-        return RemoteViews(context.packageName, R.layout.layout_notify_back).apply {
+        return RemoteViews(context.packageName, R.layout.layout_notify_for).apply {
             // 使用布局文件的默认内容，不设置文本
         }
     }

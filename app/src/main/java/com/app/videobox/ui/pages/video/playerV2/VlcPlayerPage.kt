@@ -1086,7 +1086,7 @@ private fun MediaStreamOrchestrator(
                             fontSize = 12.sp
                         )
 
-                        Slider(
+                        androidx.compose.material.Slider(
                             value = if (mediaTotalDuration > 0) {
                                 (if (seekOperationActive) previewSeekPosition else mediaCurrentPosition) / mediaTotalDuration.toFloat()
                             } else 0f,
@@ -1096,8 +1096,8 @@ private fun MediaStreamOrchestrator(
                                 Log.d(MEDIA_ORCHESTRATOR_TAG, "进度条控制: 跳转到 ${targetPosition}ms")
                             },
                             modifier = Modifier.weight(1f),
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
+                            colors = androidx.compose.material.SliderDefaults.colors(
+                                thumbColor = Color(0xFFFC7A46),
                                 activeTrackColor = Color.White
                             )
                         )
