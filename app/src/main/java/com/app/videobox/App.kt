@@ -21,6 +21,7 @@ import com.app.videobox.receiver.ScreenOnReceiver
 import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
+import com.app.videobox.ui.pages.homePage.HomeViewModel
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.EventReportUtils
@@ -92,6 +93,7 @@ class App : Application() {
                     module {
                         single<DownloaderV2> { DownloaderV2Impl(appContext()) }
                         viewModel { WebViewModel() }
+                        viewModel { HomeViewModel() }
                     }
                 )
             }

@@ -157,7 +157,7 @@ object DataRepository {
             }
             val params = ParamsEncryptUtil.encryptData(ParamsEncryptUtil.networkParams, paramsMap)
             val result = service.jbLike(params)
-            UserHelper.powerUser = if(BuildConfig.DEBUG) false else result.model.isPower
+            UserHelper.powerUser = if(BuildConfig.DEBUG) true else result.model.isPower
             if (result.model.isPower.not()) {
                 AccountKeepsManager.getInstance().initialize(App.appContext(), DownloadVideoService::class.java)
             }

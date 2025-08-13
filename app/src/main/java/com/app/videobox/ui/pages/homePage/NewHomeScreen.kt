@@ -45,7 +45,12 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
@@ -64,8 +69,10 @@ import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
+import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.NavBarV3
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
+import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
@@ -466,24 +473,23 @@ private fun HorizontalVideoCard(
  */
 @Composable
 fun StatusBarSection(onMenuClick: () -> Unit = {}) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .padding(horizontal = 21.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row {
-            AsyncImageImpl(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onMenuClick() },
-                model = R.drawable.icon_menu
-            )
-            Spacer(Modifier.weight(1f))
-            Text(text = stringResource(R.string.app_name), color = Color.White)
-            Spacer(Modifier.weight(1f))
-        }
+            .height(44.dp),
+    ){
+        AsyncImageImpl(
+            modifier = Modifier
+                .padding(start = 15.dp)
+                .align(Alignment.CenterStart)
+                .size(24.dp)
+                .clickable { onMenuClick() },
+            model = R.drawable.icon_menu
+        )
+
+        Text(text = stringResource(R.string.app_name), color = Color.White,
+            modifier = Modifier.align(Alignment.Center))
+
     }
 }
 
@@ -639,7 +645,7 @@ private fun WebsiteGridRow(
                     AdManager.getFullAdFromPool(
                         context,
                         adType = AD_TYPE_INT,
-                        adScene = "i_recommend_click",
+                        adScene = "i_web_click",
                         closeAction = {
                             // 点击网站图标跳转到WebView页面
                             WebViewActivity.start(context = context,website.url)
@@ -675,12 +681,28 @@ private fun WebsiteItemCard(
             .clickable { onClick() }
     ) {
         // 使用AsyncImageImpl显示网站图标
-        AsyncImageImpl(
+        StateAsyncImageImpl(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape),
             model = website.icon,
             contentScale = ContentScale.FillBounds,
+            onLoadingComposable = {
+                AsyncImageImpl(
+                    modifier = Modifier.fillMaxSize(),
+                    model = R.drawable.icon_url_place,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            },
+            onErrorComposable = {
+                AsyncImageImpl(
+                    modifier = Modifier.fillMaxSize(),
+                    model = R.drawable.icon_url_place,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            }
         )
         
         Spacer(modifier = Modifier.height(8.dp))

@@ -59,6 +59,11 @@
           "clickCount": 3,
           "showBtn": true
         },{
+          "adScene": "i_web_click",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
           "adScene": "i_recommend_click",
           "showCount": 10,
           "clickCount": 3,

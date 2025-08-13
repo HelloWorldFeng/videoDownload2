@@ -149,7 +149,16 @@ class WebViewModel : ViewModel() {
         ) {
             return
         }
+        //tiktok不检查
+        if (url.toUri().host?.contains("tiktok") == true
+        ) {
+            return
+        }
 
+        if (url.toUri().host?.contains("vod3.cf.dmcdn.net") == true
+            && !url.contains("manifest.m3u8")){
+            return
+        }
 
         if (isVideoUrl(url) && !discoveredUrls.contains(url)) {
             discoveredUrls.add(url)
