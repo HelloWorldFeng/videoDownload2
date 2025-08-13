@@ -1,3 +1,60 @@
+## FolderScreen空状态UI优化 (2025-01-11)
+
+### 问题描述
+- **现象**: `FolderScreen.kt`中`dataList`不是可观察变量，数据为空时没有显示空状态样式
+- **触发条件**: 当设备中没有视频文件或扫描未完成时，界面显示空白
+- **影响范围**: 本地视频文件夹列表页面的用户体验
+
+### 根本原因分析
+1. **状态管理问题**: `dataList`使用`run`块计算，不是响应式状态变量
+2. **缺少空状态UI**: 没有为空数据情况设计专门的UI组件
+3. **用户体验缺失**: 用户无法了解当前状态（加载中、无数据等）
+
+### 修复方案
+- **响应式状态**: 将`dataList`改为`mutableStateOf`管理的可观察状态
+- **状态监听**: 添加`LaunchedEffect`监听`FileManager.scanFileResultState`变化
+- **空状态UI**: 创建`EmptyVideoFoldersState`组件显示友好的空状态界面
+- **条件渲染**: 根据数据是否为空显示不同的UI组件
+
+### 技术要点
+```kotlin
+// 响应式状态管理
+val dataList = remember { mutableStateOf(emptyList<Pair<String, MutableList<FileManager.FileInfo>>>()) }
+
+// 状态监听和更新
+LaunchedEffect(FileManager.scanFileResultState) {
+    val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
+    FileManager.scanFileResultState.forEach {
+        videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it)
+    }
+    dataList.value = videoMap.toList()
+}
+
+// 条件渲染
+if (dataList.value.isEmpty()) {
+    EmptyVideoFoldersState()
+} else {
+    LazyColumn { items(dataList.value) { ... } }
+}
+```
+
+### 核心改进
+- **响应式数据**: `dataList`现在能够自动响应数据变化
+- **用户体验**: 空状态时显示友好的提示信息和图标
+- **状态管理**: 使用Compose最佳实践管理UI状态
+
+### 验证方法
+- 编译通过，无语法错误
+- 空状态UI正确显示
+- 数据加载后正常显示列表
+
+### 影响范围
+- 优化了本地视频文件夹页面的用户体验
+- 提升了应用的专业性和完整性
+- 遵循了Material Design的空状态设计规范
+
+---
+
 ## VlcPlayerPage全屏功能修复 (2025-01-11)
 
 ### 问题描述

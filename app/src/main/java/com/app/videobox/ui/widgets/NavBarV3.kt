@@ -36,6 +36,7 @@ import com.hjq.permissions.XXPermissions
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.Task
 import org.koin.compose.koinInject
+import kotlin.math.sign
 
 private val ContainColor : Color
     @Composable get() = Color(0xFF363637)
@@ -118,7 +119,7 @@ fun NavBarV3(
             selected = selected == 2,
             defaultIcon = R.drawable.icon_nav_download,
             checkedIcon = "tab_download.json",
-            markSize = 1,
+            markSize = taskStateSize,
         )
     }
 }

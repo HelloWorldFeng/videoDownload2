@@ -87,4 +87,6 @@
     <string name="submit">Submit</string>
     <string name="submit_success">Submit success</string>
     <string name="loading_video_categories">Loading video categories...</string>
+    <string name="no_video_folders_found">No video folders found</string>
+    <string name="scan_your_device_for_videos">Scan your device for videos</string>
 </resources>

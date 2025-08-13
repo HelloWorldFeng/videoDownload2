@@ -58,14 +58,6 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
 
-        lifecycleScope.launch {
-            if (FileUtils.checkFilePermission(this@MainActivity).not()) {
-                return@launch
-            }
-            FileUtils.requestFilePermission(this@MainActivity){
-                fetchPhoneVideo(this@MainActivity)
-            }
-        }
         if (SPStaticUtils.getBoolean("enter_home_first",true)){
             SPStaticUtils.put("enter_home_first",false)
             EventReportUtils.reportTDParams("enter_home_first",

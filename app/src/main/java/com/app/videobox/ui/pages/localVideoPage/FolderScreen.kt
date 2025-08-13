@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.manager.FileManager
@@ -49,15 +55,18 @@ fun FolderScreen(
 ){
     val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current as BaseActivity
-    val dataList = run {
+    val dataList = remember { mutableStateOf(emptyList<Pair<String, MutableList<FileManager.FileInfo>>>()) }
+    
+    LaunchedEffect(Unit) {
+        FileManager.fetchPhoneVideo(context)
+    }
+    
+    LaunchedEffect(FileManager.scanFileResultState) {
         val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
         FileManager.scanFileResultState.forEach {
             videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it) // 仅添加存在的文件
         }
-        videoMap.toList()
-    }
-    LaunchedEffect(Unit) {
-        FileManager.fetchPhoneVideo(context)
+        dataList.value = videoMap.toList()
     }
 
     BackHandler {
@@ -124,40 +133,44 @@ fun FolderScreen(
                     .fillMaxWidth(1f),
                 adScene = "n_local_video"
             )
-            LazyColumn(modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            )
-            {
-                items(dataList) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .singClick {
-                                navigator.push(LocalVideoScreen(it.second))
+            if (dataList.value.isEmpty()) {
+                EmptyVideoFoldersState()
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                )
+                {
+                    items(dataList.value) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .singClick {
+                                    navigator.push(LocalVideoScreen(it.second))
+                                }
+                                .padding(bottom = 16.dp)
+                                .height(100.dp)
+                                .background(
+                                    color = Color(0xFF2E2F30),
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            CoilImage(modifier = Modifier.size(30.dp,24.dp),
+                                data = R.drawable.icon_folder)
+                            Spacer(modifier = Modifier.width(15.dp))
+                            Column {
+                                Text(text = it.first, fontSize = 14.sp,color = Color.White)
+                                Text(text = context.getString(R.string.video, it.second.size),
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF898989))
                             }
-                            .padding(bottom = 16.dp)
-                            .height(100.dp)
-                            .background(
-                                color = Color(0xFF2E2F30),
-                                shape = RoundedCornerShape(14.dp)
+                            Spacer(Modifier.weight(1f))
+                            AsyncImageImpl(
+                                model = R.drawable.icon_arrow_right,
+                                modifier = Modifier.size(16.dp)
                             )
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        CoilImage(modifier = Modifier.size(30.dp,24.dp),
-                            data = R.drawable.icon_folder)
-                        Spacer(modifier = Modifier.width(15.dp))
-                        Column {
-                            Text(text = it.first, fontSize = 14.sp,color = Color.White)
-                            Text(text = context.getString(R.string.video, it.second.size),
-                                fontSize = 12.sp,
-                                color = Color(0xFF898989))
                         }
-                        Spacer(Modifier.weight(1f))
-                        AsyncImageImpl(
-                            model = R.drawable.icon_arrow_right,
-                            modifier = Modifier.size(16.dp)
-                        )
                     }
                 }
             }
@@ -165,4 +178,28 @@ fun FolderScreen(
     }
 
     LoadingDialog(FileManager.scanFileState.value)
+}
+
+@Composable
+fun EmptyVideoFoldersState() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.weight(1f))
+        val emptyLottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_empty.json"))
+        LottieAnimation(
+            composition = emptyLottie,
+            modifier = Modifier.size(171.dp),
+            contentScale = ContentScale.None
+        )
+        Text(
+            text = stringResource(R.string.there_is_no_video_please_go_to_add_it),
+            fontSize = 16.sp,
+            color = Color.White
+        )
+        Spacer(Modifier.weight(2f))
+
+    }
 }
