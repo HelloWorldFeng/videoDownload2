@@ -143,8 +143,6 @@ object DownloadUtil {
                     Log.d(TAG, "下载进度: ${progressPercent}%, 已下载: ${totalBytesRead}字节/${contentLength}字节, 速度: ${downloadSpeed}字节/秒")
                 }
 
-                // 减少延迟，提高响应性
-                delay(100)
             }
             
             inputStream.close()
@@ -285,9 +283,6 @@ object DownloadUtil {
                     
                     // 调用进度回调
                     progressCallback?.invoke(downloadProgress, avgSpeed, "下载分片 ${index + 1}/${tsUrls.size}")
-                    
-                    delay(50) // 减少延迟
-                    
                 } catch (e: Exception) {
                     Log.e(TAG, "下载TS分片失败: index=$index, url=$tsUrl, error=${e.message}")
                     throw Exception("TS分片下载失败: ${e.message}")
