@@ -26,6 +26,7 @@ import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.manager.FileManager.fetchPhoneVideo
 import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyHomeDialog
+import com.app.videobox.ui.pages.homePage.HomeViewModel
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
@@ -38,6 +39,8 @@ import com.blankj.utilcode.util.SPStaticUtils
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import kotlin.getValue
 
 class MainActivity : BaseActivity() {
 
@@ -49,7 +52,7 @@ class MainActivity : BaseActivity() {
         }
     }
     private var showNotifyDialog by mutableStateOf(true)
-
+    private val homeViewModel: HomeViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

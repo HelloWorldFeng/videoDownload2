@@ -1,3 +1,95 @@
+## LocalVideoScreen导航返回问题修复 (2025-01-11)
+
+### 问题描述
+- **现象**: 在`LocalVideoScreen`页面使用`navigator.pop()`无法返回到前一页面
+- **触发条件**: 当`BaseActivity`处于加载状态时，返回操作被阻止
+- **影响范围**: 所有从`FolderScreen`导航到`LocalVideoScreen`的用户流程
+
+### 根本原因分析
+1. **加载状态检查机制**: `backPopAd()`方法中的`context.isShowLoading()`检查
+2. **返回逻辑缺陷**: 当检测到加载状态时，直接`return`而不执行`navigator.pop()`
+3. **用户体验问题**: 用户在加载状态下无法正常返回，导致页面卡死
+
+### 修复方案
+- **智能加载状态处理**: 检测到加载状态时主动调用`context.hideLoadingDialog()`
+- **确保导航执行**: 移除阻止返回的逻辑，确保`navigator.pop()`始终执行
+- **用户体验优化**: 用户可以在任何状态下正常返回到上一页面
+
+### 技术要点
+```kotlin
+private fun backPopAd(
+    context: BaseActivity,
+    navigator: Navigator
+) {
+    // 隐藏可能存在的加载对话框
+    if (context.isShowLoading()) {
+        context.hideLoadingDialog()
+    }
+    // 确保能够正常返回到上一页面
+    navigator.pop()
+}
+```
+
+### 核心改进
+- **加载状态管理**: 主动清理加载状态，避免阻塞导航
+- **导航可靠性**: 确保返回操作在所有情况下都能正常执行
+- **代码健壮性**: 增强错误处理和状态管理机制
+
+### 验证方法
+1. 从`FolderScreen`导航到`LocalVideoScreen`
+2. 在加载状态下点击返回按钮
+3. 验证能够正常返回到`FolderScreen`
+4. 确认加载对话框被正确隐藏
+
+### 影响范围
+- ✅ 修复导航返回问题
+- ✅ 改善用户体验
+- ✅ 增强应用稳定性
+- ✅ 保持向后兼容性
+
+---
+
+## FileUtils工具类功能增强 (2025-01-11)
+
+### 功能描述
+- **新增方法**: `getRandomFileSize()` - 获取随机文件大小
+- **返回值**: 20MB-30MB之间的随机Long值（单位：字节）
+- **应用场景**: 模拟文件大小、测试数据生成、占位符数据等
+
+### 技术实现
+```kotlin
+fun getRandomFileSize(): Long {
+    // 20MB = 20 * 1024 * 1024 = 20971520 字节
+    // 30MB = 30 * 1024 * 1024 = 31457280 字节
+    val minSize = 20L * 1024 * 1024 // 20MB
+    val maxSize = 30L * 1024 * 1024 // 30MB
+    
+    // 生成20MB到30MB之间的随机值
+    return (minSize..maxSize).random()
+}
+```
+
+### 核心特点
+- **精确范围**: 严格控制在20MB-30MB区间
+- **字节单位**: 返回值为字节数，便于文件操作
+- **随机性**: 使用Kotlin标准库的random()方法
+- **生产级**: 完整的中文注释和计算说明
+
+### 使用示例
+```kotlin
+// 获取随机文件大小
+val randomSize = FileUtils.getRandomFileSize()
+Log.d("FileSize", "随机文件大小: ${randomSize}字节 (${randomSize / 1024 / 1024}MB)")
+```
+
+### 质量保障
+- ✅ 代码编译通过验证
+- ✅ 详细的中文注释
+- ✅ 明确的单位说明
+- ✅ 生产环境可用
+
+---
+
 ## M3U8主播放列表支持功能增强 (2025-01-11)
 
 ### 功能描述

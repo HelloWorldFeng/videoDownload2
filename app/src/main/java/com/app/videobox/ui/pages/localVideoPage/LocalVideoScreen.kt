@@ -68,7 +68,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         }
 
         BackHandler {
-            backPopAd(context, navigator)
+            navigator.pop()
         }
         Column(
             Modifier
@@ -77,7 +77,7 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally) {
             TitleBar(title = stringResource(id = R.string.local_video)) {
-                backPopAd(context, navigator)
+                navigator.pop()
             }
             Spacer(modifier = Modifier.height(10.dp))
             if (dataList.isEmpty()) {
@@ -145,10 +145,8 @@ data class LocalVideoScreen(val dataList:MutableList<FileManager.FileInfo>) :Scr
         context: BaseActivity,
         navigator: Navigator
     ) {
-        if (context.isShowLoading()) {
-            return
-        }
-        navigator.pop()
+
+
     }
 }
 

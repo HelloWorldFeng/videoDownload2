@@ -195,4 +195,18 @@ object FileUtils {
             retriever.release()
         }
     }
+
+    /**
+     * 获取随机文件大小
+     * @return 返回20MB-30MB之间的随机Long值（单位：字节）
+     */
+    fun getRandomFileSize(): Long {
+        // 20MB = 20 * 1024 * 1024 = 20971520 字节
+        // 30MB = 30 * 1024 * 1024 = 31457280 字节
+        val minSize = 20L * 1024 * 1024 // 20MB
+        val maxSize = 30L * 1024 * 1024 // 30MB
+        
+        // 生成20MB到30MB之间的随机值
+        return (minSize..maxSize).random()
+    }
 }

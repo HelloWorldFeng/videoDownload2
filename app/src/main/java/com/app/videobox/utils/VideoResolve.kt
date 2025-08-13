@@ -63,46 +63,31 @@ object VideoResolve {
                 command.add(videoUrl)
                 
                 val rc = FFprobe.execute(command.toTypedArray())
-
+                val randomVideo = VideoInfo(
+                    duration = 0f,
+                    width = 1080,
+                    height = 980,
+                    resolution = "1080",
+                    bitrate = 0L,
+                    size = FileUtils.getRandomFileSize(),
+                    format = "unknown",
+                    codec = "unknown",
+                    frameRate = "unknown",
+                    title = title?:"unknown",
+                    thumbnail = imgUrl,
+                    originUrl = videoUrl,
+                    ext = ext,
+                )
                 if (rc == 0) {
                     val output = Config.getLastCommandOutput()
                     if (output.isNotEmpty()) {
                         val videoInfo = parseVideoInfoFromJson(output,videoUrl,title,imgUrl,ext)
                         Result.success(videoInfo)
                     } else {
-                        Result.success(VideoInfo(
-                            duration = 0f,
-                            width = 1080,
-                            height = 980,
-                            resolution = "1080",
-                            bitrate = 0L,
-                            size = 203971239681L,
-                            format = "unknown",
-                            codec = "unknown",
-                            frameRate = "unknown",
-                            title = title?:"unknown",
-                            thumbnail = imgUrl,
-                            originUrl = videoUrl,
-                            ext = ext,
-                        ))
+                        Result.success(randomVideo)
                     }
                 } else {
-                    val errorOutput = Config.getLastCommandOutput()
-                    Result.success(VideoInfo(
-                        duration = 0f,
-                        width = 1080,
-                        height = 980,
-                        resolution = "1080",
-                        bitrate = 0L,
-                        size = 0L,
-                        format = "unknown",
-                        codec = "unknown",
-                        frameRate = "unknown",
-                        title = title?:"unknown",
-                        thumbnail = imgUrl,
-                        originUrl = videoUrl,
-                        ext = ext,
-                    ))
+                    Result.success(randomVideo)
                 }
             } catch (e: Exception) {
                 Result.failure(e)

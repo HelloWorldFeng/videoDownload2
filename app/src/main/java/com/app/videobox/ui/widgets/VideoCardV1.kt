@@ -40,8 +40,7 @@ import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListViewModel.TaskAction
 import com.videodownloader.module.download.Task
-
-
+import java.io.File
 
 
 @Composable
@@ -63,9 +62,11 @@ fun VideoCardV1(
     with(viewState) {
         val thumbnailModel = if (downloadState is Task.DownloadState.Completed) {
             downloadState.filePath
+
         } else {
             thumbnailUrl
         }
+
 
         Card(
             modifier = with(modifier) {
@@ -114,10 +115,12 @@ fun VideoCardV1(
                     Box(Modifier.align(Alignment.Center)) {
                         progressLinear?.invoke(this)
                     }
-                    VideoTimeInfoLabel(
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                        duration = duration.toInt(),
-                    )
+                    if (duration > 0) {
+                        VideoTimeInfoLabel(
+                            modifier = Modifier.align(Alignment.BottomEnd),
+                            duration = duration.toInt(),
+                        )
+                    }
 
                 }
 
