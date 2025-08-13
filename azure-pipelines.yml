@@ -1,0 +1,56 @@
+# Android
+# Build your Android project with Gradle.
+# This pipeline builds the project, generates the APK, and publishes it as an artifact.
+
+trigger:
+  - main
+
+pool:
+  vmImage: 'macos-latest'
+
+steps:
+  - script: |
+      echo "Listing contents of the working directory:"
+      ls -la $(System.DefaultWorkingDirectory)  # 列出工作目录内容
+      chmod -R 777 $(System.DefaultWorkingDirectory)
+    displayName: 'List Files in Working Directory'
+
+
+  - script: |
+      echo "Verifying Kotlin version:"
+      ./gradlew -version
+    displayName: 'Verify Kotlin Version'
+
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '17'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
+
+  - script: |
+      java -version
+    displayName: 'Verify Java Version'
+
+  - script: |
+      echo "Printing the network IP address:"
+      curl ifconfig.me
+    displayName: 'Print Network IP Address'
+
+  - task: Gradle@3
+    inputs:
+      workingDirectory: '$(System.DefaultWorkingDirectory)'  # 设置工作目录
+      gradleWrapperFile: 'gradlew'  # 使用 Gradle Wrapper
+      gradleOptions: '-Xmx3072m'  # 设置 Gradle 选项
+      publishJUnitResults: false  # 不发布 JUnit 结果
+      testResultsFiles: '**/TEST-*.xml'  # 指定测试结果文件
+      tasks: 'bundleRelease'  # 执行 assembleRelease 任务
+
+  - script: |
+      echo "Listing contents of the working directory:"
+      ls -la $(System.DefaultWorkingDirectory)/app/build/outputs/bundle  # 列出app目录内容
+    displayName: 'List Files in build'
+
+
+  - publish: $(System.DefaultWorkingDirectory)/app/build/outputs/bundle/configRelease/app-config-release.aab  # 发布生成的 AAB 文件
+    artifact: aab  # 设置工件名称
+    displayName: 'Publish AAB'
