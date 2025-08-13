@@ -2,8 +2,16 @@ package com.app.videobox.ui
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
 import com.app.videobox.App.Companion.notLaunchHot
@@ -19,9 +27,11 @@ import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
+import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.FileUtils
 import com.app.videobox.utils.NotifyHelper
+import com.app.videobox.utils.VideoThumbnailExtractor
 import com.blankj.utilcode.util.SPStaticUtils
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
@@ -40,6 +50,7 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         lifecycleScope.launch {
             if (FileUtils.checkFilePermission(this@MainActivity).not()) {

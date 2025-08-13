@@ -58,6 +58,7 @@ import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.utils.DefaultBrowserUtils
 import com.app.videobox.utils.EventReportUtils
+import com.app.videobox.utils.VideoThumbnailExtractor
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.videodownloader.module.download.DownloaderV2
@@ -525,6 +526,11 @@ private fun ResolveDialogImpl(
             //视频信息样式
             info.run {
                 item(span = {GridItemSpan(maxLineSpan)}) {
+                    //这里直接使用新的工具类获取视频的封面，不使用thumbnail.toHttpsUrl()
+//                    VideoThumbnailExtractor().extractThumbnailFromUrl(
+//                        videoUrl = "https://cdn2video.cdreader.com/4c1b3983vodhk1310397514/305344bd1397757910896377348/f0.mp4?Expires=1755065951&Signature=ME1GUdUASY5T8vATHWSpu2ql3gUE0zzjbQeqrroULiW5qUbuCueYU465SSQFU6akJEWTvkpC6ueWXr8IRIEGxG~Y8~fLRS-6s3~lHLStyu4oDp62chyQRWMeDKV-6AvYsrKGy4P4d~wSA0LRZmFPJ8ibh2j53btvOhgi8mnY3kw7qapRyMEVpZQAiK~742gYiJLufe~l-qza0yvNQHPmfJxMFbfS1KPTMVUmOmqVDn8KcqqECg2-PRRnlB8vsmm8kn~6dqWuOb8MtK9PFz1-5n~YWT5bghTrvt6tyo7SaP33N4MPNe4TruhcttNDMzyIvB8HHuzahRpjz8NTnOUpAw__&Key-Pair-Id=K3BZ1QB768QHY7"
+//                    )
+
                     VideoInfoPreview(
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
@@ -748,7 +754,7 @@ fun VideoInfoPreview(
 @Composable
 fun MediaImage(
     modifier: Modifier = Modifier,
-    imageModel: String,
+    imageModel: Any,
     contentDescription: String? = null,
 ) {
     StateAsyncImageImpl(
