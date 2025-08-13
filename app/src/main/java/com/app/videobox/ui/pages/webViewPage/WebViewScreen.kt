@@ -3,6 +3,7 @@ package com.app.videobox.ui.pages.webViewPage
 import VideoInfo
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -507,6 +508,36 @@ private fun ResolveDialogImpl(
 ) {
     val context = LocalContext.current
     val lazyGridState = rememberLazyGridState()
+    val coroutineScope = rememberCoroutineScope()
+    
+    // 状态管理：存储从视频提取的缩略图Bitmap
+    var extractedThumbnail by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var isExtractingThumbnail by remember { mutableStateOf(false) }
+    var extractionError by remember { mutableStateOf<String?>(null) }
+    
+    // 使用LaunchedEffect在组件初始化时提取视频缩略图
+    LaunchedEffect(info.originUrl) {
+        if (info.originUrl.isNotEmpty()) {
+            isExtractingThumbnail = true
+            extractionError = null
+            
+            try {
+                val videoThumbnailExtractor = VideoThumbnailExtractor()
+                val bitmap = videoThumbnailExtractor.extractThumbnailFromUrl(
+                    videoUrl = info.originUrl,
+                    width = 320,
+                    height = 240
+                )
+                extractedThumbnail = bitmap
+                Log.d("ResolveDialogImpl", "成功提取视频缩略图: ${info.originUrl}")
+            } catch (e: Exception) {
+                extractionError = e.message
+                Log.e("ResolveDialogImpl", "提取视频缩略图失败: ${e.message}", e)
+            } finally {
+                isExtractingThumbnail = false
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -526,18 +557,29 @@ private fun ResolveDialogImpl(
             //视频信息样式
             info.run {
                 item(span = {GridItemSpan(maxLineSpan)}) {
-                    //这里直接使用新的工具类获取视频的封面，不使用thumbnail.toHttpsUrl()
-//                    VideoThumbnailExtractor().extractThumbnailFromUrl(
-//                        videoUrl = "https://cdn2video.cdreader.com/4c1b3983vodhk1310397514/305344bd1397757910896377348/f0.mp4?Expires=1755065951&Signature=ME1GUdUASY5T8vATHWSpu2ql3gUE0zzjbQeqrroULiW5qUbuCueYU465SSQFU6akJEWTvkpC6ueWXr8IRIEGxG~Y8~fLRS-6s3~lHLStyu4oDp62chyQRWMeDKV-6AvYsrKGy4P4d~wSA0LRZmFPJ8ibh2j53btvOhgi8mnY3kw7qapRyMEVpZQAiK~742gYiJLufe~l-qza0yvNQHPmfJxMFbfS1KPTMVUmOmqVDn8KcqqECg2-PRRnlB8vsmm8kn~6dqWuOb8MtK9PFz1-5n~YWT5bghTrvt6tyo7SaP33N4MPNe4TruhcttNDMzyIvB8HHuzahRpjz8NTnOUpAw__&Key-Pair-Id=K3BZ1QB768QHY7"
-//                    )
+                    // 根据缩略图提取状态决定显示内容
+                    val thumbnailToUse = when {
+                        extractedThumbnail != null -> extractedThumbnail!! // 使用提取的缩略图Bitmap
+                        isExtractingThumbnail -> null // 正在提取中，显示加载状态
+                        extractionError != null -> thumbnail.toHttpsUrl() // 提取失败，回退到原始缩略图URL
+                        else -> thumbnail.toHttpsUrl() // 默认使用原始缩略图URL
+                    }
 
                     VideoInfoPreview(
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
                             .padding(bottom = 18.dp),
                         title = title,
-                        thumbnailUrl = thumbnail.toHttpsUrl(),
+                        thumbnailUrl = if (thumbnailToUse is android.graphics.Bitmap) {
+                            // 如果是Bitmap，需要转换为可用的图片源
+                            // StateAsyncImageImpl支持Bitmap作为imageModel
+                            thumbnailToUse.toString() // 临时处理，实际应该直接传递Bitmap
+                        } else {
+                            thumbnailToUse as? String ?: thumbnail.toHttpsUrl()
+                        },
                         duration = duration.roundToInt(),
+                        extractedBitmap = if (thumbnailToUse is android.graphics.Bitmap) thumbnailToUse else null,
+                        isLoadingThumbnail = isExtractingThumbnail
                     )
                 }
             }
@@ -702,17 +744,45 @@ fun VideoInfoPreview(
     title: String,
     thumbnailUrl: String,
     duration: Int,
+    extractedBitmap: android.graphics.Bitmap? = null,
+    isLoadingThumbnail: Boolean = false
 ) {
     Box(modifier = modifier
         .padding(top = 15.dp)
         .padding(horizontal = 40.dp)
         .fillMaxWidth()
         .wrapContentHeight(Alignment.Top, unbounded = false)) {
-        MediaImage(
-            modifier = Modifier.align(Alignment.Center),
-            imageModel = thumbnailUrl,
-            contentDescription = stringResource(R.string.thumbnail),
-        )
+        // 根据状态显示不同内容
+        if (isLoadingThumbnail) {
+            // 显示加载指示器
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(320.dp, 240.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+                Text(
+                    text = "Loading...",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 48.dp)
+                )
+            }
+        } else {
+            MediaImage(
+                modifier = Modifier.align(Alignment.Center),
+                imageModel = extractedBitmap ?: thumbnailUrl,
+                contentDescription = stringResource(R.string.thumbnail),
+            )
+        }
 
         Column(
             modifier = Modifier
