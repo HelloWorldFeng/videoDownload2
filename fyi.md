@@ -1,3 +1,53 @@
+## FileManager响应式数据优化 (2025-01-11)
+
+### 问题描述
+- **现象**: `FileManager.fetchPhoneVideo()`异步扫描完成后，`FolderScreen`界面无法立即显示内容
+- **触发条件**: 视频扫描完成后，界面仍显示空状态，需要手动刷新才能看到数据
+- **影响范围**: 本地视频文件夹列表页面的数据响应性和用户体验
+
+### 根本原因分析
+1. **非响应式数据源**: `FileManager.scanFileResultState`使用普通`MutableList`，不是可观察状态
+2. **监听机制失效**: `FolderScreen`中的`LaunchedEffect`无法监听到`MutableList`的变化
+3. **数据更新延迟**: 扫描完成后界面无法自动刷新显示最新数据
+
+### 修复方案
+- **响应式数据源**: 将`scanFileResultState`改为`mutableStateListOf`可观察列表
+- **监听优化**: 修改`LaunchedEffect`监听`scanFileResultState.size`变化
+- **自动更新**: 实现数据变化时界面自动响应更新
+
+### 技术要点
+```kotlin
+// FileManager.kt - 响应式数据源
+import androidx.compose.runtime.mutableStateListOf
+var scanFileResultState = mutableStateListOf<FileInfo>()
+
+// FolderScreen.kt - 监听数据变化
+LaunchedEffect(FileManager.scanFileResultState.size) {
+    val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
+    FileManager.scanFileResultState.forEach {
+        videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it)
+    }
+    dataList.value = videoMap.toList()
+}
+```
+
+### 核心改进
+- **实时响应**: 扫描完成后界面立即显示内容，无需手动刷新
+- **数据一致性**: 确保UI状态与数据源状态完全同步
+- **用户体验**: 提升应用响应速度和交互流畅性
+
+### 验证方法
+- 编译通过，无语法错误
+- 视频扫描完成后界面自动更新
+- 数据变化时UI实时响应
+
+### 影响范围
+- 优化了本地视频扫描的响应性能
+- 提升了数据驱动UI的实时性
+- 遵循了Compose响应式编程最佳实践
+
+---
+
 ## FolderScreen空状态UI优化 (2025-01-11)
 
 ### 问题描述

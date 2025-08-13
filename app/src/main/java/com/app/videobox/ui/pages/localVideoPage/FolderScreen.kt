@@ -61,7 +61,7 @@ fun FolderScreen(
         FileManager.fetchPhoneVideo(context)
     }
     
-    LaunchedEffect(FileManager.scanFileResultState) {
+    LaunchedEffect(FileManager.scanFileResultState.size) {
         val videoMap = mutableMapOf<String,MutableList<FileManager.FileInfo>>()
         FileManager.scanFileResultState.forEach {
             videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it) // 仅添加存在的文件
