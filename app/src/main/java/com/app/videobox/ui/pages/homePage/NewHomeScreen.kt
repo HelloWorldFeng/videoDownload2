@@ -60,6 +60,7 @@ import com.app.videobox.ext.openGooglePlayStore
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.urlInBrowser
+import com.app.videobox.manager.FileManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
@@ -92,7 +93,7 @@ class NewHomeScreen : Screen {
 
     @Composable
     override fun Content() {
-        val context = LocalContext.current as Activity
+        val context = LocalContext.current as BaseActivity
         // 将状态管理移到Content方法内部，避免序列化问题
         var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
         val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -153,6 +154,7 @@ class NewHomeScreen : Screen {
 
                     },
                     onClickVideo = {
+                        FileManager.fetchPhoneVideo(context)
                         AdManager.getFullAdFromPool(
                             context,
                             adType = AD_TYPE_INT,
@@ -231,7 +233,7 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
                     adScene = "n_home"
                 )
 
-                // 热门推荐展示区域
+//                // 热门推荐展示区域
                 PopularVideoSection(navigator)
             }
         }
@@ -245,7 +247,7 @@ fun PopularVideoSection(navigator: Navigator) {
     val videoClasses by DataRepository.videoClassFlow.collectAsStateWithLifecycle()
     
     // 只有当分类数据可用时才展示分类列表
-    if (videoClasses.isNotEmpty()) {
+    if (videoClasses != null && videoClasses.isNotEmpty()) {
         Column(
             modifier = Modifier
                 .padding(bottom = 90.dp)

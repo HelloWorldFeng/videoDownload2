@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -103,19 +104,26 @@ class PrivacyActivity : BaseActivity() {
                 }
 
                 Spacer(modifier = Modifier.height(23.dp))
-                Text(text = stringResource(R.string.privacy_policy),
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.singClick {
-                        context.urlInBrowser(BuildConfig.privacyUrl)
-                    })
+                Text(text = "By clicking start, you acknowledge that you've read!",
+                    color = Color.White.copy(alpha = 0.9f))
+                Row {
+                    Text("accept our ",color = Color.White.copy(alpha = 0.9f))
+                    Text(text = stringResource(R.string.privacy_policy),
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.singClick {
+                            context.urlInBrowser(BuildConfig.privacyUrl)
+                        })
+                    Text(" and ",color = Color.White.copy(alpha = 0.9f))
+                    Text(text = stringResource(R.string.terms_of_service),
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.singClick {
+                            context.urlInBrowser(BuildConfig.termUrl)
+                        })
+                }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = stringResource(R.string.terms_of_service),
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.singClick {
-                        context.urlInBrowser(BuildConfig.termUrl)
-                    })
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }

@@ -168,7 +168,6 @@ class SplashActivity : BaseActivity() {
             Spacer(modifier = Modifier.weight(6f))
             LottieAnimation(
                 composition = lottie,
-                iterations = LottieConstants.IterateForever,
                 modifier = Modifier.size(100.dp),
                 contentScale = ContentScale.None
             )

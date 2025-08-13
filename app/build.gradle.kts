@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = prop.getProperty("packageName")
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 6
         versionName = "1.0.5"

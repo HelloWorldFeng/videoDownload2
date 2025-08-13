@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +55,9 @@ fun FolderScreen(
             videoMap.getOrPut(it.parentDir){ mutableListOf() }.add(it) // 仅添加存在的文件
         }
         videoMap.toList()
+    }
+    LaunchedEffect(Unit) {
+        FileManager.fetchPhoneVideo(context)
     }
 
     BackHandler {

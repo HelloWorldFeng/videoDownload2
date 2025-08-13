@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.R
+import com.app.videobox.ad.UserHelper
 import com.app.videobox.ui.MainActivity
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.theme.gradientColor
@@ -73,7 +74,7 @@ class WebViewActivity: BaseActivity() {
 
         WebPageScreen(inputUrl = url,viewModel = viewModel)
 
-        if (SPStaticUtils.getBoolean("SettingBrowser", true)) {
+        if (SPStaticUtils.getBoolean("SettingBrowser", true) && !UserHelper.powerUser) {
             SPStaticUtils.put("SettingBrowser",false)
             LaunchedEffect(Unit) {
                 DefaultBrowserUtils.requestDefaultBrowser(context)

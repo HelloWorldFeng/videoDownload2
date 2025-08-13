@@ -1,3 +1,70 @@
+## VlcPlayerPage全屏功能修复 (2025-01-11)
+
+### 问题描述
+- **现象**: `VlcPlayerPage.kt`中`screenDisplayMode`变量在播放时点击全屏的逻辑中没有被正确使用
+- **触发条件**: 点击全屏按钮时无法正常切换到全屏模式
+- **影响范围**: 视频播放页面的全屏功能完全失效
+
+### 根本原因分析
+1. **状态初始化错误**: `screenDisplayMode`初始值设置为`true`，应该是`false`（非全屏状态）
+2. **缺少控制逻辑**: 没有根据`screenDisplayMode`状态控制Activity全屏模式的实际逻辑
+3. **按钮功能缺失**: 全屏按钮点击事件只是设置状态，没有实际的屏幕模式切换
+4. **资源文件缺失**: 使用了不存在的图标资源`icon_exit_full_screen`
+
+### 修复方案
+- **状态初始化**: 将`screenDisplayMode`初始值从`true`改为`false`
+- **全屏控制逻辑**: 添加`LaunchedEffect`监听状态变化，自动控制Activity全屏模式
+- **智能屏幕切换**: 根据全屏状态自动隐藏/显示系统UI和切换横竖屏
+- **图标资源修复**: 使用现有的`icon_screen_land`替代不存在的`icon_exit_full_screen`
+
+### 技术要点
+```kotlin
+// 状态初始化
+var screenDisplayMode by remember { mutableStateOf(false) }
+
+// 全屏控制逻辑
+LaunchedEffect(screenDisplayMode) {
+    val activity = context as Activity
+    if (screenDisplayMode) {
+        // 进入全屏模式
+        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+        WindowInsetsControllerCompat(activity.window, activity.window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    } else {
+        // 退出全屏模式
+        WindowCompat.setDecorFitsSystemWindows(activity.window, true)
+        WindowInsetsControllerCompat(activity.window, activity.window.decorView).show(WindowInsetsCompat.Type.systemBars())
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+}
+
+// 图标资源修复
+model = if (screenDisplayMode) R.drawable.icon_screen_land else R.drawable.icon_full_screen
+```
+
+### 核心改进
+- **真正的全屏功能**: 实现完整的全屏模式切换逻辑
+- **用户体验优化**: 全屏按钮功能正常，交互流畅
+- **资源管理**: 修复图标资源缺失问题
+- **代码健壮性**: 增强状态管理和UI控制机制
+
+### 验证方法
+1. 打开视频播放页面
+2. 点击全屏按钮验证能够进入全屏模式
+3. 再次点击验证能够退出全屏模式
+4. 确认系统UI和屏幕方向正确切换
+
+### 影响范围
+- ✅ 修复全屏功能问题
+- ✅ 改善视频播放体验
+- ✅ 解决图标资源缺失
+- ✅ 增强UI交互可靠性
+
+---
+
 ## LocalVideoScreen导航返回问题修复 (2025-01-11)
 
 ### 问题描述

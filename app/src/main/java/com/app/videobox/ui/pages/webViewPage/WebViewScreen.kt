@@ -1,8 +1,10 @@
 package com.app.videobox.ui.pages.webViewPage
 
 import VideoInfo
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -62,6 +64,8 @@ import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.VideoThumbnailExtractor
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
+import com.hjq.permissions.OnPermissionCallback
+import com.hjq.permissions.XXPermissions
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.TaskFactory
 import kotlinx.coroutines.launch
@@ -79,31 +83,6 @@ import kotlin.math.roundToInt
  * 5. 悬浮按钮显示检测到的视频数量
  * 6. 详细日志记录排查问题
  */
-class WebViewScreen(
-    private val url: String,
-) : Screen {
-    
-    companion object {
-        private const val TAG = "WebViewScreen"
-    }
-    
-    @SuppressLint("ContextCastToActivity")
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current as BaseActivity
-        val viewModel: WebViewModel = koinViewModel()
-
-        WebPageScreen(inputUrl = url,viewModel = viewModel)
-
-        if (SPStaticUtils.getBoolean("SettingBrowser", true)) {
-            SPStaticUtils.put("SettingBrowser",false)
-            LaunchedEffect(Unit) {
-                DefaultBrowserUtils.requestDefaultBrowser(context)
-            }
-        }
-    }
-}
-
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun WebPageScreen(
@@ -642,7 +621,37 @@ private fun ResolveDialogImpl(
                             onNavigateBack.invoke()
                             ToastUtils.showLong(context.getString(R.string.start_download_task))
                         }
-                        startDownload()
+                        // 检查外部存储权限 - Android 13+不需要存储权限
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            // Android 13+ 直接下载
+                            startDownload()
+                        } else {
+                            // Android 12及以下需要检查权限
+                            context.let { ctx ->
+                                if (XXPermissions.isGranted(ctx, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                                    // 权限已授予，直接下载
+                                    startDownload()
+                                } else {
+                                    // 申请权限
+                                    XXPermissions.with(ctx)
+                                        .permission(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE,))
+                                        .request(object : OnPermissionCallback {
+                                            override fun onGranted(permissions: MutableList<String>, all: Boolean) {
+                                                if (all) {
+                                                    // 权限授予成功，开始下载
+                                                    startDownload()
+                                                }
+                                            }
+
+                                            override fun onDenied(permissions: MutableList<String>, never: Boolean) {
+                                                // 权限被拒绝，提示用户
+                                                ToastUtils.showShort("Storage permission denied, unable to download")
+                                                Log.w("FormatDialog", "存储权限被拒绝，无法下载到公共目录")
+                                            }
+                                        })
+                                }
+                            } ?: startDownload() // 如果context为空，直接下载
+                        }
                     }, text = stringResource(R.string.download))
 
                 }
