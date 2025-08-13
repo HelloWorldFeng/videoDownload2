@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
@@ -31,6 +33,9 @@ import com.app.videobox.R
 import com.blankj.utilcode.util.ToastUtils
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
+import com.videodownloader.module.download.DownloaderV2
+import com.videodownloader.module.download.Task
+import org.koin.compose.koinInject
 
 private val ContainColor : Color
     @Composable get() = Color(0xFF363637)
@@ -39,12 +44,17 @@ private val ContainColor : Color
 fun NavBarV3(
     modifier: Modifier,
     defaultIndex: Int = 0,
+    downloader: DownloaderV2 = koinInject(),
     onClickHome:()-> Unit = {},
     onClickDownload:()-> Unit = {},
     onClickVideo:()-> Unit = {}
 ) {
     val context = LocalContext.current
     var selected by remember { mutableIntStateOf(defaultIndex) }
+    val taskStateSize = downloader
+        .getTaskStateMap()
+        .filter { it.value.downloadState is Task.DownloadState.Running }
+        .size
     Row(
         modifier = modifier
             .navigationBarsPadding()
@@ -92,7 +102,8 @@ fun NavBarV3(
                 onClickHome.invoke()
             },
             selected = selected == 1,
-            checkedIcon = "tab_web.json"
+            checkedIcon = "tab_web.json",
+
         )
 
         NavBarIcon(
@@ -106,7 +117,8 @@ fun NavBarV3(
             },
             selected = selected == 2,
             defaultIcon = R.drawable.icon_nav_download,
-            checkedIcon = "tab_download.json"
+            checkedIcon = "tab_download.json",
+            markSize = taskStateSize,
         )
     }
 }
@@ -118,6 +130,7 @@ private fun NavBarIcon(
     selected: Boolean = false,
     defaultIcon: Any?=null,
     checkedIcon: Any,
+    markSize: Int?= null
 ){
     Box(
         modifier = modifier
@@ -147,6 +160,18 @@ private fun NavBarIcon(
                 model = defaultIcon,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+            )
+        }
+
+        if (markSize != null && markSize > 0) {
+            Text(
+                text = markSize.toString(),
+                fontSize = 12.sp,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .background(color = Color.Red, shape = RoundedCornerShape(12.dp))
+                    .padding(horizontal = 3.dp, vertical = 1.dp)
             )
         }
     }

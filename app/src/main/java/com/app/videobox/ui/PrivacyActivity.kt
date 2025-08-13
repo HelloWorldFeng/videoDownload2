@@ -105,14 +105,14 @@ class PrivacyActivity : BaseActivity() {
                 Spacer(modifier = Modifier.height(23.dp))
                 Text(text = stringResource(R.string.privacy_policy),
                     fontSize = 13.sp,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.9f),
                     modifier = Modifier.singClick {
                         context.urlInBrowser(BuildConfig.privacyUrl)
                     })
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(text = stringResource(R.string.terms_of_service),
                     fontSize = 13.sp,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.9f),
                     modifier = Modifier.singClick {
                         context.urlInBrowser(BuildConfig.termUrl)
                     })

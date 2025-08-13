@@ -1,7 +1,9 @@
 {
 
-  "launchTime": 10,
-  "adLoadingTime": 3,
+  "groupNotify": 2,
+  "limitTime": 5,
+  "notifyCount": 30,
+
   "outerConfigs": [
     {
       "innerAdList": [

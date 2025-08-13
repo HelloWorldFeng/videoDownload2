@@ -65,6 +65,7 @@ import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.NavBarV3
+import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
@@ -400,12 +401,50 @@ private fun HorizontalVideoCard(
                 .fillMaxSize()
         ) {
             // 视频缩略图
-            AsyncImageImpl(
+            StateAsyncImageImpl(
                 modifier = Modifier
                     .matchParentSize()
                     .clip(RoundedCornerShape(8.dp)),
                 model = video.imageURL,
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                onLoadingComposable = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = Color(0xFF2E2F30),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        AsyncImageImpl(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(28.dp),
+                            model = R.drawable.icon_video_place,
+                            contentDescription = null,
+                            contentScale = ContentScale.Inside
+                        )
+                    }
+                },
+                onErrorComposable = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+
+                            .background(
+                                color = Color(0xFF2E2F30),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        AsyncImageImpl(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(28.dp),
+                            model = R.drawable.icon_video_place,
+                            contentDescription = null
+                        )
+                    }
+                }
             )
 
             // 视频标题

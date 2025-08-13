@@ -80,9 +80,8 @@ fun WebPathBar(
 
         AsyncImageImpl(
             modifier = Modifier
-                .weight(1f)
-                .size(34.dp)
                 .padding(horizontal = 9.dp)
+                .size(22.dp)
                 .singClick {
                     adState.value = !adState.value
                     onAd.invoke()

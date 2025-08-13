@@ -1,5 +1,6 @@
 package com.app.videobox
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.content.Context
@@ -14,6 +15,7 @@ import cn.thinkingdata.analytics.TDConfig
 import com.app.videobox.ad.UserHelper
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
+import com.app.videobox.receiver.HomeKeyReceiver
 import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
 import com.app.videobox.service.DownloadVideoService
@@ -114,17 +116,40 @@ class App : Application() {
         return packageName
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initReceiver() {
+        // 注册屏幕点亮广播接收器
         val screenReceiver = IntentFilter(Intent.ACTION_SCREEN_ON)
         registerReceiver(ScreenOnReceiver(), screenReceiver)
 
+        // 注册电源断开广播接收器
         val powerReceiver = IntentFilter(Intent.ACTION_POWER_DISCONNECTED)
         registerReceiver(PowerDisconnectReceiver(), powerReceiver)
 
+        try {
+            // 注册Home键检测广播接收器
+            val homeKeyReceiver = HomeKeyReceiver()
+            val homeKeyFilter = IntentFilter().apply {
+                addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+                // 可以根据需要添加其他相关的系统广播
+                addAction(Intent.ACTION_SCREEN_OFF)
+            }
+            registerReceiver(homeKeyReceiver, homeKeyFilter)
+
+            // 启用Home键检测功能
+            homeKeyReceiver.enableHomeKeyDetection()
+
+            Log.d("App", "所有广播接收器注册完成: ScreenOnReceiver, PowerDisconnectReceiver, HomeKeyReceiver")
+
+        }catch (e: Exception){
+
+        }
+        // 设置下载模块事件监听器
         DlEvtBridge.setListener(object : DlEvtBridge.OnDlEvtListener {
             override fun onMp4DownloadSuccess(taskId: String, outputPaths: List<String>) {
-                // TODO: 在此处理下载成功（如发通知等）
+                // 处理下载成功事件
                 NotifyHelper.sendDownloadNotify(this@App)
+                Log.d("App", "视频下载成功，已发送通知")
             }
         })
     }

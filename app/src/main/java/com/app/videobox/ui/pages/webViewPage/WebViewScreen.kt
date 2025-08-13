@@ -147,7 +147,6 @@ fun WebPageScreen(
         .singClick {}){
         Column(modifier = Modifier.fillMaxSize())
         {
-
             // 显示当前URL的状态栏
             WebPathBar(
                 currentUrl = currentUrl,

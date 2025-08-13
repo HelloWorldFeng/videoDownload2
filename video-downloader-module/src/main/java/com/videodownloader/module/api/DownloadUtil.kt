@@ -353,30 +353,76 @@ object DownloadUtil {
     
     /**
      * 解析M3U8内容，提取TS分片URL列表
+     * 支持主播放列表(Master Playlist)和媒体播放列表(Media Playlist)
      */
-    private fun parseM3U8Content(content: String, baseUrl: String): List<String> {
+    private suspend fun parseM3U8Content(content: String, baseUrl: String): List<String> {
         Log.d(TAG, "解析M3U8内容，基础URL: $baseUrl")
         val lines = content.split("\n")
-        val tsUrls = mutableListOf<String>()
         val baseUri = java.net.URI(baseUrl)
         
-        lines.forEach { line ->
-            val trimmedLine = line.trim()
-            if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
-                // 这是一个TS分片URL
-                val tsUrl = if (trimmedLine.startsWith("http")) {
-                    trimmedLine
-                } else {
-                    // 相对URL，需要与基础URL合并
-                    baseUri.resolve(trimmedLine).toString()
-                }
-                tsUrls.add(tsUrl)
-                Log.v(TAG, "解析到TS分片: $tsUrl")
-            }
-        }
+        // 检查是否为主播放列表(Master Playlist)
+        val isMasterPlaylist = lines.any { it.trim().startsWith("#EXT-X-STREAM-INF") }
         
-        Log.d(TAG, "M3U8解析完成，共${tsUrls.size}个TS分片")
-        return tsUrls
+        if (isMasterPlaylist) {
+            Log.d(TAG, "检测到主播放列表(Master Playlist)，需要解析媒体播放列表")
+            
+            // 查找第一个媒体播放列表URL
+            var i = 0
+            while (i < lines.size) {
+                val line = lines[i].trim()
+                if (line.startsWith("#EXT-X-STREAM-INF")) {
+                    // 下一行应该是媒体播放列表URL
+                    if (i + 1 < lines.size) {
+                        val mediaPlaylistUrl = lines[i + 1].trim()
+                        if (mediaPlaylistUrl.isNotEmpty() && !mediaPlaylistUrl.startsWith("#")) {
+                            // 构建完整的媒体播放列表URL
+                            val fullMediaUrl = if (mediaPlaylistUrl.startsWith("http")) {
+                                mediaPlaylistUrl
+                            } else {
+                                baseUri.resolve(mediaPlaylistUrl).toString()
+                            }
+                            
+                            Log.d(TAG, "找到媒体播放列表URL: $fullMediaUrl")
+                            
+                            // 递归下载并解析媒体播放列表
+                            try {
+                                val mediaPlaylistContent = downloadM3U8Playlist(fullMediaUrl)
+                                Log.d(TAG, "成功下载媒体播放列表，内容长度: ${mediaPlaylistContent.length}字符")
+                                return parseM3U8Content(mediaPlaylistContent, fullMediaUrl)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "下载媒体播放列表失败: $fullMediaUrl, error=${e.message}")
+                                throw Exception("无法下载媒体播放列表: ${e.message}")
+                            }
+                        }
+                    }
+                }
+                i++
+            }
+            
+            throw Exception("主播放列表中未找到有效的媒体播放列表URL")
+        } else {
+            // 这是媒体播放列表，直接解析TS分片
+            Log.d(TAG, "检测到媒体播放列表(Media Playlist)，开始解析TS分片")
+            val tsUrls = mutableListOf<String>()
+            
+            lines.forEach { line ->
+                val trimmedLine = line.trim()
+                if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+                    // 这是一个TS分片URL
+                    val tsUrl = if (trimmedLine.startsWith("http")) {
+                        trimmedLine
+                    } else {
+                        // 相对URL，需要与基础URL合并
+                        baseUri.resolve(trimmedLine).toString()
+                    }
+                    tsUrls.add(tsUrl)
+                    Log.v(TAG, "解析到TS分片: $tsUrl")
+                }
+            }
+            
+            Log.d(TAG, "媒体播放列表解析完成，共${tsUrls.size}个TS分片")
+            return tsUrls
+        }
     }
     
     /**

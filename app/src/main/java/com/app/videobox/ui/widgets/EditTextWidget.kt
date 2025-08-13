@@ -212,7 +212,7 @@ fun WebUrlInputWidget(
         Row(modifier = Modifier.wrapContentWidth(), horizontalArrangement = Arrangement.End) {
             AsyncImageImpl(
                 model = R.drawable.icon_home,
-                modifier = Modifier.size(22.dp).singClick{
+                modifier = Modifier.size(19.dp).singClick{
                     adState.value = !adState.value
                     onHome.invoke()
                 },
@@ -221,7 +221,7 @@ fun WebUrlInputWidget(
             Spacer(Modifier.width(10.dp))
             AsyncImageImpl(
                 model = R.drawable.icon_refresh,
-                modifier = Modifier.size(22.dp).singClick{
+                modifier = Modifier.size(19.dp).singClick{
                     adState.value = !adState.value
                     onRefresh.invoke()
                 },

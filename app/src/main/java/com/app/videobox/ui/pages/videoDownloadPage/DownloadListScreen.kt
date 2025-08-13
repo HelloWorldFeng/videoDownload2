@@ -311,7 +311,7 @@ private fun TaskListContent(
 
         AnimatedVisibility(
             modifier = Modifier
-                .padding(bottom = 80.dp)
+                .padding(bottom = 100.dp)
                 .align(Alignment.BottomCenter),
             visible = uiState.isSelectModeEnabled,
             enter = scaleIn(),

@@ -23,6 +23,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import com.google.gson.Gson
 import kotlin.random.Random
 import kotlin.text.format
+import kotlin.times
 
 object RemoteConfigManager {
     @SuppressLint("StaticFieldLeak")
@@ -91,6 +92,10 @@ object RemoteConfigManager {
 
             AdManager.initAdMapConfig(map)
 
+            groupNotify = if (result.groupNotify == 0) 2 else result.groupNotify
+
+            limitTime = if (result.limitTime == 0L) 5 * 60 *1000 else result.limitTime * 60 * 1000
+            notifyCount = if (result.notifyCount == 0) 30 else result.notifyCount
         }catch (e:Exception){
             e.printStackTrace()
         }
