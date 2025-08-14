@@ -37,12 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.screen.Screen
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.ModalBottomSheetV3
 import com.app.videobox.ui.widgets.singClick
@@ -59,17 +57,14 @@ import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
-import com.app.videobox.utils.DefaultBrowserUtils
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.VideoThumbnailExtractor
-import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.TaskFactory
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
@@ -480,7 +475,7 @@ private fun ResolveDialog(
 @Composable
 private fun ResolveDialogImpl(
     modifier: Modifier,
-    info: VideoResolve.VideoInfo,
+    info: VideoResolve.ResolveVideoInfo,
     onNavigateBack: () -> Unit,
     onClickDownload:(videoUrl: VideoInfo)-> Unit,
 ) {

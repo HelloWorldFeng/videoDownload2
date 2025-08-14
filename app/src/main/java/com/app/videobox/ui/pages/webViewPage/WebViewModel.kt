@@ -1,8 +1,5 @@
 package com.app.videobox.ui.pages.webViewPage
 
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.util.Log
 import android.webkit.WebView
 import androidx.core.net.toUri
@@ -41,7 +38,7 @@ class WebViewModel : ViewModel() {
     sealed interface ResolveVideoState {
         data object Idle : ResolveVideoState
         data object Loading: ResolveVideoState
-        data class ResolveSuccess(val info: VideoResolve.VideoInfo) : ResolveVideoState
+        data class ResolveSuccess(val info: VideoResolve.ResolveVideoInfo) : ResolveVideoState
     }
 
     sealed interface Action{
