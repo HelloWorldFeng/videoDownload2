@@ -5,5 +5,5 @@ import androidx.lifecycle.ViewModel
 
 class HomeViewModel : ViewModel() {
 
-    var mSelectIndex = mutableIntStateOf(value = 0)
+    var mSelectIndex = mutableIntStateOf(value = 1)
 }

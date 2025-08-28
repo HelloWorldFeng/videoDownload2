@@ -87,9 +87,31 @@ object DownloadUtil {
 
         
         try {
-            // 获取URL对应的请求头
-            val headers = addHeadersForUrl(url)
-            Log.d(TAG, "为URL添加请求头: url=$url, 请求头数量=${headers.size}")
+            // 使用VideoInfo中的HTTP上下文信息
+            val headers = mutableMapOf<String, String>()
+            
+            // 优先使用VideoInfo中的HTTP头信息
+            if (videoInfo.httpHeaders.isNotEmpty()) {
+                headers.putAll(videoInfo.httpHeaders)
+                Log.d(TAG, "使用VideoInfo中的HTTP头: ${videoInfo.httpHeaders.size}个")
+            } else {
+                // 如果VideoInfo中没有HTTP头信息，则使用默认的
+                headers.putAll(addHeadersForUrl(url))
+                Log.d(TAG, "使用默认HTTP头: ${headers.size}个")
+            }
+            
+            // 添加VideoInfo中的其他HTTP上下文信息
+            if (videoInfo.userAgent.isNotEmpty()) {
+                headers["User-Agent"] = videoInfo.userAgent
+            }
+            if (videoInfo.referer.isNotEmpty()) {
+                headers["Referer"] = videoInfo.referer
+            }
+            if (videoInfo.cookies.isNotEmpty()) {
+                headers["Cookie"] = videoInfo.cookies
+            }
+            
+            Log.d(TAG, "最终请求头数量: ${headers.size}")
             
             // 创建网络连接
             Log.d(TAG, "建立网络连接: url=$url, 超时=${NETWORK_TIMEOUT_MS}ms")
@@ -235,12 +257,12 @@ object DownloadUtil {
             // 第一步：下载并解析M3U8播放列表
             Log.d(TAG, "步骤1: 下载M3U8播放列表文件")
             progressCallback?.invoke(5f, 0L, "下载播放列表...")
-            val m3u8Content = downloadM3U8Playlist(videoInfo.url)
+            val m3u8Content = downloadM3U8Playlist(videoInfo.url, videoInfo)
             Log.d(TAG, "M3U8播放列表内容长度: ${m3u8Content.length}字符")
             
             // 第二步：解析TS分片URL列表
             progressCallback?.invoke(10f, 0L, "解析播放列表...")
-            val tsUrls = parseM3U8Content(m3u8Content, videoInfo.url)
+            val tsUrls = parseM3U8Content(m3u8Content, videoInfo.url, videoInfo)
             Log.d(TAG, "步骤2: 解析到${tsUrls.size}个TS分片")
             
             if (tsUrls.isEmpty()) {
@@ -265,7 +287,7 @@ object DownloadUtil {
                 Log.d(TAG, "下载TS分片 ${index + 1}/${tsUrls.size}: $tsUrl")
                 
                 try {
-                    downloadTSSegment(tsUrl, tsFile)
+                    downloadTSSegment(tsUrl, tsFile, videoInfo)
                     tsFiles.add(tsFile)
                     
                     // 更新进度（下载阶段占80%）
@@ -333,12 +355,39 @@ object DownloadUtil {
     /**
      * 下载M3U8播放列表文件内容
      */
-    private suspend fun downloadM3U8Playlist(url: String): String {
+    private suspend fun downloadM3U8Playlist(url: String, videoInfo: VideoInfo? = null): String {
         Log.d(TAG, "下载M3U8播放列表: $url")
         
-        // 获取URL对应的请求头
-        val headers = addHeadersForUrl(url)
-        Log.d(TAG, "为M3U8播放列表添加请求头: url=$url, 请求头数量=${headers.size}")
+        // 使用VideoInfo中的HTTP上下文信息
+        val headers = mutableMapOf<String, String>()
+        
+        if (videoInfo != null) {
+            // 优先使用VideoInfo中的HTTP头信息
+            if (videoInfo.httpHeaders.isNotEmpty()) {
+                headers.putAll(videoInfo.httpHeaders)
+                Log.d(TAG, "使用VideoInfo中的HTTP头: ${videoInfo.httpHeaders.size}个")
+            } else {
+                // 如果VideoInfo中没有HTTP头信息，则使用默认的
+                headers.putAll(addHeadersForUrl(url))
+                Log.d(TAG, "使用默认HTTP头: ${headers.size}个")
+            }
+            
+            // 添加VideoInfo中的其他HTTP上下文信息
+            if (videoInfo.userAgent.isNotEmpty()) {
+                headers["User-Agent"] = videoInfo.userAgent
+            }
+            if (videoInfo.referer.isNotEmpty()) {
+                headers["Referer"] = videoInfo.referer
+            }
+            if (videoInfo.cookies.isNotEmpty()) {
+                headers["Cookie"] = videoInfo.cookies
+            }
+        } else {
+            // 如果没有VideoInfo，使用默认请求头
+            headers.putAll(addHeadersForUrl(url))
+        }
+        
+        Log.d(TAG, "M3U8播放列表最终请求头数量: ${headers.size}")
         
         val connection = java.net.URL(url).openConnection()
         connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
@@ -355,7 +404,7 @@ object DownloadUtil {
      * 解析M3U8内容，提取TS分片URL列表
      * 支持主播放列表(Master Playlist)和媒体播放列表(Media Playlist)
      */
-    private suspend fun parseM3U8Content(content: String, baseUrl: String): List<String> {
+    private suspend fun parseM3U8Content(content: String, baseUrl: String, videoInfo: VideoInfo? = null): List<String> {
         Log.d(TAG, "解析M3U8内容，基础URL: $baseUrl")
         val lines = content.split("\n")
         val baseUri = java.net.URI(baseUrl)
@@ -386,9 +435,9 @@ object DownloadUtil {
                             
                             // 递归下载并解析媒体播放列表
                             try {
-                                val mediaPlaylistContent = downloadM3U8Playlist(fullMediaUrl)
+                                val mediaPlaylistContent = downloadM3U8Playlist(fullMediaUrl, videoInfo)
                                 Log.d(TAG, "成功下载媒体播放列表，内容长度: ${mediaPlaylistContent.length}字符")
-                                return parseM3U8Content(mediaPlaylistContent, fullMediaUrl)
+                                return parseM3U8Content(mediaPlaylistContent, fullMediaUrl, videoInfo)
                             } catch (e: Exception) {
                                 Log.e(TAG, "下载媒体播放列表失败: $fullMediaUrl, error=${e.message}")
                                 throw Exception("无法下载媒体播放列表: ${e.message}")
@@ -428,10 +477,37 @@ object DownloadUtil {
     /**
      * 下载单个TS分片
      */
-    private suspend fun downloadTSSegment(url: String, outputFile: File) {
-        // 获取URL对应的请求头
-        val headers = addHeadersForUrl(url)
-        Log.v(TAG, "为TS分片添加请求头: url=$url, 请求头数量=${headers.size}")
+    private suspend fun downloadTSSegment(url: String, outputFile: File, videoInfo: VideoInfo? = null) {
+        // 使用VideoInfo中的HTTP上下文信息
+        val headers = mutableMapOf<String, String>()
+        
+        if (videoInfo != null) {
+            // 优先使用VideoInfo中的HTTP头信息
+            if (videoInfo.httpHeaders.isNotEmpty()) {
+                headers.putAll(videoInfo.httpHeaders)
+                Log.v(TAG, "使用VideoInfo中的HTTP头: ${videoInfo.httpHeaders.size}个")
+            } else {
+                // 如果VideoInfo中没有HTTP头信息，则使用默认的
+                headers.putAll(addHeadersForUrl(url))
+                Log.v(TAG, "使用默认HTTP头: ${headers.size}个")
+            }
+            
+            // 添加VideoInfo中的其他HTTP上下文信息
+            if (videoInfo.userAgent.isNotEmpty()) {
+                headers["User-Agent"] = videoInfo.userAgent
+            }
+            if (videoInfo.referer.isNotEmpty()) {
+                headers["Referer"] = videoInfo.referer
+            }
+            if (videoInfo.cookies.isNotEmpty()) {
+                headers["Cookie"] = videoInfo.cookies
+            }
+        } else {
+            // 如果没有VideoInfo，使用默认请求头
+            headers.putAll(addHeadersForUrl(url))
+        }
+        
+        Log.v(TAG, "TS分片最终请求头数量: ${headers.size}")
         
         val connection = java.net.URL(url).openConnection()
         connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()

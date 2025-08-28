@@ -16,6 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -45,9 +48,16 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.App
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
+import com.app.videobox.SHOW_RATE
 import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AD_TYPE_INT
@@ -55,17 +65,24 @@ import com.app.videobox.ext.openGooglePlayStore
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.urlInBrowser
+import com.app.videobox.lastExitTimestamp
+import com.app.videobox.manager.FileManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.LanguageActivity
+import com.app.videobox.ui.dialogs.FeedBackDialog
+import com.app.videobox.ui.dialogs.RateDialog
 import com.app.videobox.ui.pages.FeedbackScreen
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
+import com.app.videobox.ui.widgets.CoilImage
+import com.app.videobox.ui.widgets.ExitDialog
 import com.app.videobox.ui.widgets.NavBarV3
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
+import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
@@ -85,14 +102,33 @@ class NewHomeScreen : Screen {
 
     @Composable
     override fun Content() {
-        val context = LocalContext.current as Activity
+        val context = LocalContext.current as BaseActivity
         // 将状态管理移到Content方法内部，避免序列化问题
         var mSelectIndex by remember { mutableIntStateOf(value = SELECT_HOME) }
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
-        
-        BackHandler {  }
-        
+
+        var showExitDialog by remember { mutableStateOf(false) }
+        var showRateDialog by remember { mutableStateOf(false) }
+        var showFeedbackDialog by remember { mutableStateOf(false) }
+
+        BackHandler {
+            val currentTime = System.currentTimeMillis()
+            val lastTimestamp = SPStaticUtils.getLong(lastExitTimestamp,0L)
+            val timeDifference = currentTime - lastTimestamp
+
+            // 10秒内只弹出一次退出弹窗，超过10秒或首次按返回键则显示弹窗
+            if (timeDifference > 10_000L || lastTimestamp == 0L) {
+                // 显示退出弹窗并记录时间戳
+                showExitDialog = true
+                SPStaticUtils.put(lastExitTimestamp,currentTime)
+            } else {
+                // 10秒内再次按返回键，直接返回桌面
+                context.moveTaskToBack(true)
+            }
+
+
+        }
         ModalNavigationDrawer(
             drawerState = drawerState,
             gesturesEnabled = true,
@@ -102,7 +138,8 @@ class NewHomeScreen : Screen {
                     scope = scope
                 )
             }
-        ) {
+        )
+        {
             Box(Modifier.fillMaxSize()) {
                 HomeScreen(
                     onMenuClick = {
@@ -133,7 +170,22 @@ class NewHomeScreen : Screen {
                         .padding(bottom = 30.dp),
                     defaultIndex = SELECT_HOME,
                     onClickHome = {
+                        if (mSelectIndex != SELECT_HOME && SPStaticUtils.getBoolean(SHOW_RATE,true)){
+                            showRateDialog = true
+                            SPStaticUtils.put(SHOW_RATE,false)
+                        }
                         mSelectIndex = SELECT_HOME
+                        // 检查热门网站数据是否为空，如果为空则重新获取
+                        if (DataRepository.webUrlFlow.value == null) {
+                            DataRepository.fetchWebUrlList()
+                        }
+                        // 检查视频分类数据是否为空，如果为空则重新获取
+                        if (DataRepository.videoClassFlow.value.isNullOrEmpty()) {
+                            // 使用协程作用域来调用suspend函数
+                            App.coroutineScope.launch {
+                                DataRepository.getVideoClass()
+                            }
+                        }
                     },
                     onClickDownload = {
                         AdManager.getFullAdFromPool(
@@ -146,6 +198,7 @@ class NewHomeScreen : Screen {
 
                     },
                     onClickVideo = {
+                        FileManager.fetchPhoneVideo(context)
                         AdManager.getFullAdFromPool(
                             context,
                             adType = AD_TYPE_INT,
@@ -157,6 +210,44 @@ class NewHomeScreen : Screen {
                     })
             }
         }
+
+        if (showExitDialog){
+            ExitDialog(
+                onDismissRequest = {
+                    showExitDialog = false
+                },
+                onClick = {
+                    context.moveTaskToBack(true)
+                },
+            )
+        }
+
+        if (showRateDialog){
+            RateDialog(
+                onDismissRequest = {
+                    showRateDialog = false
+                    showFeedbackDialog = true
+
+                },
+                onClick = {
+                    showRateDialog = false
+                    context.openGooglePlayStore()
+                }
+            )
+        }
+
+        if (showFeedbackDialog) {
+            FeedBackDialog(
+                onDismissRequest = {
+                    showFeedbackDialog = false
+                },
+                onConfirm = { it->
+                    App.coroutineScope.launch {
+                        DataRepository.feedbackApi(it)
+                    }
+                }
+            )
+        }
     }
 
 
@@ -167,6 +258,8 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
     val navigator = LocalNavigator.currentOrThrow
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    
     LaunchedEffect(Unit) {
         if (SPStaticUtils.getBoolean("browser_show",true)){
             SPStaticUtils.put("browser_show",false)
@@ -181,6 +274,7 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
                 ), desc = "应用内浏览器展示")
         }
     }
+
 
     Box(Modifier.fillMaxSize()){
         AsyncImageImpl(
@@ -238,7 +332,7 @@ fun PopularVideoSection(navigator: Navigator) {
     val videoClasses by DataRepository.videoClassFlow.collectAsStateWithLifecycle()
     
     // 只有当分类数据可用时才展示分类列表
-    if (videoClasses.isNotEmpty()) {
+    if (videoClasses != null && videoClasses.isNotEmpty()) {
         Column(
             modifier = Modifier
                 .padding(bottom = 90.dp)
@@ -466,24 +560,23 @@ private fun HorizontalVideoCard(
  */
 @Composable
 fun StatusBarSection(onMenuClick: () -> Unit = {}) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
-            .padding(horizontal = 21.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row {
-            AsyncImageImpl(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onMenuClick() },
-                model = R.drawable.icon_menu
-            )
-            Spacer(Modifier.weight(1f))
-            Text(text = stringResource(R.string.app_name), color = Color.White)
-            Spacer(Modifier.weight(1f))
-        }
+            .height(44.dp),
+    ){
+        AsyncImageImpl(
+            modifier = Modifier
+                .padding(start = 15.dp)
+                .align(Alignment.CenterStart)
+                .size(24.dp)
+                .clickable { onMenuClick() },
+            model = R.drawable.icon_menu
+        )
+
+        Text(text = stringResource(R.string.app_name), color = Color.White,
+            modifier = Modifier.align(Alignment.Center))
+
     }
 }
 
@@ -545,10 +638,12 @@ private fun SearchSection() {
             )
 
             AsyncImageImpl(
-                modifier = Modifier.size(50.dp).singClick{
-                    focusManager.clearFocus()
-                    handleSearch(searchText, context, navigator)
-                },
+                modifier = Modifier
+                    .size(50.dp)
+                    .singClick {
+                        focusManager.clearFocus()
+                        handleSearch(searchText, context, navigator)
+                    },
                 model = R.drawable.icon_search
             )
         }
@@ -639,7 +734,7 @@ private fun WebsiteGridRow(
                     AdManager.getFullAdFromPool(
                         context,
                         adType = AD_TYPE_INT,
-                        adScene = "i_recommend_click",
+                        adScene = "i_web_click",
                         closeAction = {
                             // 点击网站图标跳转到WebView页面
                             WebViewActivity.start(context = context,website.url)
@@ -675,12 +770,28 @@ private fun WebsiteItemCard(
             .clickable { onClick() }
     ) {
         // 使用AsyncImageImpl显示网站图标
-        AsyncImageImpl(
+        StateAsyncImageImpl(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape),
             model = website.icon,
             contentScale = ContentScale.FillBounds,
+            onLoadingComposable = {
+                AsyncImageImpl(
+                    modifier = Modifier.fillMaxSize(),
+                    model = R.drawable.icon_url_place,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            },
+            onErrorComposable = {
+                AsyncImageImpl(
+                    modifier = Modifier.fillMaxSize(),
+                    model = R.drawable.icon_url_place,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            }
         )
         
         Spacer(modifier = Modifier.height(8.dp))

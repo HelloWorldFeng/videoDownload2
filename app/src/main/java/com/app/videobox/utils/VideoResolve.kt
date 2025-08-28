@@ -13,7 +13,7 @@ object VideoResolve {
     /**
      * 视频信息数据类
      */
-    data class VideoInfo(
+    data class ResolveVideoInfo(
         val duration: Float,           // 视频时长（秒）
         val width: Int,               // 视频宽度
         val height: Int,              // 视频高度
@@ -37,7 +37,7 @@ object VideoResolve {
      * @param title 视频标题文案
      * @return VideoInfo 视频信息
      */
-    suspend fun getVideoInfo(videoUrl: String, title: String? = null, imgUrl: String, ext: String): Result<VideoInfo> =
+    suspend fun getVideoInfo(videoUrl: String, title: String? = null, imgUrl: String, ext: String): Result<ResolveVideoInfo> =
         withContext(Dispatchers.IO) {
             try {
                 val command = mutableListOf<String>()
@@ -63,7 +63,7 @@ object VideoResolve {
                 command.add(videoUrl)
                 
                 val rc = FFprobe.execute(command.toTypedArray())
-                val randomVideo = VideoInfo(
+                val randomVideo = ResolveVideoInfo(
                     duration = 0f,
                     width = 1080,
                     height = 980,
@@ -184,7 +184,7 @@ object VideoResolve {
         title: String?,
         imgUrl: String,
         ext: String
-    ): VideoInfo {
+    ): ResolveVideoInfo {
         // 清理和验证JSON输出
         val cleanedJson = cleanJsonOutput(jsonOutput)
         
@@ -317,7 +317,7 @@ object VideoResolve {
             title
         }
 
-        return VideoInfo(
+        return ResolveVideoInfo(
             duration = duration,
             width = width,
             height = height,

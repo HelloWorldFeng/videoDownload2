@@ -36,6 +36,7 @@ import com.hjq.permissions.XXPermissions
 import com.videodownloader.module.download.DownloaderV2
 import com.videodownloader.module.download.Task
 import org.koin.compose.koinInject
+import kotlin.math.sign
 
 private val ContainColor : Color
     @Composable get() = Color(0xFF363637)
@@ -132,35 +133,39 @@ private fun NavBarIcon(
     checkedIcon: Any,
     markSize: Int?= null
 ){
-    Box(
-        modifier = modifier
-            .aspectRatio(1f / 1f, matchHeightConstraintsFirst = true)
-            .singClick {
-                onClick.invoke()
+
+    Box(Modifier.aspectRatio(1f / 1f, matchHeightConstraintsFirst = true)){
+        Box(
+            modifier = modifier
+                .align(Alignment.Center)
+                .aspectRatio(1f / 1f, matchHeightConstraintsFirst = true)
+                .singClick {
+                    onClick.invoke()
+                }
+        ) {
+            if (defaultIcon == null) {
+                val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
+                LottieAnimation(
+                    composition = lottie,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
             }
-    ) {
-        if (defaultIcon == null) {
-            val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
-            LottieAnimation(
-                composition = lottie,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
-        }
-        if (selected) {
-            val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
-            LottieAnimation(
-                composition = lottie,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
-        } else {
-            AsyncImageImpl(
-                modifier = Modifier.fillMaxSize(),
-                model = defaultIcon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-            )
+            if (selected) {
+                val lottie by rememberLottieComposition(LottieCompositionSpec.Asset(checkedIcon.toString()))
+                LottieAnimation(
+                    composition = lottie,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
+                )
+            } else {
+                AsyncImageImpl(
+                    modifier = Modifier.fillMaxSize(),
+                    model = defaultIcon,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                )
+            }
         }
 
         if (markSize != null && markSize > 0) {
@@ -169,6 +174,7 @@ private fun NavBarIcon(
                 fontSize = 12.sp,
                 color = Color.White,
                 modifier = Modifier
+                    .padding(end = 5.dp)
                     .align(Alignment.TopEnd)
                     .background(color = Color.Red, shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 3.dp, vertical = 1.dp)

@@ -17,3 +17,15 @@ const val appLiveBtn = "appLiveBtn"
 const val MAIN_OPERATE = "main_operate"
 const val MAIN_SHOW_WEB = "main_show_web"
 const val MAIN_SHOW_VIDEO = "main_show_video"
+
+//首次进入主页
+const val FIRST_IN_HOME = "FIRST_IN_HOME"
+
+const val lastExitTimestamp = "lastTimestamp"
+
+const val GUIDER = "GUIDER"
+
+//首次申请通知权限
+const val FIRST_NOTIFY = "FIRST_NOTIFY"
+//评分弹窗
+const val SHOW_RATE = "SHOW_RATE"

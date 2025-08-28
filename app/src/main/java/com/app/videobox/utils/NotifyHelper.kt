@@ -92,7 +92,7 @@ object NotifyHelper {
             NotificationChannel(
                 CHANNEL_ID_FOREGROUND,
                 CHANNEL_NAME_FOREGROUND,
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "ForegroundNotification"
                 enableLights(false)

@@ -34,10 +34,13 @@ import com.blankj.utilcode.util.SPStaticUtils
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.FIRST_NOTIFY
+import com.app.videobox.GUIDER
 import com.app.videobox.MAIN_OPERATE
 import com.app.videobox.MAIN_SHOW_VIDEO
 import com.app.videobox.MAIN_SHOW_WEB
@@ -46,6 +49,7 @@ import com.app.videobox.NOTIFY_TYPE_CUSTOM
 import com.app.videobox.NOTIFY_TYPE_DOWNLOAD
 import com.app.videobox.NOTIFY_TYPE_FOREGROUND
 import com.app.videobox.ad.AdManager
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyDialog
 import com.app.videobox.utils.EventReportUtils
@@ -53,6 +57,8 @@ import com.app.videobox.utils.NotifyHelper
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
+import kotlinx.coroutines.launch
+import me.leolin.shortcutbadger.ShortcutBadger
 
 class SplashActivity : BaseActivity() {
 
@@ -74,8 +80,40 @@ class SplashActivity : BaseActivity() {
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onStart(owner: LifecycleOwner) {
             super.onStart(owner)
+            handleAppLaunch()
+
+            if (SPStaticUtils.getBoolean("firstLaunch",true)){
+                return
+            }
             if (XXPermissions.isGranted(this@SplashActivity,
                     Permission.POST_NOTIFICATIONS).not()) {
+
+                //第一次进入没有权限直接申请
+                if (SPStaticUtils.getBoolean(FIRST_NOTIFY,true)){
+                    SPStaticUtils.put(FIRST_NOTIFY,false)
+                    XXPermissions
+                        .with(this@SplashActivity)
+                        .permission(Permission.POST_NOTIFICATIONS)
+                        .request(object : OnPermissionCallback{
+                            override fun onGranted(
+                                permissions: List<String?>,
+                                allGranted: Boolean
+                            ) {
+                                // 权限获取后启动 LaunchedEffect
+                                startPlay.value = true
+                                DownloadVideoService.startService(this@SplashActivity)
+                            }
+
+                            override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {
+                                super.onDenied(permissions, doNotAskAgain)
+                                // 即使权限被拒绝也启动 LaunchedEffect
+                                startPlay.value = true
+                            }
+                        })
+                    return
+                }
+
+
                 //没有通知权限-展示自定义样式弹窗
                 showNotifyDialog = true
             }
@@ -85,7 +123,7 @@ class SplashActivity : BaseActivity() {
                 startPlay.value = true
             }
 
-            handleAppLaunch()
+
         }
     }
 
@@ -155,6 +193,9 @@ class SplashActivity : BaseActivity() {
                 )
             }
         }
+
+
+        ShortcutBadger.removeCount(this)
     }
 
     @Composable
@@ -168,7 +209,6 @@ class SplashActivity : BaseActivity() {
             Spacer(modifier = Modifier.weight(6f))
             LottieAnimation(
                 composition = lottie,
-                iterations = LottieConstants.IterateForever,
                 modifier = Modifier.size(100.dp),
                 contentScale = ContentScale.None
             )
@@ -191,25 +231,13 @@ class SplashActivity : BaseActivity() {
     override fun onBackPressed() {}
 
     private fun navNextStep() {
-        if (SPStaticUtils.getBoolean("chooseLanguage", true)) {
-            AdManager.getFullAdFromPool(
-                this,
-                adType = "open",
-                adScene = "oa_cold_start",
-                closeAction = {
-                    this.safeStartActivity(LanguageActivity::class.java)
-                })
-
-        }else{
-            AdManager.getFullAdFromPool(
-                this,
-                adType = "open",
-                adScene = if (!AppManager.isInitialized) "oa_cold_start" else "oa_hot_launch",
-                closeAction = {
-                    goNextType()
-                })
-
-        }
+        AdManager.getFullAdFromPool(
+            this,
+            adType = "open",
+            adScene = if (!AppManager.isInitialized) "oa_cold_start" else "oa_hot_launch",
+            closeAction = {
+                goNextType()
+            })
 
         AppManager.isInitialized = true
     }
@@ -237,7 +265,11 @@ class SplashActivity : BaseActivity() {
             finish()
             return
         }
-        MainActivity.start(this)
+        if (RemoteConfigManager.showGuider && SPStaticUtils.getBoolean(GUIDER,true)){
+            GuiderActivity.start(this)
+        }else{
+            MainActivity.start(this)
+        }
         finish()
     }
 
@@ -298,7 +330,7 @@ class SplashActivity : BaseActivity() {
                 Log.d("TestLog", "进入启动页的类型:${notifyType} ")
 
                 if (notifyType == -1) {
-                    EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "active"), desc = "进入启动页->主动点击")
+                    EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "active"), desc = "进入启动页->主动点击")
                     return
                 }
 
@@ -310,7 +342,7 @@ class SplashActivity : BaseActivity() {
                         EventReportUtils.reportTDParams("push_click", mutableMapOf<String, Any>().apply {
                             put("push_scene", "download")
                         })
-                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "download"), desc = "进入启动页->download")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "download"), desc = "进入启动页->download")
                         "download"
                     }
 
@@ -327,17 +359,17 @@ class SplashActivity : BaseActivity() {
                             put("videoUrl",videoUrl)
                             put("pageType",if (pageType == 4) "webUrl" else "video")
                         })
-                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "media"), desc = "进入启动页->media")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "media"), desc = "进入启动页->media")
                         "media"
                     }
 
                     NOTIFY_TYPE_FOREGROUND -> {
                         EventReportUtils.reportTDParams("permanent_click", desc = "常驻通知栏点击")
-                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "permanent"), desc = "进入启动页->permanent")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "permanent"), desc = "进入启动页->permanent")
                         "permanent" // 前台服务通知
                     }
                     else -> {
-                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("type" to "normal"), desc = "进入启动页->normal")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "normal"), desc = "进入启动页->normal")
                         "normal"
                     }
                 }

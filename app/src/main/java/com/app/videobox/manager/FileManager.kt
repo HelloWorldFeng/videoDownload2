@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
 import com.app.videobox.App
@@ -35,7 +36,7 @@ object FileManager {
         var playTime:Long
     ):Serializable
 
-    var scanFileResultState: MutableList<FileInfo> = mutableListOf()
+    var scanFileResultState = mutableStateListOf<FileInfo>()
     var scanFileState = mutableStateOf(value = false)
 
 

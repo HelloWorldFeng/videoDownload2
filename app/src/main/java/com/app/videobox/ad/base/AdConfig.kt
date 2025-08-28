@@ -10,6 +10,7 @@ data class AdConfig(
     var groupNotify: Int = 1,
     var limitTime: Long = 0L,
     var notifyCount: Int = 30,
+    var showGuider: Boolean,
 
     val guiderGo: Boolean,
 

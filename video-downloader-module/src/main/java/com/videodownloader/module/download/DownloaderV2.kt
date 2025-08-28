@@ -317,7 +317,7 @@ class DownloaderV2Impl(private val context: Context) : DownloaderV2 {
                 downloadState = Idle
             }
             else -> {
-                throw IllegalStateException("无法重启当前状态的任务: ${preState::class.simpleName}")
+
             }
         }
     }

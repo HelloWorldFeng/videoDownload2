@@ -87,8 +87,10 @@ class LanguageActivity : BaseActivity() {
 
             }
 
+            Spacer(modifier = Modifier.weight(1f))
             Box(
                 modifier = Modifier
+                    .navigationBarsPadding()
                     .singClick {
                         SPStaticUtils.put("chooseLanguage", false)
                         SPStaticUtils.put("selectLanguageIndex", selectLanguageIndex.value)

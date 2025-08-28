@@ -8,6 +8,7 @@ import com.blankj.utilcode.util.SPStaticUtils
 import com.app.videobox.ad.base.AD_TYPE_START
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ad.base.InnerAd
+import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.EventReportUtils
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -94,6 +95,7 @@ object AdManager {
                     put("ad_action",11)
                     put("ad_format",adWrapper.type)
                     put("ad_unit_id",adWrapper.adNumberId)
+                    put("interType",SplashActivity.interType)
                 })
             },
             failCallBack = { code, msg, adWrapper ->
@@ -107,6 +109,7 @@ object AdManager {
                     put("ad_format",adWrapper.type)
                     put("ad_unit_id",adWrapper.adNumberId)
                     put("err_msg","$msg")
+                    put("interType",SplashActivity.interType)
                 })
             },
             showCallBack = { adWrapper ->
@@ -155,6 +158,7 @@ object AdManager {
                     scene?.let {
                         put("ad_scenes",scene.adScene)
                     }
+                    put("interType",SplashActivity.interType)
                 })
             },
             closeCallBack ={
@@ -168,6 +172,7 @@ object AdManager {
                     scene?.let {
                         put("ad_scenes",scene.adScene)
                     }
+                    put("interType",SplashActivity.interType)
                 })
             }
         ).loadAdInstance(*adTypeTag)
@@ -275,6 +280,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene showBool limit")
+                put("interType",SplashActivity.interType)
             })
             Log.d(TAG, "场景展示限制:${adScene}")
             closeAction.invoke()
@@ -288,6 +294,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene one day limit")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -301,6 +308,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene clickBool limit")
+                put("interType",SplashActivity.interType)
             })
             Log.d(TAG, "点击限制:${adScene}")
             closeAction.invoke()
@@ -316,6 +324,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene scene btn close")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -329,6 +338,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene interval limit")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -346,6 +356,7 @@ object AdManager {
                         put("ad_format",adType)
                         put("ad_scenes",adScene)
                         put("err_msg","$adType Btn Close")
+                        put("interType",SplashActivity.interType)
                     })
                     Log.d(TAG, "${adType}广告位关闭，不请求")
                     closeAction.invoke()

@@ -217,7 +217,7 @@ private fun MediaStreamOrchestrator(
     val lifecycleMonitor = LocalLifecycleOwner.current
 
     // === 播放器核心状态管理区域 ===
-    var screenDisplayMode by remember { mutableStateOf(true) }           // 屏幕显示模式
+    var screenDisplayMode by remember { mutableStateOf(false) }          // 全屏显示模式(false=窗口模式, true=全屏模式)
     var contentAspectRatio by remember { mutableStateOf(16f / 9f) }       // 内容宽高比例
     var playbackVelocity by remember { mutableStateOf(1.0f) }            // 播放速度系数
     var interfaceLockState by remember { mutableStateOf(false) }          // 界面锁定状态
@@ -607,18 +607,36 @@ private fun MediaStreamOrchestrator(
         Log.d(MEDIA_ORCHESTRATOR_TAG, "屏幕方向切换: ${if (orientationLandscape) "横屏" else "竖屏"}")
     }
 
+    // === 全屏模式控制器实现 ===
+    LaunchedEffect(screenDisplayMode) {
+        executionActivity?.let { activity ->
+            if (screenDisplayMode) {
+                // 进入全屏模式
+                activity.window.decorView.systemUiVisibility = (
+                    android.view.View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                )
+                // 全屏时自动切换到横屏
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                Log.d(MEDIA_ORCHESTRATOR_TAG, "全屏模式: 已启用 - 隐藏系统UI并切换横屏")
+            } else {
+                // 退出全屏模式
+                activity.window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+                // 退出全屏时恢复竖屏
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                Log.d(MEDIA_ORCHESTRATOR_TAG, "全屏模式: 已退出 - 显示系统UI并恢复竖屏")
+            }
+        }
+    }
+
     // === 播放器控制器接口暴露 ===
     DisposableEffect(Unit) {
         val controllerInterface =
             _root_ide_package_.com.app.videobox.ui.pages.video.playerV2.VideoPlayerController(
                 setFullScreen = { fullscreenEnabled ->
-                    screenDisplayMode = true
-                    executionActivity?.requestedOrientation = if (fullscreenEnabled) {
-                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    } else {
-                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    }
-                    Log.d(MEDIA_ORCHESTRATOR_TAG, "外部控制器: 全屏模式 - $fullscreenEnabled")
+                    screenDisplayMode = fullscreenEnabled
+                    Log.d(MEDIA_ORCHESTRATOR_TAG, "外部控制器: 全屏模式切换 - $fullscreenEnabled")
                 },
                 setAspectRatio = { ratio ->
                     contentAspectRatio = ratio
@@ -1069,13 +1087,13 @@ private fun MediaStreamOrchestrator(
 
                         Spacer(Modifier.width(10.dp))
                         // 全屏模式按钮
-                        AsyncImageImpl(
-                            modifier = Modifier.size(26.dp).singClick{
-                                screenDisplayMode = true
-                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 全屏模式切换")
-                            },
-                            model = R.drawable.icon_full_screen
-                        )
+//                        AsyncImageImpl(
+//                            modifier = Modifier.size(26.dp).singClick{
+//                                screenDisplayMode = !screenDisplayMode
+//                                Log.d(MEDIA_ORCHESTRATOR_TAG, "底部控制: 全屏模式切换 -> ${if (screenDisplayMode) "全屏" else "窗口"}")
+//                            },
+//                            model = if (screenDisplayMode) R.drawable.icon_full_screen else R.drawable.icon_full_screen
+//                        )
 
                     }
                     // 进度条控制

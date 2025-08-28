@@ -28,7 +28,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.videobox.FIRST_IN_HOME
+import com.app.videobox.GUIDER
 import com.app.videobox.R
+import com.app.videobox.ad.UserHelper
 import com.app.videobox.ui.MainActivity
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.theme.gradientColor
@@ -73,12 +76,17 @@ class WebViewActivity: BaseActivity() {
 
         WebPageScreen(inputUrl = url,viewModel = viewModel)
 
-        if (SPStaticUtils.getBoolean("SettingBrowser", true)) {
+        if (SPStaticUtils.getBoolean("SettingBrowser", true)
+            && !UserHelper.powerUser
+            && !SPStaticUtils.getBoolean(FIRST_IN_HOME,true)
+            ) {
             SPStaticUtils.put("SettingBrowser",false)
             LaunchedEffect(Unit) {
                 DefaultBrowserUtils.requestDefaultBrowser(context)
             }
         }
+
+        SPStaticUtils.put(FIRST_IN_HOME,false)
     }
 
 

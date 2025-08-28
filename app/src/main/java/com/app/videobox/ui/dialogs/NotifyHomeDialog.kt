@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.R
@@ -60,7 +61,8 @@ fun NotifyHomeDialog(
         },
     ){
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(vertical = 10.dp)
         ) {
             Row(Modifier.fillMaxWidth()) {
@@ -84,7 +86,7 @@ fun NotifyHomeDialog(
 
                 Spacer(Modifier.height(30.dp))
                 Text(
-                    text = stringResource(R.string.permission_required),
+                    text = stringResource(R.string.enable_notifications),
                     fontSize = 18.sp,
                     color = Color.White)
                 Spacer(Modifier.height(20.dp))
@@ -97,67 +99,15 @@ fun NotifyHomeDialog(
                 )
                 Spacer(Modifier.height(18.dp))
 
-                Text(
-                    text = stringResource(R.string.to_download_files_you_need_to),
-                    fontSize = 16.sp,
-                    color = Color.White
+
+                Text(stringResource(R.string.turn_on_notifications_for_stream_box_in_you_setting),
+                    color = Color.White,
+                    textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(28.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.Start)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    listOf(Color(0xFFFF5A83), Color(0xFFFF7B29))
-                                ),
-                                shape = CircleShape
-                            )
-                    ){
-                        Text("1", modifier = Modifier.align(Alignment.Center),color = Color.White)
-                    }
-
-                    Spacer(Modifier.width(10.dp))
-                    Text(stringResource(R.string.open_settings_tap_permission),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White)
-                }
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-                {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    listOf(Color(0xFFFF5A83), Color(0xFFFF7B29))
-                                ),
-                                shape = CircleShape
-                            )
-                    ){
-                        Text("2", modifier = Modifier.align(Alignment.Center), color = Color.White)
-                    }
-
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = stringResource(R.string.turn_on_notification),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(58.dp))
 
                 GradientButton(
-                    text = stringResource(R.string.update_settings),
+                    text = stringResource(R.string.open_settings),
                     onClick = {
                         onClick.invoke()
                     }

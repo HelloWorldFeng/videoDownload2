@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = prop.getProperty("packageName")
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 6
         versionName = "1.0.5"
@@ -196,4 +196,6 @@ dependencies {
     implementation("com.github.megatronking.stringfog:interface:4.0.1")
     implementation("com.github.megatronking.stringfog:xor:4.0.1")
     implementation(files("libs/keeps-release-6.1.4.aar"))
+    //角标
+    implementation("me.leolin:ShortcutBadger:1.1.22@aar")
 }

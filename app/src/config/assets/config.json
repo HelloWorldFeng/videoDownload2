@@ -4,6 +4,8 @@
   "limitTime": 5,
   "notifyCount": 30,
 
+  "showGuider": false,
+
   "outerConfigs": [
     {
       "innerAdList": [
@@ -43,6 +45,16 @@
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
+        },{
+          "adScene": "n_exit",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
+        },{
+          "adScene": "n_guider",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
         }
       ],
 
@@ -55,6 +67,11 @@
       "innerAdList": [
         {
           "adScene": "i_search_back",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_web_click",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
@@ -85,6 +102,16 @@
           "showBtn": true
         },{
           "adScene": "i_video_player_close",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_guider",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_download",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
