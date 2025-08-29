@@ -275,9 +275,9 @@ class NewHomeScreen : Screen {
             FeedBackDialog(
                 onDismissRequest = {
                     showFeedbackDialog = false
-                    showFeedbackOkDialog = true
                 },
                 onConfirm = { it->
+                    showFeedbackOkDialog = true
                     App.coroutineScope.launch {
                         DataRepository.feedbackApi(it)
                     }

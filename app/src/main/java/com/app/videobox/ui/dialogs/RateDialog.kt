@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.singClick
+import com.app.videobox.utils.EventReportUtils
 
 @Composable
 fun RateDialog(
@@ -44,6 +46,12 @@ fun RateDialog(
     Dialog(
         onDismissRequest = onDismissRequest
     ) {
+        LaunchedEffect(Unit) {
+            EventReportUtils.reportTDParams(
+                "score_show",
+                mutableMapOf("rate_type" to "normal"),
+                desc = "评分弹窗")
+        }
         Column(
             Modifier
                 .width(325.dp)
@@ -80,6 +88,13 @@ fun RateDialog(
                 Box(Modifier
                     .singClick{
                         onDismissRequest.invoke()
+                        EventReportUtils.reportTDParams(
+                            "score_click",
+                            mutableMapOf(
+                                "rate_type" to "normal",
+                                "action" to "bad"
+                            ),
+                            desc = "评分弹窗")
                     }
                     .size(97.dp,53.dp)
                     .background(color = Color(0xFF515253), shape = RoundedCornerShape(26.dp))){
@@ -93,6 +108,13 @@ fun RateDialog(
                 Box(Modifier
                     .singClick{
                         onClick.invoke()
+                        EventReportUtils.reportTDParams(
+                            "score_click",
+                            mutableMapOf(
+                                "rate_type" to "normal",
+                                "action" to "good"
+                            ),
+                            desc = "评分弹窗")
                     }
                     .size(97.dp,53.dp)
                     .background(

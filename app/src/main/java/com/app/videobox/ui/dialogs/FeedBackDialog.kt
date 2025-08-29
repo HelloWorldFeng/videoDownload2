@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +37,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
+import com.app.videobox.utils.EventReportUtils
 
 @Composable
 fun FeedBackDialog(
@@ -45,6 +47,13 @@ fun FeedBackDialog(
     Dialog(
         onDismissRequest = onDismissRequest
     ) {
+        LaunchedEffect(Unit) {
+            EventReportUtils.reportTDParams(
+                "score_show",
+                mutableMapOf("rate_type" to "bad"),
+                desc = "评分弹窗")
+        }
+
         Column(
             Modifier
                 .width(325.dp,)
@@ -74,6 +83,14 @@ fun FeedBackDialog(
             // 单选区域 - 反馈问题类型选择
             SingleCheckBox(
                 onConfirm = { selectedFeedback ->
+                    EventReportUtils.reportTDParams(
+                        "score_click",
+                        mutableMapOf(
+                            "rate_type" to "bad",
+                            "action" to selectedFeedback
+                        ),
+                        desc = "评分弹窗")
+
                     onConfirm(selectedFeedback)
                     onDismissRequest()
                 }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.videobox.R
 import com.app.videobox.ad.NativeBigAdsView
+import com.app.videobox.utils.EventReportUtils
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +108,7 @@ fun ExitDialog(
                     .background(color = Color.White),
                 adScene = "n_exit"
             )
+
         }
 
     }
