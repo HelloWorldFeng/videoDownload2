@@ -491,6 +491,46 @@ Log.d("FileSize", "随机文件大小: ${randomSize}字节 (${randomSize / 1024 
 
 ---
 
+## R8混淆规则修复 - Play Core KTX依赖 (2025年1月)
+
+### 问题描述
+Release构建时R8混淆失败，缺少Google Play Services相关注解类：
+```
+Missing class com.google.android.gms.common.annotation.NoNullnessRewrite 
+(referenced from: void com.google.android.play.core.ktx.ReviewManagerKtxKt$sam$com_google_android_gms_tasks_OnSuccessListener$0.onSuccess(java.lang.Object))
+```
+
+### 根本原因分析
+Play Core KTX库(com.google.android.play:review-ktx:2.0.2)依赖Google Play Services的内部注解类，但R8混淆时无法找到该类定义，导致构建失败。
+
+### 技术解决方案
+在 `proguard-rules.pro` 中添加R8自动生成的混淆规则：
+
+```proguard
+# R8自动生成的缺失类规则
+-dontwarn com.google.android.gms.common.annotation.NoNullnessRewrite
+```
+
+### 关键实现细节
+1. **依赖分析**：Play Core KTX库内部使用Google Play Services注解进行空值检查
+2. **R8规则生成**：构建失败时R8自动在 `missing_rules.txt` 中生成所需规则
+3. **混淆策略**：使用 `-dontwarn` 指令忽略缺失的内部注解类警告
+4. **版本兼容性**：确保Play Core版本与Google Play Services版本兼容
+
+### 验证结果
+- ✅ Release构建成功完成 (2分32秒)
+- ✅ R8混淆处理正常，无缺失类错误
+- ✅ 保持现有Play Core功能完整性
+- ⚠️ Kotlin版本兼容性警告(非阻塞性)
+
+### 经验总结
+1. **混淆规则管理**：及时添加R8自动生成的缺失类规则到proguard配置
+2. **依赖版本控制**：关注第三方库的内部依赖，特别是Google Play Services相关组件
+3. **构建优化**：定期检查R8警告，优化Kotlin版本与R8版本兼容性
+4. **生产环境准备**：确保Release构建流程稳定，混淆规则完整覆盖所有依赖
+
+---
+
 ## 广播接收器注册问题修复 (2025-01-11)
 
 ### 问题描述

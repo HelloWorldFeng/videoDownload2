@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -104,7 +106,7 @@ class PrivacyActivity : BaseActivity() {
                         }
                 ){
                     Text(
-                        text = stringResource(R.string.continues), fontSize = 18.sp, color = Color.White,
+                        text = stringResource(R.string.start), fontSize = 18.sp, color = Color.White,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -117,12 +119,14 @@ class PrivacyActivity : BaseActivity() {
                     Text(text = stringResource(R.string.privacy_policy),
                         fontSize = 13.sp,
                         color = Color.White.copy(alpha = 0.9f),
+                        textDecoration = TextDecoration.Underline,
                         modifier = Modifier.singClick {
                             context.urlInBrowser(BuildConfig.privacyUrl)
                         })
                     Text(" and ",color = Color.White.copy(alpha = 0.9f))
                     Text(text = stringResource(R.string.terms_of_service),
                         fontSize = 13.sp,
+                        textDecoration = TextDecoration.Underline,
                         color = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.singClick {
                             context.urlInBrowser(BuildConfig.termUrl)
