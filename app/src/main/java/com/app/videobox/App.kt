@@ -34,6 +34,8 @@ import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils
 import com.google.android.gms.ads.AdActivity
+import com.google.android.play.core.review.ReviewManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.uouo.start.AccountKeepsManager
@@ -73,6 +75,7 @@ class App : Application() {
         private var beatCount = 0
 
         var notLaunchHot = false
+
     }
     override fun onCreate() {
         super.onCreate()
@@ -103,6 +106,8 @@ class App : Application() {
             AccountKeepsManager.getInstance().initialize(App.appContext(), DownloadVideoService::class.java)
 
             EventReportUtils.reportTDParams("app_open", desc = "冷启动应用")
+
+
         }
 
     }

@@ -1,5 +1,6 @@
 package com.app.videobox.ui.widgets
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +47,7 @@ fun LinearProgress(
                 if (AdManager.canSpeedAnim() && boolean) {
                     boolean = false
                     mLaunchTime = 1
+                    Log.d("AdLog", "开始加速 ")
                 }
             }
             finishBlock.invoke()

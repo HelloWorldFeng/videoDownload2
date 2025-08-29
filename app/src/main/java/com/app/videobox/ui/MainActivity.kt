@@ -3,12 +3,14 @@ package com.app.videobox.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.navigator.Navigator
+import com.app.videobox.App
 import com.app.videobox.App.Companion.notLaunchHot
 import com.app.videobox.FIRST_IN_HOME
 import com.app.videobox.MAIN_OPERATE
@@ -27,6 +29,7 @@ import com.app.videobox.ui.widgets.ExitDialog
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.NotifyHelper
 import com.blankj.utilcode.util.SPStaticUtils
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -106,6 +109,8 @@ class MainActivity : BaseActivity() {
         }
 
         handleIntent(intent)
+
+
     }
 
     private fun handleIntent(intent: Intent) {

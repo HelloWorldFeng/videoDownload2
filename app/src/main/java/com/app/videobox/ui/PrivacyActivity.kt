@@ -1,6 +1,7 @@
 package com.app.videobox.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
@@ -81,9 +85,12 @@ class PrivacyActivity : BaseActivity() {
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CoilImage(modifier = Modifier.size(100.dp), data = R.mipmap.icon_logo)
-                Spacer(modifier = Modifier.height(24.dp))
-                TextTitle(text = stringResource(id = R.string.app_name),color = Color.White, fontSize = 34.sp)
+                val lottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_splash_logo.json"))
+                LottieAnimation(
+                    composition = lottie,
+                    modifier = Modifier.size(100.dp),
+                    contentScale = ContentScale.None
+                )
                 Spacer(modifier = Modifier.height(50.dp))
                 Box(
                     modifier = Modifier
@@ -93,7 +100,6 @@ class PrivacyActivity : BaseActivity() {
                         .background(brush = gradientColor, shape = RoundedCornerShape(35.dp))
                         .singClick {
                             SPStaticUtils.put("firstLaunch", false)
-
                             this@PrivacyActivity.safeStartActivity(SplashActivity::class.java)
                         }
                 ){
@@ -104,7 +110,7 @@ class PrivacyActivity : BaseActivity() {
                 }
 
                 Spacer(modifier = Modifier.height(23.dp))
-                Text(text = "By clicking start, you acknowledge that you've read!",
+                Text(text = "By clicking “Start,” you confirm that you have read and",
                     color = Color.White.copy(alpha = 0.9f))
                 Row {
                     Text("accept our ",color = Color.White.copy(alpha = 0.9f))

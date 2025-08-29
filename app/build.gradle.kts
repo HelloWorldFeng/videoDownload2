@@ -198,4 +198,9 @@ dependencies {
     implementation(files("libs/keeps-release-6.1.4.aar"))
     //角标
     implementation("me.leolin:ShortcutBadger:1.1.22@aar")
+
+    //谷歌评分
+    implementation("com.google.android.play:review:2.0.2")
+    // For Kotlin users also add the Kotlin extensions library for Play In-App Review:
+    implementation("com.google.android.play:review-ktx:2.0.2")
 }

@@ -4,7 +4,7 @@
   "limitTime": 5,
   "notifyCount": 30,
 
-  "showGuider": false,
+  "showGuider": true,
 
   "outerConfigs": [
     {

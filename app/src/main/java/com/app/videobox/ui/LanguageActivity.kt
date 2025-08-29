@@ -117,9 +117,6 @@ class LanguageActivity : BaseActivity() {
     }
 
     override fun onBackPressed() {
-        if (SPStaticUtils.getBoolean("chooseLanguage", true)) {
-            return
-        }
         super.onBackPressed()
     }
 }

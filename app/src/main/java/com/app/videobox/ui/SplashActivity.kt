@@ -49,7 +49,9 @@ import com.app.videobox.NOTIFY_TYPE_CUSTOM
 import com.app.videobox.NOTIFY_TYPE_DOWNLOAD
 import com.app.videobox.NOTIFY_TYPE_FOREGROUND
 import com.app.videobox.ad.AdManager
+import com.app.videobox.ad.UserHelper.launchTimeFirst
 import com.app.videobox.manager.RemoteConfigManager
+import com.app.videobox.secondStay
 import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyDialog
 import com.app.videobox.utils.EventReportUtils
@@ -77,55 +79,7 @@ class SplashActivity : BaseActivity() {
     private var pageType = 0    //4-网页类型 其他都是视频类型
 
 
-    private val lifecycleObserver = object : DefaultLifecycleObserver {
-        override fun onStart(owner: LifecycleOwner) {
-            super.onStart(owner)
-            handleAppLaunch()
 
-            if (SPStaticUtils.getBoolean("firstLaunch",true)){
-                return
-            }
-            if (XXPermissions.isGranted(this@SplashActivity,
-                    Permission.POST_NOTIFICATIONS).not()) {
-
-                //第一次进入没有权限直接申请
-                if (SPStaticUtils.getBoolean(FIRST_NOTIFY,true)){
-                    SPStaticUtils.put(FIRST_NOTIFY,false)
-                    XXPermissions
-                        .with(this@SplashActivity)
-                        .permission(Permission.POST_NOTIFICATIONS)
-                        .request(object : OnPermissionCallback{
-                            override fun onGranted(
-                                permissions: List<String?>,
-                                allGranted: Boolean
-                            ) {
-                                // 权限获取后启动 LaunchedEffect
-                                startPlay.value = true
-                                DownloadVideoService.startService(this@SplashActivity)
-                            }
-
-                            override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {
-                                super.onDenied(permissions, doNotAskAgain)
-                                // 即使权限被拒绝也启动 LaunchedEffect
-                                startPlay.value = true
-                            }
-                        })
-                    return
-                }
-
-
-                //没有通知权限-展示自定义样式弹窗
-                showNotifyDialog = true
-            }
-            else{
-                //有通知权限-不展示弹窗
-                showNotifyDialog = false
-                startPlay.value = true
-            }
-
-
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,9 +89,25 @@ class SplashActivity : BaseActivity() {
             return
         }
 
+        Log.d("BugLog", "onCreate ")
+        val nowTime = System.currentTimeMillis()
+        val launchTime = SPStaticUtils.getLong(launchTimeFirst,0L)
 
-        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
+        //次留点位
+        if (launchTime != 0L
+            && !isSameDay(nowTime,launchTime)
+            && SPStaticUtils.getBoolean(secondStay,true)){
+            SPStaticUtils.put(secondStay,false)
+            EventReportUtils.afEventLog(
+                "nextday_open",
+                mutableMapOf()
+            )
+            Log.d("BugLog", "次留点位 ")
+        }
+
         acceptIntent(intent)
+
+        Log.d("BugLog", "开始绘制 ")
         setContent {
             BackHandler {  }
             Box(modifier = Modifier
@@ -196,6 +166,7 @@ class SplashActivity : BaseActivity() {
 
 
         ShortcutBadger.removeCount(this)
+        Log.d("BugLog", "ShortcutBadger ")
     }
 
     @Composable
@@ -281,10 +252,54 @@ class SplashActivity : BaseActivity() {
     }
 
 
+    override fun onStart() {
+        super.onStart()
+        handleAppLaunch()
+
+        if (SPStaticUtils.getBoolean("firstLaunch",true)){
+            return
+        }
+        if (XXPermissions.isGranted(this@SplashActivity,
+                Permission.POST_NOTIFICATIONS).not()) {
+
+            //第一次进入没有权限直接申请
+            if (SPStaticUtils.getBoolean(FIRST_NOTIFY,true)){
+                SPStaticUtils.put(FIRST_NOTIFY,false)
+                XXPermissions
+                    .with(this@SplashActivity)
+                    .permission(Permission.POST_NOTIFICATIONS)
+                    .request(object : OnPermissionCallback{
+                        override fun onGranted(
+                            permissions: List<String?>,
+                            allGranted: Boolean
+                        ) {
+                            // 权限获取后启动 LaunchedEffect
+                            startPlay.value = true
+                            DownloadVideoService.startService(this@SplashActivity)
+                        }
+
+                        override fun onDenied(permissions: List<String?>, doNotAskAgain: Boolean) {
+                            super.onDenied(permissions, doNotAskAgain)
+                            // 即使权限被拒绝也启动 LaunchedEffect
+                            startPlay.value = true
+                        }
+                    })
+                return
+            }
+
+
+            //没有通知权限-展示自定义样式弹窗
+            showNotifyDialog = true
+        }
+        else{
+            //有通知权限-不展示弹窗
+            showNotifyDialog = false
+            startPlay.value = true
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
     }
 
     object AppManager {
@@ -378,5 +393,11 @@ class SplashActivity : BaseActivity() {
 
     }
 
+
+    fun isSameDay(time1: Long, time2: Long): Boolean {
+        val calendar1 = java.util.Calendar.getInstance().apply { timeInMillis = time1 }
+        val calendar2 = java.util.Calendar.getInstance().apply { timeInMillis = time2 }
+        return calendar1.get(java.util.Calendar.DAY_OF_YEAR) == calendar2.get(java.util.Calendar.DAY_OF_YEAR)
+    }
 }
 

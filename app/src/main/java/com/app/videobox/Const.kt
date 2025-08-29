@@ -29,3 +29,8 @@ const val GUIDER = "GUIDER"
 const val FIRST_NOTIFY = "FIRST_NOTIFY"
 //评分弹窗
 const val SHOW_RATE = "SHOW_RATE"
+//次留打开点位
+const val secondStay = "secondStay"
+//广告展示次数买量点位
+const val intShowCountConst = "intShowCount"
+const val openShowCountConst = "openShowCount"

@@ -8,6 +8,8 @@ import com.blankj.utilcode.util.SPStaticUtils
 import com.app.videobox.ad.base.AD_TYPE_START
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ad.base.InnerAd
+import com.app.videobox.intShowCountConst
+import com.app.videobox.openShowCountConst
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.EventReportUtils
 import java.util.TimeZone
@@ -131,9 +133,23 @@ object AdManager {
                 //记录开屏展示的时间戳
                 if (adWrapper.type == AD_TYPE_START) {
                     openShowTime = System.currentTimeMillis()
+                    //开屏展示次数 买量点位
+                    var openShowCount = SPStaticUtils.getInt(openShowCountConst,0) + 1
+                    EventReportUtils.afEventLog(
+                        "ud_ad_action_impression_open_${openShowCount}",
+                        mutableMapOf(),
+                    )
+                    SPStaticUtils.put(openShowCountConst,openShowCount)
                 }
                 if (adWrapper.type == AD_TYPE_INT) {
                     intShowTime = System.currentTimeMillis()
+                    //插屏展示次数 买量点位
+                    var intShowCount = SPStaticUtils.getInt(intShowCountConst,0) + 1
+                    EventReportUtils.afEventLog(
+                        "ud_ad_action_impression_inters_${intShowCount}",
+                        mutableMapOf(),
+                    )
+                    SPStaticUtils.put(intShowCountConst,intShowCount)
                 }
 
                 Log.d(TAG, "${adWrapper.type} 展示成功 id:${adWrapper.getAdSourceId()}, scene:${nowShowAdScene} hashCode:${adWrapper.getAdInstance().hashCode()},展示次数:${scene?.nowShowCount},限制次数:${scene?.showCount}")

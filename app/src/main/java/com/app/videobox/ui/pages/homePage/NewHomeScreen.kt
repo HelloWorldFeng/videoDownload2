@@ -1,6 +1,7 @@
 package com.app.videobox.ui.pages.homePage
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,6 +73,7 @@ import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.LanguageActivity
 import com.app.videobox.ui.dialogs.FeedBackDialog
+import com.app.videobox.ui.dialogs.FeedBackOkDialog
 import com.app.videobox.ui.dialogs.RateDialog
 import com.app.videobox.ui.pages.FeedbackScreen
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
@@ -86,6 +88,7 @@ import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
+import com.google.android.play.core.review.ReviewManagerFactory
 
 /**
  * 新主页 - 基于Figma设计稿实现
@@ -111,6 +114,7 @@ class NewHomeScreen : Screen {
         var showExitDialog by remember { mutableStateOf(false) }
         var showRateDialog by remember { mutableStateOf(false) }
         var showFeedbackDialog by remember { mutableStateOf(false) }
+        var showFeedbackOkDialog by remember { mutableStateOf(false) }
 
         BackHandler {
             val currentTime = System.currentTimeMillis()
@@ -218,6 +222,7 @@ class NewHomeScreen : Screen {
                 },
                 onClick = {
                     context.moveTaskToBack(true)
+                    showExitDialog = false
                 },
             )
         }
@@ -231,7 +236,37 @@ class NewHomeScreen : Screen {
                 },
                 onClick = {
                     showRateDialog = false
-                    context.openGooglePlayStore()
+//                    context.openGooglePlayStore()
+
+                    try {
+                        val manager = ReviewManagerFactory.create(context)
+                        val request = manager.requestReviewFlow()
+                        request.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // We got the ReviewInfo object
+                                val reviewInfo = task.result
+
+                                val flow = manager.launchReviewFlow(context, reviewInfo)
+                                flow.addOnFailureListener { e ->
+                                    // 评价流程启动失败
+                                    Log.e("BugLog", "启动应用内评价弹窗失败 " + e.toString())
+                                }
+                                flow.addOnSuccessListener {
+                                    // 评价流程启动成功
+                                    Log.e("BugLog", "启动应用内评价弹窗成功 ")
+                                }
+                                flow.addOnCanceledListener {
+                                    // 评价流程被取消
+                                    Log.e("BugLog", "启动应用内评价弹窗取消 ")
+                                }
+                            } else {
+                                // There was some problem, log or handle the error code.
+                                Log.d("BugLog", "Content:${task.exception?.message} ")
+                            }
+                        }
+                    }catch (e: Exception){
+                        e.printStackTrace()
+                    }
                 }
             )
         }
@@ -240,11 +275,20 @@ class NewHomeScreen : Screen {
             FeedBackDialog(
                 onDismissRequest = {
                     showFeedbackDialog = false
+                    showFeedbackOkDialog = true
                 },
                 onConfirm = { it->
                     App.coroutineScope.launch {
                         DataRepository.feedbackApi(it)
                     }
+                }
+            )
+        }
+
+        if (showFeedbackOkDialog){
+            FeedBackOkDialog(
+                onDismissRequest = {
+                    showFeedbackOkDialog = false
                 }
             )
         }

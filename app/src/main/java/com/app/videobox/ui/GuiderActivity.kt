@@ -291,7 +291,7 @@ class GuiderActivity: BaseActivity() {
                                         composition = lottie,
                                         iterations = LottieConstants.IterateForever,
                                         modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
+                                        contentScale = ContentScale.FillWidth
                                     )
                                     Spacer(
                                         modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(85.dp)
