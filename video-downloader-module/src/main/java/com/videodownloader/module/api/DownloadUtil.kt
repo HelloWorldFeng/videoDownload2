@@ -12,6 +12,27 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import java.io.File
 import java.net.URI
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.spec.IvParameterSpec
+
+/**
+ * M3U8加密信息数据类
+ */
+data class M3U8EncryptionInfo(
+    val method: String = "",
+    val keyUri: String = "",
+    val iv: String = ""
+)
+
+/**
+ * TS分片信息数据类
+ */
+data class TSSegmentInfo(
+    val url: String,
+    val duration: Float = 0f,
+    val encryptionInfo: M3U8EncryptionInfo? = null
+)
 
 object DownloadUtil {
 
@@ -260,12 +281,12 @@ object DownloadUtil {
             val m3u8Content = downloadM3U8Playlist(videoInfo.url, videoInfo)
             Log.d(TAG, "M3U8播放列表内容长度: ${m3u8Content.length}字符")
             
-            // 第二步：解析TS分片URL列表
+            // 第二步：解析TS分片信息列表
             progressCallback?.invoke(10f, 0L, "解析播放列表...")
-            val tsUrls = parseM3U8Content(m3u8Content, videoInfo.url, videoInfo)
-            Log.d(TAG, "步骤2: 解析到${tsUrls.size}个TS分片")
+            val tsSegments = parseM3U8Content(m3u8Content, videoInfo.url, videoInfo)
+            Log.d(TAG, "步骤2: 解析到${tsSegments.size}个TS分片")
             
-            if (tsUrls.isEmpty()) {
+            if (tsSegments.isEmpty()) {
                 throw Exception("M3U8播放列表中未找到TS分片")
             }
             
@@ -278,20 +299,20 @@ object DownloadUtil {
             }
             
             // 第四步：下载所有TS分片
-            Log.d(TAG, "步骤3: 开始下载${tsUrls.size}个TS分片")
+            Log.d(TAG, "步骤3: 开始下载${tsSegments.size}个TS分片")
             val tsFiles = mutableListOf<File>()
             val startTime = System.currentTimeMillis()
             
-            tsUrls.forEachIndexed { index, tsUrl ->
+            tsSegments.forEachIndexed { index, tsSegment ->
                 val tsFile = File(tempDir, "segment_${index.toString().padStart(4, '0')}.ts")
-                Log.d(TAG, "下载TS分片 ${index + 1}/${tsUrls.size}: $tsUrl")
+                Log.d(TAG, "下载TS分片 ${index + 1}/${tsSegments.size}: ${tsSegment.url}")
                 
                 try {
-                    downloadTSSegment(tsUrl, tsFile, videoInfo)
+                    downloadTSSegment(tsSegment, tsFile, videoInfo)
                     tsFiles.add(tsFile)
                     
                     // 更新进度（下载阶段占80%）
-                    val downloadProgress = 10f + ((index + 1) * 70f) / tsUrls.size
+                    val downloadProgress = 10f + ((index + 1) * 70f) / tsSegments.size
                     
                     // 计算下载速度
                     val elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000.0
@@ -304,9 +325,9 @@ object DownloadUtil {
                     Log.v(TAG, "TS分片下载完成: segment_${index.toString().padStart(4, '0')}.ts, 大小: ${tsFile.length()}字节")
                     
                     // 调用进度回调
-                    progressCallback?.invoke(downloadProgress, avgSpeed, "下载分片 ${index + 1}/${tsUrls.size}")
+                    progressCallback?.invoke(downloadProgress, avgSpeed, "下载分片 ${index + 1}/${tsSegments.size}")
                 } catch (e: Exception) {
-                    Log.e(TAG, "下载TS分片失败: index=$index, url=$tsUrl, error=${e.message}")
+                    Log.e(TAG, "下载TS分片失败: index=$index, url=${tsSegment.url}, error=${e.message}")
                     throw Exception("TS分片下载失败: ${e.message}")
                 }
             }
@@ -401,10 +422,11 @@ object DownloadUtil {
     }
     
     /**
-     * 解析M3U8内容，提取TS分片URL列表
+     * 解析M3U8内容，提取TS分片信息列表
      * 支持主播放列表(Master Playlist)和媒体播放列表(Media Playlist)
+     * 支持AES-128加密的TS分片
      */
-    private suspend fun parseM3U8Content(content: String, baseUrl: String, videoInfo: VideoInfo? = null): List<String> {
+    private suspend fun parseM3U8Content(content: String, baseUrl: String, videoInfo: VideoInfo? = null): List<TSSegmentInfo> {
         Log.d(TAG, "解析M3U8内容，基础URL: $baseUrl")
         val lines = content.split("\n")
         val baseUri = java.net.URI(baseUrl)
@@ -452,32 +474,189 @@ object DownloadUtil {
         } else {
             // 这是媒体播放列表，直接解析TS分片
             Log.d(TAG, "检测到媒体播放列表(Media Playlist)，开始解析TS分片")
-            val tsUrls = mutableListOf<String>()
+            val tsSegments = mutableListOf<TSSegmentInfo>()
+            var currentEncryption: M3U8EncryptionInfo? = null
+            var currentDuration = 0f
             
-            lines.forEach { line ->
-                val trimmedLine = line.trim()
-                if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
-                    // 这是一个TS分片URL
-                    val tsUrl = if (trimmedLine.startsWith("http")) {
-                        trimmedLine
-                    } else {
-                        // 相对URL，需要与基础URL合并
-                        baseUri.resolve(trimmedLine).toString()
+            var i = 0
+            while (i < lines.size) {
+                val line = lines[i].trim()
+                
+                when {
+                    // 解析加密信息
+                    line.startsWith("#EXT-X-KEY:") -> {
+                        currentEncryption = parseEncryptionInfo(line, baseUri)
+                        Log.d(TAG, "解析到加密信息: method=${currentEncryption?.method}, keyUri=${currentEncryption?.keyUri}")
                     }
-                    tsUrls.add(tsUrl)
-                    Log.v(TAG, "解析到TS分片: $tsUrl")
+                    
+                    // 解析分片时长
+                    line.startsWith("#EXTINF:") -> {
+                        val durationStr = line.substringAfter("#EXTINF:").substringBefore(",")
+                        currentDuration = durationStr.toFloatOrNull() ?: 0f
+                    }
+                    
+                    // 解析TS分片URL
+                    line.isNotEmpty() && !line.startsWith("#") -> {
+                        val tsUrl = if (line.startsWith("http")) {
+                            line
+                        } else {
+                            // 相对URL，需要与基础URL合并
+                            baseUri.resolve(line).toString()
+                        }
+                        
+                        val segmentInfo = TSSegmentInfo(
+                            url = tsUrl,
+                            duration = currentDuration,
+                            encryptionInfo = currentEncryption
+                        )
+                        
+                        tsSegments.add(segmentInfo)
+                        Log.v(TAG, "解析到TS分片: url=$tsUrl, duration=$currentDuration, encrypted=${currentEncryption != null}")
+                        
+                        // 重置当前时长
+                        currentDuration = 0f
+                    }
                 }
+                i++
             }
             
-            Log.d(TAG, "媒体播放列表解析完成，共${tsUrls.size}个TS分片")
-            return tsUrls
+            Log.d(TAG, "媒体播放列表解析完成，共${tsSegments.size}个TS分片，其中${tsSegments.count { it.encryptionInfo != null }}个加密分片")
+            return tsSegments
         }
     }
     
     /**
-     * 下载单个TS分片
+     * 解析#EXT-X-KEY标签中的加密信息
      */
-    private suspend fun downloadTSSegment(url: String, outputFile: File, videoInfo: VideoInfo? = null) {
+    private fun parseEncryptionInfo(keyLine: String, baseUri: java.net.URI): M3U8EncryptionInfo? {
+        try {
+            // 解析格式: #EXT-X-KEY:METHOD=AES-128,URI="https://...",IV=0x...
+            val keyInfo = keyLine.substringAfter("#EXT-X-KEY:")
+            val attributes = mutableMapOf<String, String>()
+            
+            // 解析属性
+            val regex = "(\\w+)=(?:\"([^\"]*)\"|([^,]*))".toRegex()
+            regex.findAll(keyInfo).forEach { match ->
+                val key = match.groupValues[1]
+                val value = match.groupValues[2].ifEmpty { match.groupValues[3] }
+                attributes[key] = value
+            }
+            
+            val method = attributes["METHOD"] ?: ""
+            val keyUri = attributes["URI"] ?: ""
+            val iv = attributes["IV"] ?: ""
+            
+            // 如果没有加密方法，返回null
+            if (method.isEmpty() || method == "NONE") {
+                return null
+            }
+            
+            // 构建完整的密钥URI
+            val fullKeyUri = if (keyUri.startsWith("http")) {
+                keyUri
+            } else {
+                baseUri.resolve(keyUri).toString()
+            }
+            
+            Log.d(TAG, "解析加密信息成功: method=$method, keyUri=$fullKeyUri, iv=$iv")
+            return M3U8EncryptionInfo(method, fullKeyUri, iv)
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "解析加密信息失败: $keyLine, error=${e.message}")
+            return null
+        }
+    }
+    
+    /**
+     * 下载加密密钥
+     */
+    private suspend fun downloadEncryptionKey(keyUri: String, videoInfo: VideoInfo? = null): ByteArray {
+        Log.d(TAG, "下载加密密钥: $keyUri")
+        
+        val headers = mutableMapOf<String, String>()
+        
+        if (videoInfo != null) {
+            if (videoInfo.httpHeaders.isNotEmpty()) {
+                headers.putAll(videoInfo.httpHeaders)
+            } else {
+                headers.putAll(addHeadersForUrl(keyUri))
+            }
+            
+            if (videoInfo.userAgent.isNotEmpty()) {
+                headers["User-Agent"] = videoInfo.userAgent
+            }
+            if (videoInfo.referer.isNotEmpty()) {
+                headers["Referer"] = videoInfo.referer
+            }
+            if (videoInfo.cookies.isNotEmpty()) {
+                headers["Cookie"] = videoInfo.cookies
+            }
+        } else {
+            headers.putAll(addHeadersForUrl(keyUri))
+        }
+        
+        val connection = java.net.URL(keyUri).openConnection()
+        connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
+        connection.readTimeout = NETWORK_TIMEOUT_MS.toInt()
+        
+        setConnectionHeaders(connection, headers)
+        
+        return connection.getInputStream().use { it.readBytes() }
+    }
+    
+    /**
+     * AES-128解密TS分片数据
+     */
+    private fun decryptTSData(encryptedData: ByteArray, key: ByteArray, iv: ByteArray): ByteArray {
+        try {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val secretKey = SecretKeySpec(key, "AES")
+            val ivSpec = IvParameterSpec(iv)
+            
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+            return cipher.doFinal(encryptedData)
+        } catch (e: Exception) {
+            Log.e(TAG, "AES解密失败: ${e.message}", e)
+            throw Exception("TS分片解密失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 解析IV值（支持十六进制格式）
+     */
+    private fun parseIV(ivString: String, segmentIndex: Int): ByteArray {
+        return when {
+            ivString.startsWith("0x") || ivString.startsWith("0X") -> {
+                // 十六进制格式
+                val hexString = ivString.substring(2)
+                val bytes = ByteArray(16) // AES-128需要16字节IV
+                val hexBytes = hexString.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                System.arraycopy(hexBytes, 0, bytes, 0, minOf(hexBytes.size, 16))
+                bytes
+            }
+            ivString.isEmpty() -> {
+                // 如果没有指定IV，使用分片索引作为IV
+                val bytes = ByteArray(16)
+                val indexBytes = segmentIndex.toString().toByteArray()
+                System.arraycopy(indexBytes, 0, bytes, 0, minOf(indexBytes.size, 16))
+                bytes
+            }
+            else -> {
+                // 直接使用字符串的字节
+                val bytes = ByteArray(16)
+                val stringBytes = ivString.toByteArray()
+                System.arraycopy(stringBytes, 0, bytes, 0, minOf(stringBytes.size, 16))
+                bytes
+            }
+        }
+    }
+    
+    /**
+     * 下载单个TS分片（支持加密）
+     */
+    private suspend fun downloadTSSegment(tsSegment: TSSegmentInfo, outputFile: File, videoInfo: VideoInfo? = null) {
+        Log.v(TAG, "下载TS分片: ${tsSegment.url} -> ${outputFile.name}, 加密: ${tsSegment.encryptionInfo != null}")
+        
         // 使用VideoInfo中的HTTP上下文信息
         val headers = mutableMapOf<String, String>()
         
@@ -488,7 +667,7 @@ object DownloadUtil {
                 Log.v(TAG, "使用VideoInfo中的HTTP头: ${videoInfo.httpHeaders.size}个")
             } else {
                 // 如果VideoInfo中没有HTTP头信息，则使用默认的
-                headers.putAll(addHeadersForUrl(url))
+                headers.putAll(addHeadersForUrl(tsSegment.url))
                 Log.v(TAG, "使用默认HTTP头: ${headers.size}个")
             }
             
@@ -504,25 +683,46 @@ object DownloadUtil {
             }
         } else {
             // 如果没有VideoInfo，使用默认请求头
-            headers.putAll(addHeadersForUrl(url))
+            headers.putAll(addHeadersForUrl(tsSegment.url))
         }
         
         Log.v(TAG, "TS分片最终请求头数量: ${headers.size}")
         
-        val connection = java.net.URL(url).openConnection()
+        val connection = java.net.URL(tsSegment.url).openConnection()
         connection.connectTimeout = NETWORK_TIMEOUT_MS.toInt()
         connection.readTimeout = NETWORK_TIMEOUT_MS.toInt()
         
         // 设置请求头以避免403错误
         setConnectionHeaders(connection, headers)
         
-        connection.getInputStream().use { input ->
-            outputFile.outputStream().use { output ->
-                input.copyTo(output, BUFFER_SIZE)
-            }
+        // 下载TS分片数据
+        val tsData = connection.getInputStream().use { it.readBytes() }
+        
+        // 如果分片是加密的，需要解密
+        val finalData = if (tsSegment.encryptionInfo != null && tsSegment.encryptionInfo.method == "AES-128") {
+            Log.d(TAG, "TS分片已加密，开始解密处理")
+            
+            // 下载密钥
+            val key = downloadEncryptionKey(tsSegment.encryptionInfo.keyUri, videoInfo)
+            Log.d(TAG, "密钥下载完成，长度: ${key.size}字节")
+            
+            // 解析IV
+            val segmentIndex = outputFile.nameWithoutExtension.substringAfterLast("_").toIntOrNull() ?: 0
+            val iv = parseIV(tsSegment.encryptionInfo.iv, segmentIndex)
+            Log.d(TAG, "IV解析完成，长度: ${iv.size}字节")
+            
+            // 解密数据
+            decryptTSData(tsData, key, iv)
+        } else {
+            tsData
         }
         
-        Log.v(TAG, "TS分片下载完成: ${outputFile.name}, 大小: ${outputFile.length()}字节")
+        // 写入解密后的数据
+        outputFile.outputStream().use { output ->
+            output.write(finalData)
+        }
+        
+        Log.v(TAG, "TS分片下载完成: ${outputFile.name}, 原始大小: ${tsData.size}字节, 最终大小: ${finalData.size}字节")
     }
     
     /**
