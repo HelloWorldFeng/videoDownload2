@@ -464,7 +464,7 @@ private fun CategoryVideoSection(
                 Row(
                     modifier = Modifier.singClick{
                         //将category.id传入VideoDetailScreen
-                        navigator.push()
+                        navigator.push(VideoDetailScreen(categoryId = category.id, categoryName = category.categoryName))
                     }
                 ) {
                     Text(
