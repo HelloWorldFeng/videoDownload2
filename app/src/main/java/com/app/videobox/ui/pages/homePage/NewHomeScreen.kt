@@ -457,6 +457,25 @@ private fun CategoryVideoSection(
                     fontSize = 16.sp,
                     style = MaterialTheme.typography.headlineSmall
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                //more分类的详细内容
+                Row(
+                    modifier = Modifier.singClick{
+                        //将category.id传入VideoDetailScreen
+                        navigator.push()
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.more),
+                        color = Color.White
+                    )
+                    AsyncImageImpl(
+                        modifier = Modifier.size(14.dp),
+                        model = R.drawable.icon_arrow_right
+                    )
+                }
             }
 
         }

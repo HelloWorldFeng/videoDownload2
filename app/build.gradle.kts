@@ -203,4 +203,8 @@ dependencies {
     implementation("com.google.android.play:review:2.0.2")
     // For Kotlin users also add the Kotlin extensions library for Play In-App Review:
     implementation("com.google.android.play:review-ktx:2.0.2")
+
+    implementation("com.google.ads.mediation:applovin:13.3.1.1")
+    implementation("com.google.ads.mediation:inmobi:10.8.7.0")
+    implementation("com.google.ads.mediation:vungle:7.5.1.0")
 }

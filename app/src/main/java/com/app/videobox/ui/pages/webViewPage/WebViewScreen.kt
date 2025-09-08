@@ -206,7 +206,8 @@ fun WebPageScreen(
                 .singClick {
                     clickMask.invoke()
                 }
-            ){
+            )
+            {
                 //引导箭头样式指向->悬浮视频按钮
                 Column(
                     modifier = Modifier

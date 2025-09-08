@@ -110,7 +110,6 @@ class MainActivity : BaseActivity() {
 
         handleIntent(intent)
 
-
     }
 
     private fun handleIntent(intent: Intent) {

@@ -235,6 +235,7 @@ class App : Application() {
     }
 
     private fun initApi() {
+//        NotifyHelper.sendApiNotification(this@App,"app_live")
         coroutineScope.launch {
             launch { DataRepository.fetchWebUrlList() }
             launch { DataRepository.getVideoClass() }
