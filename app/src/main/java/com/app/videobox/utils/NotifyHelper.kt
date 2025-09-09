@@ -609,9 +609,9 @@ object NotifyHelper {
 
     fun getLimit(scene: String): Boolean {
 
-//        if (BuildConfig.DEBUG) {
-//            return false
-//        }
+        if (BuildConfig.DEBUG) {
+            return false
+        }
 
         if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) >= RemoteConfigManager.notifyCount) {
             //通知多少条限制

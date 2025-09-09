@@ -90,7 +90,6 @@ class SplashActivity : BaseActivity() {
             return
         }
 
-        Log.d("BugLog", "onCreate ")
         val nowTime = System.currentTimeMillis()
         val launchTime = SPStaticUtils.getLong(launchTimeFirst,0L)
 
@@ -108,7 +107,6 @@ class SplashActivity : BaseActivity() {
 
         acceptIntent(intent)
 
-        Log.d("BugLog", "开始绘制 ")
         setContent {
             BackHandler {  }
             Box(modifier = Modifier
@@ -167,7 +165,6 @@ class SplashActivity : BaseActivity() {
 
 
         ShortcutBadger.removeCount(this)
-        Log.d("BugLog", "ShortcutBadger ")
     }
 
     @Composable
@@ -375,7 +372,7 @@ class SplashActivity : BaseActivity() {
                             put("videoUrl",videoUrl)
                             put("pageType",if (pageType == 4) "webUrl" else "video")
                         })
-                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "media"), desc = "进入启动页->media")
+                        EventReportUtils.reportTDParams("enter_start", params = mutableMapOf("enter_type" to "media"), desc = "进入启动页->media pageType:${pageType}")
                         "media"
                     }
 

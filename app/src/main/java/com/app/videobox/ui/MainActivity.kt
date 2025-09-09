@@ -112,13 +112,20 @@ class MainActivity : BaseActivity() {
 
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
     private fun handleIntent(intent: Intent) {
         // 处理内部 Intent
         val flag = intent.getStringExtra(MAIN_OPERATE)
+        val mediaUrl = intent.getStringExtra("videoUrl")
+        Log.d("BugLog", "进入首页的跳转:${flag} ")
         when (flag) {
             //跳网页
             MAIN_SHOW_WEB -> {
-                intent.getStringExtra("videoUrl")?.let {
+                mediaUrl?.let {
                     if (it.startsWith("http")) {
                         WebViewActivity.start(context = this,it)
 
@@ -130,13 +137,8 @@ class MainActivity : BaseActivity() {
             }
 
             MAIN_SHOW_VIDEO -> {
-                intent.getStringExtra("videoUrl")?.let {
+                mediaUrl?.let {
                     val title = intent.getStringExtra("videoTitle")?:"title"
-//                    VlcPlayerActivity.start(
-//                        context = this,
-//                        videoPath = it,
-//                        videoTitle = title
-//                    )
                     VlcPlayActivity.start(
                         context = this,
                         videoUrl = it,
