@@ -58,6 +58,10 @@
             </intent-filter>
         </service>
 
+        <activity android:name=".ui.pages.homePage.VideoDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+
         <activity
             android:name=".ui.GuiderActivity"
             android:exported="true"

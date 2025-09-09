@@ -81,6 +81,11 @@
           "clickCount": 3,
           "showBtn": true
         },{
+          "adScene": "i_more_click",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
           "adScene": "i_video_download",
           "showCount": 10,
           "clickCount": 3,

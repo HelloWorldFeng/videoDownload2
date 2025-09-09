@@ -331,7 +331,9 @@ object NotifyHelper {
     }
 
     fun sendApiNotification(context: Context, scene: String){
-        EventReportUtils.reportTDParams("push_request_scene", mutableMapOf<String, Any>().apply {
+        EventReportUtils.reportTDParams(
+            "push_request_scene",
+            mutableMapOf<String, Any>().apply {
             put("push_scene", scene)
 
         }, desc = "触发通知的场景:${scene}")
@@ -342,15 +344,15 @@ object NotifyHelper {
             try {
                 //获取接口通知内容
                 val result = DataRepository.GetSceneEventPushMessageData()
-                result?.let {
+                if (result != null){
                     val notificationCount = (SPStaticUtils.getInt(NOTIFY_COUNT,0) + 1) % RemoteConfigManager.groupNotify
                     val notificationId = notificationIdList[notificationCount]
 
-                    val imgUrl = it.model.imageUrl
-                    val videoUrl = it.model.videoUrl
-                    val title = it.model.title
-                    val body = it.model.content
-                    val pageType = it.model.pageType
+                    val imgUrl = result.model.imageUrl
+                    val videoUrl = result.model.videoUrl
+                    val title = result.model.title
+                    val body = result.model.content
+                    val pageType = result.model.pageType
                     //发送通知
                     sendContentNotification(
                         context = context,
@@ -361,8 +363,15 @@ object NotifyHelper {
                         videoUrl = videoUrl,
                         scene = scene,
                         pageType = pageType
-
                     )
+                }else{
+                    EventReportUtils.reportTDParams(
+                        "push_request_fail",
+                        mutableMapOf(
+                            "push_scene" to scene,
+                            "err_reason" to "api json null"
+                        ),
+                        desc = "通知发送失败：${scene} 触发了限制条件")
                 }
 
             }catch (e: Exception){
@@ -387,12 +396,6 @@ object NotifyHelper {
         scene: String,
         pageType: Int
     ){
-        EventReportUtils.reportTDParams(
-            "push_request_scene",
-            mutableMapOf(
-                "push_scene" to scene,
-            ),
-            desc = "触发通知的场景（请求）：${scene}")
 
         // 使用自定义 PendingIntent
         val customIntent = Intent(context, SplashActivity::class.java).apply {
@@ -606,9 +609,9 @@ object NotifyHelper {
 
     fun getLimit(scene: String): Boolean {
 
-        if (BuildConfig.DEBUG) {
-            return false
-        }
+//        if (BuildConfig.DEBUG) {
+//            return false
+//        }
 
         if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) >= RemoteConfigManager.notifyCount) {
             //通知多少条限制

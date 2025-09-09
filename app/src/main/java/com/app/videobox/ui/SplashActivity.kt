@@ -56,6 +56,7 @@ import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyDialog
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.NotifyHelper
+import com.facebook.FacebookSdk
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
@@ -390,7 +391,6 @@ class SplashActivity : BaseActivity() {
                 }
             }
         }
-
     }
 
 

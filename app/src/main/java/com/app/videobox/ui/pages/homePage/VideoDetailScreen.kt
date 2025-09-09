@@ -1,6 +1,9 @@
 package com.app.videobox.ui.pages.homePage
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,25 +18,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.compose.collectAsLazyPagingItems
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
-import com.app.videobox.ad.AdManager
-import com.app.videobox.ad.base.AD_TYPE_INT
+import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
-import com.app.videobox.utils.EventReportUtils
 
 /**
  * 视频详情页面 - 展示特定分类的所有视频
@@ -42,14 +40,30 @@ import com.app.videobox.utils.EventReportUtils
  * @param categoryId 视频分类ID
  * @param categoryName 视频分类名称
  */
-class VideoDetailScreen(
-    private val categoryId: Int,
-    private val categoryName: String
-) : Screen {
+class VideoDetailActivity() : BaseActivity() {
+
+    companion object{
+        fun start(context: Context, categoryId: Int,categoryName: String) {
+            val intent = Intent(context, VideoDetailActivity::class.java).apply {
+                putExtra("categoryId",categoryId)
+                putExtra("categoryName",categoryName)
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val categoryId = intent.getIntExtra("categoryId",0)
+        val categoryName = intent.getStringExtra("categoryName")?:"title"
+
+        setContent {
+            Content(categoryId,categoryName)
+        }
+    }
 
     @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
+    fun Content(categoryId: Int, categoryName: String) {
         val context = LocalContext.current as Activity
         
         // 创建分页器获取视频数据
@@ -82,7 +96,7 @@ class VideoDetailScreen(
                 TopNavigationBar(
                     title = categoryName,
                     onBackClick = {
-                        navigator.pop()
+                        finish()
                     }
                 )
                 
@@ -101,25 +115,9 @@ class VideoDetailScreen(
                             GridVideoCard(
                                 video = video,
                                 onClick = {
-                                    AdManager.getFullAdFromPool(
-                                        context,
-                                        adType = AD_TYPE_INT,
-                                        adScene = "i_category_video_click",
-                                        closeAction = {
-                                            // 点击视频跳转到WebView页面播放
-                                            WebViewActivity.start(context = context, video.videoURL)
-                                        }
-                                    )
-                                    
-                                    EventReportUtils.reportTDParams(
-                                        "browser_click",
-                                        params = mutableMapOf(
-                                            "action" to "category_detail",
-                                            "webname" to video.videoURL,
-                                            "category_id" to categoryId.toString()
-                                        ),
-                                        desc = "分类详情页视频点击"
-                                    )
+                                    // 点击视频跳转到WebView页面播放
+                                    WebViewActivity.start(context = context, video.videoURL)
+
                                 }
                             )
                         }
@@ -178,7 +176,7 @@ private fun GridVideoCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .aspectRatio(0.632f)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 1f)

@@ -4,6 +4,7 @@ import com.app.videobox.App
 import com.app.videobox.NOTIFY_COUNT
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
+import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.NotifyHelper
 import com.app.videobox.utils.NotifyHelper.notificationIdList
 import com.blankj.utilcode.util.SPStaticUtils
@@ -27,6 +28,13 @@ class FCMService: FirebaseMessagingService() {
 
                 val notificationCount = (SPStaticUtils.getInt(NOTIFY_COUNT,0) + 1) % RemoteConfigManager.groupNotify
                 val notificationId = notificationIdList[notificationCount]
+                EventReportUtils.reportTDParams(
+                    "push_request_scene",
+                    mutableMapOf(
+                        "push_scene" to "onMessageReceived",
+                    ),
+                    desc = "触发通知的场景（请求）：onMessageReceived")
+
                 NotifyHelper.sendContentNotification(
                     context = this,
                     notificationId = notificationId,
