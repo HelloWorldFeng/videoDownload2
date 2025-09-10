@@ -96,7 +96,6 @@ class PrivacyActivity : BaseActivity() {
                 Spacer(modifier = Modifier.height(50.dp))
                 Box(
                     modifier = Modifier
-
                         .fillMaxWidth(0.9f)
                         .height(57.dp)
                         .background(brush = gradientColor, shape = RoundedCornerShape(35.dp))

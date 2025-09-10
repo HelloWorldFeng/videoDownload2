@@ -520,7 +520,7 @@ private fun CategoryVideoSection(
                         AdManager.getFullAdFromPool(
                             context,
                             adType = AD_TYPE_INT,
-                            adScene = "i_more_click",
+                            adScene = "i_recommend_more",
                             closeAction = {
                                 //将category.id传入VideoDetailScreen
                                 VideoDetailActivity.start(

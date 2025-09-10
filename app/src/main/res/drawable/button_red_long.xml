@@ -1,0 +1,4 @@
+<animated-image xmlns:android="http://schemas.android.com/apk/res/android"
+    android:autoStart="true"
+    android:autoMirrored="true"
+    android:src="@drawable/button_red_long_gif" />

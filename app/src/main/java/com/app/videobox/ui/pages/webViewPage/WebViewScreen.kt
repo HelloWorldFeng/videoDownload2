@@ -758,6 +758,11 @@ private fun FloatingVideoButton(
 
                         viewModel.postAction(WebViewModel.Action.ShowEmptyResolveDialog)
 
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_video_download_none",
+                            closeAction = {})
                         EventReportUtils.reportTDParams(
                             "browser_download_click",
                             params = mutableMapOf(

@@ -55,6 +55,11 @@
           "showCount": 30,
           "clickCount": 10,
           "showBtn": true
+        },{
+          "adScene": "n_recommend_more",
+          "showCount": 30,
+          "clickCount": 10,
+          "showBtn": true
         }
       ],
 
@@ -81,12 +86,17 @@
           "clickCount": 3,
           "showBtn": true
         },{
-          "adScene": "i_more_click",
+          "adScene": "i_recommend_more",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true
         },{
           "adScene": "i_video_download",
+          "showCount": 10,
+          "clickCount": 3,
+          "showBtn": true
+        },{
+          "adScene": "i_video_download_none",
           "showCount": 10,
           "clickCount": 3,
           "showBtn": true

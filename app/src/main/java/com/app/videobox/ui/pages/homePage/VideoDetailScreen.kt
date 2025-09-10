@@ -28,6 +28,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
@@ -99,7 +100,13 @@ class VideoDetailActivity() : BaseActivity() {
                         finish()
                     }
                 )
-                
+                Spacer(Modifier.height(10.dp))
+                NativeAdsView(
+                    modifier = Modifier
+                        .fillMaxWidth(1f),
+                    adScene = "n_guider"
+                )
+                Spacer(Modifier.height(10.dp))
                 // 视频网格列表
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),

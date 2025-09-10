@@ -26,20 +26,11 @@
             android:scaleType="centerCrop"/>
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="3"
+            android:layout_height="match_parent"
             android:layout_marginStart="15dp"
             android:orientation="vertical">
-            <TextView
-                android:id="@+id/title_tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:textSize="15sp"
-                android:textColor="#21212B"
-                android:maxLines="1"
-                android:visibility="gone"
-                android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/content_tv"
@@ -51,6 +42,14 @@
                 android:ellipsize="end"/>
         </LinearLayout>
 
+        <ImageView
+            android:id="@+id/button_iv"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:src="@drawable/button_red_short"
+            />
     </LinearLayout>
 
 </RelativeLayout>
