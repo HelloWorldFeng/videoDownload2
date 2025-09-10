@@ -1,3 +1,34 @@
+## R8代码混淆JaCoCo缺失类问题修复 (2025-01-17)
+
+### 问题描述
+- **构建错误**: Release构建时R8报告缺失类 `java.lang.instrument.IllegalClassFormatException`
+- **错误来源**: JaCoCo测试覆盖率工具在代码混淆过程中引用了不存在的类
+- **影响范围**: 仅影响Release构建，Debug构建正常
+
+### 解决方案
+1. **查看自动生成的规则**: 检查 `/app/build/outputs/mapping/configRelease/missing_rules.txt`
+2. **添加ProGuard规则**: 在 `proguard-rules.pro` 中添加 `-dontwarn` 规则
+3. **重新构建验证**: 执行 `./gradlew clean assembleRelease` 确认修复
+
+### 技术实现
+```proguard
+# === JaCoCo测试覆盖率工具相关规则 ===
+# 解决R8代码混淆时JaCoCo相关的缺失类警告
+-dontwarn java.lang.instrument.IllegalClassFormatException
+```
+
+### 核心要点
+- **自动化诊断**: Android Gradle插件会自动生成缺失规则文件
+- **精确修复**: 只需添加 `-dontwarn` 规则，不影响其他混淆逻辑
+- **生产安全**: 该规则仅忽略警告，不会影响应用功能和安全性
+- **版本兼容**: 适用于所有使用JaCoCo和R8的Android项目
+
+### 验证结果
+- **构建成功**: Release构建通过，无缺失类错误
+- **功能正常**: 所有应用功能保持正常，混淆效果不受影响
+
+---
+
 ## WebView白屏问题增强修复方案 (2025-01-17)
 
 ### 问题描述
