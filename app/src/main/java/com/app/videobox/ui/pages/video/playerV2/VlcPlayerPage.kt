@@ -843,6 +843,7 @@ private fun MediaStreamOrchestrator(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .navigationBarsPadding()
             .pointerInput(uiElementsVisible, interfaceLockState) {
                 detectTapGestures(
                     onTap = {
