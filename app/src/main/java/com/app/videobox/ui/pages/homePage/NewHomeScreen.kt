@@ -121,6 +121,11 @@ class NewHomeScreen : Screen {
         var showFeedbackDialog by remember { mutableStateOf(false) }
         var showFeedbackOkDialog by remember { mutableStateOf(false) }
 
+        if (SPStaticUtils.getBoolean(SHOW_RATE,true)){
+            showRateDialog = true
+            SPStaticUtils.put(SHOW_RATE,false)
+        }
+
         BackHandler {
             val currentTime = System.currentTimeMillis()
             val lastTimestamp = SPStaticUtils.getLong(lastExitTimestamp,0L)
@@ -180,10 +185,6 @@ class NewHomeScreen : Screen {
                         .padding(bottom = 30.dp),
                     defaultIndex = SELECT_HOME,
                     onClickHome = {
-                        if (mSelectIndex != SELECT_HOME && SPStaticUtils.getBoolean(SHOW_RATE,true)){
-                            showRateDialog = true
-                            SPStaticUtils.put(SHOW_RATE,false)
-                        }
                         mSelectIndex = SELECT_HOME
                         // 使用HomeViewModel检查并刷新数据
                         homeViewModel.checkAndRefreshDataIfNeeded()

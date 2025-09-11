@@ -104,7 +104,7 @@ class VideoDetailActivity() : BaseActivity() {
                 NativeAdsView(
                     modifier = Modifier
                         .fillMaxWidth(1f),
-                    adScene = "n_guider"
+                    adScene = "n_recommend_more"
                 )
                 Spacer(Modifier.height(10.dp))
                 // 视频网格列表
