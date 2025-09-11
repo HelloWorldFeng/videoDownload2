@@ -32,11 +32,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.R
+import com.app.videobox.ui.widgets.AsyncImageImpl
+import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 
 @Composable
@@ -45,7 +48,11 @@ fun FeedBackDialog(
     onConfirm: (String) -> Unit = {} // 确认按钮回调，传递选中的反馈类型
 ) {
     Dialog(
-        onDismissRequest = onDismissRequest
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        )
     ) {
         LaunchedEffect(Unit) {
             EventReportUtils.reportTDParams(
@@ -62,6 +69,16 @@ fun FeedBackDialog(
                 .padding(horizontal = 24.dp, vertical = 30.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            AsyncImageImpl(
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .size(24.dp)
+                    .singClick{
+                        onDismissRequest.invoke()
+                    },
+                model = R.drawable.icon_close,
+            )
+
             val lottie by rememberLottieComposition(LottieCompositionSpec.Asset("bad_feedback.json"))
             LottieAnimation(
                 composition = lottie,

@@ -578,7 +578,9 @@ object NotifyHelper {
         return RemoteViews(context.packageName, R.layout.layout_notify_custom).apply {
             setTextViewText(R.id.title_tv, title)
             setTextViewText(R.id.content_tv, content)
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                setImageViewResource(R.id.ok_btn,R.drawable.button_red_short)
+            }
             // 设置图片（如果有）
             bitmap?.let {
                 setImageViewBitmap(R.id.logo_iv, it)
@@ -598,7 +600,10 @@ object NotifyHelper {
         return RemoteViews(context.packageName, R.layout.layout_notify_custom_big).apply {
             setTextViewText(R.id.title_tv, title)
             setTextViewText(R.id.content_tv, content)
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                setImageViewResource(R.id.ok_btn,R.drawable.button_red_long)
+                setImageViewResource(R.id.iv_close,R.drawable.icon_notify_close)
+            }
             // 设置图片（如果有）
             bitmap?.let {
                 setImageViewBitmap(R.id.img_iv, it)

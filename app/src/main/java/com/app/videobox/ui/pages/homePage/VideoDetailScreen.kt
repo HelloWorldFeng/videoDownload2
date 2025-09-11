@@ -28,7 +28,9 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.app.videobox.R
+import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
+import com.app.videobox.ad.base.AD_TYPE_INT
 import com.app.videobox.ui.base.BaseActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
@@ -107,26 +109,55 @@ class VideoDetailActivity() : BaseActivity() {
                     adScene = "n_recommend_more"
                 )
                 Spacer(Modifier.height(10.dp))
-                // 视频网格列表
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(vertical = 16.dp)
-                ) {
-                    items(lazyPagingItems.itemCount) { index ->
-                        lazyPagingItems[index]?.let { video ->
-                            GridVideoCard(
-                                video = video,
-                                onClick = {
-                                    // 点击视频跳转到WebView页面播放
-                                    WebViewActivity.start(context = context, video.videoURL)
-
+                
+                // 根据数据状态显示不同的内容
+                when {
+                    // 数据加载中或为空时显示占位卡片
+                    lazyPagingItems.itemCount == 0 -> {
+                        // 数据为空时展示8个EmptyCard视图作为占位符
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            // 显示8个空白占位卡片，提供良好的加载体验
+                            items(8) { index ->
+                                EmptyCard()
+                            }
+                        }
+                    }
+                    // 有数据时显示实际的视频列表
+                    else -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            items(lazyPagingItems.itemCount) { index ->
+                                lazyPagingItems[index]?.let { video ->
+                                    GridVideoCard(
+                                        video = video,
+                                        onClick = {
+                                            AdManager.getFullAdFromPool(
+                                                context,
+                                                adType = AD_TYPE_INT,
+                                                adScene = "i_recommend_click",
+                                                closeAction = {
+                                                    // 点击视频跳转到WebView页面播放
+                                                    WebViewActivity.start(context = context,video.videoURL)
+                                                })
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -171,6 +202,46 @@ private fun TopNavigationBar(
     }
 }
 
+@Composable
+private fun EmptyCard(){
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.632f)
+            .clickable {  },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    )
+    {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // 视频缩略图
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        color = Color(0xFF2E2F30),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+            ) {
+                AsyncImageImpl(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
+                    model = R.drawable.icon_video_place,
+                    contentDescription = null,
+                    contentScale = ContentScale.Inside
+                )
+            }
+
+
+        }
+    }
+}
+
 /**
  * 网格布局中的视频卡片组件
  * 复用HorizontalVideoCard的样式，但调整为适合网格布局的尺寸
@@ -189,7 +260,8 @@ private fun GridVideoCard(
             containerColor = Color.White.copy(alpha = 1f)
         ),
         shape = RoundedCornerShape(12.dp)
-    ) {
+    )
+    {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {

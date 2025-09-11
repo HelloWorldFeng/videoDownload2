@@ -6,56 +6,55 @@
     android:layout_width="match_parent"
     android:layout_height="256dp">
 
-    <RelativeLayout
+    <ImageView
+        android:id="@+id/img_iv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:scaleType="centerCrop"
+        />
 
+    <ImageView
+        android:layout_width="43dp"
+        android:layout_height="43dp"
+        android:src="@drawable/icon_notify_play"
+        android:layout_centerInParent="true"/>
+    
+    <TextView
+        android:id="@+id/content_tv"
+        android:layout_width="155dp"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="@color/white"
+        android:maxLines="3"
+        android:ellipsize="end"
+        android:layout_marginStart="10dp"
+        android:textAlignment="textStart"
+        android:layout_centerVertical="true"
+        tools:text="New video content detected download now!New video content detected download now!New video content detected download now!"/>
 
-        <ImageView
-            android:id="@+id/img_iv"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            />
+    <ImageView
+        android:id="@+id/ok_btn"
+        android:layout_marginHorizontal="50dp"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:gravity="center"
+        tools:src="@drawable/button_red_long"
+        android:layout_marginBottom="10dp"
+        android:layout_alignParentBottom="true"
+        />
 
-        <TextView
-            android:id="@+id/content_tv"
-            android:layout_width="155dp"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textColor="@color/white"
-            android:maxLines="3"
-            android:ellipsize="end"
-            android:layout_marginStart="10dp"
-            android:textAlignment="textStart"
-            android:layout_centerVertical="true"
-            tools:text="New video content detected download now!New video content detected download now!New video content detected download now!"/>
-
-        <ImageView
-            android:id="@+id/ok_btn"
-            android:layout_marginHorizontal="50dp"
-            android:layout_width="match_parent"
-            android:layout_height="53dp"
-            android:gravity="center"
-            android:src="@drawable/button_red_long"
-            android:layout_marginBottom="10dp"
-
-            android:layout_alignParentBottom="true"
-            />
-
-        <ImageView
-
-            android:layout_marginHorizontal="50dp"
-            android:layout_width="33dp"
-            android:layout_height="33dp"
-            android:gravity="center"
-            android:src="@drawable/button_close"
-            android:layout_marginTop="20dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginStart="10dp"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            />
-    </RelativeLayout>
+    <ImageView
+        android:id="@+id/iv_close"
+        android:layout_marginHorizontal="50dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:gravity="center"
+        tools:src="@drawable/button_close"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        />
+    
 </RelativeLayout>

@@ -61,6 +61,7 @@ import com.app.videobox.App
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.SHOW_RATE
+import com.app.videobox.SHOW_RATE_COUNT
 import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AD_TYPE_INT
@@ -120,10 +121,18 @@ class NewHomeScreen : Screen {
         var showRateDialog by remember { mutableStateOf(false) }
         var showFeedbackDialog by remember { mutableStateOf(false) }
         var showFeedbackOkDialog by remember { mutableStateOf(false) }
+        val showRateCount = SPStaticUtils.getInt(SHOW_RATE_COUNT,0)
 
-        if (SPStaticUtils.getBoolean(SHOW_RATE,true)){
-            showRateDialog = true
-            SPStaticUtils.put(SHOW_RATE,false)
+
+        LaunchedEffect(Unit) {
+            if (
+                SPStaticUtils.getBoolean(SHOW_RATE,true)
+                || showRateCount <= 1
+            ){
+                showRateDialog = true
+                SPStaticUtils.put(SHOW_RATE,false)
+                SPStaticUtils.put(SHOW_RATE_COUNT,showRateCount+1)
+            }
         }
 
         BackHandler {
@@ -234,8 +243,6 @@ class NewHomeScreen : Screen {
                 },
                 onClick = {
                     showRateDialog = false
-//                    context.openGooglePlayStore()
-
                     try {
                         val manager = ReviewManagerFactory.create(context)
                         val request = manager.requestReviewFlow()

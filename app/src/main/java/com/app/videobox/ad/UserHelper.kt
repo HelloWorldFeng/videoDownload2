@@ -42,6 +42,8 @@ object UserHelper {
             //首次启动直接是新用户
             userType.put("user_type","new_user")
         }else{
+
+
             val nowTime = System.currentTimeMillis()
 
             val isSameDay = isSameDay(nowTime, firstLaunchTime)

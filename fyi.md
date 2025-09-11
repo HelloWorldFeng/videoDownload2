@@ -1,3 +1,53 @@
+## VideoDetailScreen空数据状态UI优化 (2025-01-17)
+
+### 问题描述
+- **UI逻辑缺陷**: VideoDetailScreen中存在两个重复的LazyVerticalGrid，一个用于空状态，一个用于数据展示
+- **状态判断缺失**: 缺少对lazyPagingItems数据状态的正确判断逻辑
+- **用户体验问题**: 数据加载时没有合适的占位符显示，影响用户体验
+
+### 解决方案
+1. **统一状态管理**: 使用when表达式根据数据状态显示不同内容
+2. **精确状态判断**: 通过`lazyPagingItems.itemCount == 0`判断数据是否为空
+3. **优化占位体验**: 数据为空时显示8个EmptyCard作为占位符
+
+### 技术实现
+```kotlin
+// VideoDetailScreen.kt - 优化后的状态管理
+when {
+    // 数据加载中或为空时显示占位卡片
+    lazyPagingItems.itemCount == 0 -> {
+        LazyVerticalGrid(...) {
+            // 显示8个空白占位卡片，提供良好的加载体验
+            items(8) { index ->
+                EmptyCard()
+            }
+        }
+    }
+    // 有数据时显示实际的视频列表
+    else -> {
+        LazyVerticalGrid(...) {
+            items(lazyPagingItems.itemCount) { index ->
+                lazyPagingItems[index]?.let { video ->
+                    GridVideoCard(...)
+                }
+            }
+        }
+    }
+}
+```
+
+### 核心改进
+- **消除重复代码**: 移除了重复的LazyVerticalGrid定义
+- **清晰状态逻辑**: 使用when表达式明确区分空数据和有数据状态
+- **用户体验优化**: 加载时显示占位卡片，避免空白页面
+- **代码可维护性**: 统一的布局参数管理，便于后续维护
+
+### 验证结果
+- **构建成功**: 通过完整构建测试，无编译错误
+- **逻辑正确**: 数据状态判断逻辑清晰，UI展示符合预期
+
+---
+
 ## R8代码混淆JaCoCo缺失类问题修复 (2025-01-17)
 
 ### 问题描述
