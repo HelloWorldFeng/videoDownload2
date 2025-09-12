@@ -5,6 +5,7 @@
   "notifyCount": 30,
 
   "showGuider": true,
+  "showRate": true,
 
   "outerConfigs": [
     {

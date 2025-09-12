@@ -33,6 +33,7 @@ object RemoteConfigManager {
     var limitTime = 5 * 60 * 1000L
     var notifyCount = 30
     var showGuider = true
+    var showRate = true
     private var blackUrl: UrlBlack? = null
 
     fun fetchConfig() {
@@ -98,6 +99,7 @@ object RemoteConfigManager {
             limitTime = if (result.limitTime == 0L) 5 * 60 *1000 else result.limitTime * 60 * 1000
             notifyCount = if (result.notifyCount == 0) 30 else result.notifyCount
             showGuider = result.showGuider
+            showRate = result.showRate
         }catch (e:Exception){
             e.printStackTrace()
         }

@@ -71,6 +71,7 @@ import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.urlInBrowser
 import com.app.videobox.lastExitTimestamp
 import com.app.videobox.manager.FileManager
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
@@ -126,8 +127,9 @@ class NewHomeScreen : Screen {
 
         LaunchedEffect(Unit) {
             if (
-                SPStaticUtils.getBoolean(SHOW_RATE,true)
-                || showRateCount <= 1
+                (SPStaticUtils.getBoolean(SHOW_RATE,true)
+                || showRateCount <= 1)
+                && RemoteConfigManager.showRate
             ){
                 showRateDialog = true
                 SPStaticUtils.put(SHOW_RATE,false)

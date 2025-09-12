@@ -11,6 +11,7 @@ data class AdConfig(
     var limitTime: Long = 0L,
     var notifyCount: Int = 30,
     var showGuider: Boolean,
+    var showRate: Boolean,
 
     val guiderGo: Boolean,
 
