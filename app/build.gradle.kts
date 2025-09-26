@@ -196,4 +196,15 @@ dependencies {
     implementation("com.github.megatronking.stringfog:interface:4.0.1")
     implementation("com.github.megatronking.stringfog:xor:4.0.1")
     implementation(files("libs/keeps-release-6.1.4.aar"))
+    //角标
+    implementation("me.leolin:ShortcutBadger:1.1.22@aar")
+
+    //谷歌评分
+    implementation("com.google.android.play:review:2.0.2")
+    // For Kotlin users also add the Kotlin extensions library for Play In-App Review:
+    implementation("com.google.android.play:review-ktx:2.0.2")
+
+    implementation("com.google.ads.mediation:applovin:13.3.1.1")
+    implementation("com.google.ads.mediation:inmobi:10.8.7.0")
+    implementation("com.google.ads.mediation:vungle:7.5.1.0")
 }

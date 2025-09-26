@@ -1,6 +1,7 @@
 package com.app.videobox.ui.pages.homePage
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,11 +17,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -47,12 +52,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.App
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
+import com.app.videobox.SHOW_RATE
+import com.app.videobox.SHOW_RATE_COUNT
 import com.app.videobox.ad.AdManager
 import com.app.videobox.ad.NativeAdsView
 import com.app.videobox.ad.base.AD_TYPE_INT
@@ -60,23 +69,30 @@ import com.app.videobox.ext.openGooglePlayStore
 import com.app.videobox.ext.safeStartActivity
 import com.app.videobox.ext.shareApp
 import com.app.videobox.ext.urlInBrowser
+import com.app.videobox.lastExitTimestamp
 import com.app.videobox.manager.FileManager
+import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.network.model.MediaClass
 import com.app.videobox.network.model.WebsiteItem
 import com.app.videobox.ui.LanguageActivity
+import com.app.videobox.ui.dialogs.FeedBackDialog
+import com.app.videobox.ui.dialogs.FeedBackOkDialog
+import com.app.videobox.ui.dialogs.RateDialog
 import com.app.videobox.ui.pages.FeedbackScreen
 import com.app.videobox.ui.pages.localVideoPage.FolderScreen
 import com.app.videobox.ui.pages.videoDownloadPage.DownloadListScreen
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.CoilImage
+import com.app.videobox.ui.widgets.ExitDialog
 import com.app.videobox.ui.widgets.NavBarV3
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.ui.widgets.TextTitle
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.utils.EventReportUtils
 import com.blankj.utilcode.util.SPStaticUtils
+import com.google.android.play.core.review.ReviewManagerFactory
 
 /**
  * 新主页 - 基于Figma设计稿实现
@@ -99,8 +115,45 @@ class NewHomeScreen : Screen {
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
         
-        BackHandler {  }
-        
+        // 获取HomeViewModel实例
+        val homeViewModel: HomeViewModel = viewModel()
+
+        var showExitDialog by remember { mutableStateOf(false) }
+        var showRateDialog by remember { mutableStateOf(false) }
+        var showFeedbackDialog by remember { mutableStateOf(false) }
+        var showFeedbackOkDialog by remember { mutableStateOf(false) }
+        val showRateCount = SPStaticUtils.getInt(SHOW_RATE_COUNT,0)
+
+
+        LaunchedEffect(Unit) {
+            if (
+                (SPStaticUtils.getBoolean(SHOW_RATE,true)
+                || showRateCount <= 1)
+                && RemoteConfigManager.showRate
+            ){
+                showRateDialog = true
+                SPStaticUtils.put(SHOW_RATE,false)
+                SPStaticUtils.put(SHOW_RATE_COUNT,showRateCount+1)
+            }
+        }
+
+        BackHandler {
+            val currentTime = System.currentTimeMillis()
+            val lastTimestamp = SPStaticUtils.getLong(lastExitTimestamp,0L)
+            val timeDifference = currentTime - lastTimestamp
+
+            // 10秒内只弹出一次退出弹窗，超过10秒或首次按返回键则显示弹窗
+            if (timeDifference > 10_000L || lastTimestamp == 0L) {
+                // 显示退出弹窗并记录时间戳
+                showExitDialog = true
+                SPStaticUtils.put(lastExitTimestamp,currentTime)
+            } else {
+                // 10秒内再次按返回键，直接返回桌面
+                context.moveTaskToBack(true)
+            }
+
+
+        }
         ModalNavigationDrawer(
             drawerState = drawerState,
             gesturesEnabled = true,
@@ -110,9 +163,11 @@ class NewHomeScreen : Screen {
                     scope = scope
                 )
             }
-        ) {
+        )
+        {
             Box(Modifier.fillMaxSize()) {
                 HomeScreen(
+                    homeViewModel = homeViewModel,
                     onMenuClick = {
                         scope.launch {
                             drawerState.open()
@@ -142,6 +197,8 @@ class NewHomeScreen : Screen {
                     defaultIndex = SELECT_HOME,
                     onClickHome = {
                         mSelectIndex = SELECT_HOME
+                        // 使用HomeViewModel检查并刷新数据
+                        homeViewModel.checkAndRefreshDataIfNeeded()
                     },
                     onClickDownload = {
                         AdManager.getFullAdFromPool(
@@ -166,16 +223,102 @@ class NewHomeScreen : Screen {
                     })
             }
         }
+
+        if (showExitDialog){
+            ExitDialog(
+                onDismissRequest = {
+                    showExitDialog = false
+                },
+                onClick = {
+                    context.moveTaskToBack(true)
+                    showExitDialog = false
+                },
+            )
+        }
+
+        if (showRateDialog){
+            RateDialog(
+                onDismissRequest = {
+                    showRateDialog = false
+                    showFeedbackDialog = true
+
+                },
+                onClick = {
+                    showRateDialog = false
+                    try {
+                        val manager = ReviewManagerFactory.create(context)
+                        val request = manager.requestReviewFlow()
+                        request.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // We got the ReviewInfo object
+                                val reviewInfo = task.result
+
+                                val flow = manager.launchReviewFlow(context, reviewInfo)
+                                flow.addOnFailureListener { e ->
+                                    // 评价流程启动失败
+                                    Log.e("BugLog", "启动应用内评价弹窗失败 " + e.toString())
+                                }
+                                flow.addOnSuccessListener {
+                                    // 评价流程启动成功
+                                    Log.e("BugLog", "启动应用内评价弹窗成功 ")
+                                }
+                                flow.addOnCanceledListener {
+                                    // 评价流程被取消
+                                    Log.e("BugLog", "启动应用内评价弹窗取消 ")
+                                }
+                            } else {
+                                // There was some problem, log or handle the error code.
+                                Log.d("BugLog", "Content:${task.exception?.message} ")
+                            }
+                        }
+                    }catch (e: Exception){
+                        e.printStackTrace()
+                    }
+                }
+            )
+        }
+
+        if (showFeedbackDialog) {
+            FeedBackDialog(
+                onDismissRequest = {
+                    showFeedbackDialog = false
+                },
+                onConfirm = { it->
+                    showFeedbackOkDialog = true
+                    App.coroutineScope.launch {
+                        DataRepository.feedbackApi(it)
+                    }
+                }
+            )
+        }
+
+        if (showFeedbackOkDialog){
+            FeedBackOkDialog(
+                onDismissRequest = {
+                    showFeedbackOkDialog = false
+                }
+            )
+        }
     }
 
 
 }
 
 @Composable
-fun HomeScreen(onMenuClick: () -> Unit = {}){
+fun HomeScreen(
+    homeViewModel: HomeViewModel,
+    onMenuClick: () -> Unit = {}
+){
     val navigator = LocalNavigator.currentOrThrow
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    
+    // 初始化数据
+    LaunchedEffect(Unit) {
+        homeViewModel.initializeData()
+    }
+    
     LaunchedEffect(Unit) {
         if (SPStaticUtils.getBoolean("browser_show",true)){
             SPStaticUtils.put("browser_show",false)
@@ -190,6 +333,7 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
                 ), desc = "应用内浏览器展示")
         }
     }
+
 
     Box(Modifier.fillMaxSize()){
         AsyncImageImpl(
@@ -224,7 +368,10 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // 热门网站展示区域 - 两页轮播
-                PopularWebsitesSection(navigator)
+                PopularWebsitesSection(
+                    homeViewModel = homeViewModel,
+                    navigator = navigator
+                )
                 Spacer(modifier = Modifier.height(10.dp))
                 NativeAdsView(
                     modifier = Modifier
@@ -233,8 +380,11 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
                     adScene = "n_home"
                 )
 
-//                // 热门推荐展示区域
-                PopularVideoSection(navigator)
+                // 热门推荐展示区域
+                PopularVideoSection(
+                    homeViewModel = homeViewModel,
+                    navigator = navigator
+                )
             }
         }
     }
@@ -242,9 +392,13 @@ fun HomeScreen(onMenuClick: () -> Unit = {}){
 }
 
 @Composable
-fun PopularVideoSection(navigator: Navigator) {
-    // 获取分类数据
-    val videoClasses by DataRepository.videoClassFlow.collectAsStateWithLifecycle()
+fun PopularVideoSection(
+    homeViewModel: HomeViewModel,
+    navigator: Navigator
+) {
+    // 从HomeViewModel获取分类数据
+    val videoClasses by homeViewModel.videoClassState.collectAsStateWithLifecycle()
+    val isLoadingVideoClass by homeViewModel.isLoadingVideoClass.collectAsStateWithLifecycle()
     
     // 只有当分类数据可用时才展示分类列表
     if (videoClasses != null && videoClasses.isNotEmpty()) {
@@ -262,19 +416,58 @@ fun PopularVideoSection(navigator: Navigator) {
                 )
             }
         }
-    } else {
+    } else if (isLoadingVideoClass) {
         // 显示加载状态
         Box(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(vertical = 40.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = stringResource(R.string.loading_video_categories),
-                color = Color.White,
-                fontSize = 16.sp,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color(0xFFFF5C7F),
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.loading_video_categories),
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    } else {
+        // 数据为空且未在加载，显示空状态
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 40.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "暂无视频分类数据",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = { homeViewModel.fetchVideoClasses() }
+                ) {
+                    Text(
+                        text = "点击重试",
+                        color = Color(0xFFFF5C7F),
+                        fontSize = 12.sp
+                    )
+                }
+            }
         }
     }
 }
@@ -328,6 +521,37 @@ private fun CategoryVideoSection(
                     fontSize = 16.sp,
                     style = MaterialTheme.typography.headlineSmall
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                //more分类的详细内容
+                Row(
+                    modifier = Modifier.singClick{
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_recommend_more",
+                            closeAction = {
+                                //将category.id传入VideoDetailScreen
+                                VideoDetailActivity.start(
+                                    context,
+                                    categoryId = category.id,
+                                    categoryName = category.categoryName
+                                )
+                            }
+                        )
+
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.more),
+                        color = Color.White
+                    )
+                    AsyncImageImpl(
+                        modifier = Modifier.size(14.dp),
+                        model = R.drawable.icon_arrow_right
+                    )
+                }
             }
 
         }
@@ -553,10 +777,12 @@ private fun SearchSection() {
             )
 
             AsyncImageImpl(
-                modifier = Modifier.size(50.dp).singClick{
-                    focusManager.clearFocus()
-                    handleSearch(searchText, context, navigator)
-                },
+                modifier = Modifier
+                    .size(50.dp)
+                    .singClick {
+                        focusManager.clearFocus()
+                        handleSearch(searchText, context, navigator)
+                    },
                 model = R.drawable.icon_search
             )
         }
@@ -568,60 +794,119 @@ private fun SearchSection() {
  * 第一页展示前4个网站，第二页展示后4个网站
  */
 @Composable
-private fun PopularWebsitesSection(navigator: Navigator) {
-    // 生成热门网站假数据
-    val webListState by DataRepository.webUrlFlow.collectAsStateWithLifecycle()
+private fun PopularWebsitesSection(
+    homeViewModel: HomeViewModel,
+    navigator: Navigator
+) {
+    // 从HomeViewModel获取热门网站数据
+    val webListState by homeViewModel.webUrlState.collectAsStateWithLifecycle()
+    val isLoadingWebUrls by homeViewModel.isLoadingWebUrls.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
 
-    webListState?.runCatching {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-            // 网站轮播区域
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        // 第一页：展示前4个网站
-                        WebsiteGridRow(
-                            websites = webListState!!.urlList.take(4),
-                            navigator = navigator
-                        )
+    webListState?.let { webList ->
+        if (webList.urlList.isNotEmpty()) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // 网站轮播区域
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) { page ->
+                    when (page) {
+                        0 -> {
+                            // 第一页：展示前4个网站
+                            WebsiteGridRow(
+                                websites = webList.urlList.take(4),
+                                navigator = navigator
+                            )
+                        }
+                        1 -> {
+                            // 第二页：展示后4个网站
+                            WebsiteGridRow(
+                                websites = webList.urlList.drop(4).take(4),
+                                navigator = navigator
+                            )
+                        }
                     }
-                    1 -> {
-                        // 第二页：展示后4个网站
-                        WebsiteGridRow(
-                            websites = webListState!!.urlList.drop(4).take(4),
-                            navigator = navigator
+                }
+                Spacer(Modifier.height(10.dp))
+                // 页面指示器
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    repeat(2) { index ->
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (pagerState.currentPage == index)
+                                        Color(0xFFFF5C7F)
+                                    else
+                                        Color.White.copy(alpha = 0.3f)
+                                )
                         )
                     }
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            // 页面指示器
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+        }
+    } ?: run {
+        if (isLoadingWebUrls) {
+            // 显示加载状态
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 40.dp),
+                contentAlignment = Alignment.Center
             ) {
-                repeat(2) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (pagerState.currentPage == index)
-                                    Color(0xFFFF5C7F)
-                                else
-                                    Color.White.copy(alpha = 0.3f)
-                            )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color(0xFFFF5C7F),
+                        modifier = Modifier.size(32.dp)
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "正在加载热门网站...",
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        } else {
+            // 数据为空且未在加载，显示空状态
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "暂无热门网站数据",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = { homeViewModel.fetchWebUrls() }
+                    ) {
+                        Text(
+                            text = "点击重试",
+                            color = Color(0xFFFF5C7F),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
             }
         }
     }
-
 }
 
 /**

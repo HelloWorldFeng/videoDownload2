@@ -46,7 +46,7 @@ import com.app.videobox.ui.widgets.AsyncImageImpl
 
 import com.app.videobox.ui.widgets.CoilImage
 import com.app.videobox.ui.widgets.singClick
-
+import com.app.videobox.utils.EventReportUtils
 
 
 @Composable
@@ -59,6 +59,10 @@ fun FolderScreen(
     
     LaunchedEffect(Unit) {
         FileManager.fetchPhoneVideo(context)
+        EventReportUtils.reportTDParams(
+            "local_show",
+            desc = "本地视频页面展示"
+        )
     }
     
     LaunchedEffect(FileManager.scanFileResultState.size) {
@@ -69,9 +73,6 @@ fun FolderScreen(
         dataList.value = videoMap.toList()
     }
 
-    BackHandler {
-
-    }
 
     Column(
         Modifier
@@ -89,43 +90,6 @@ fun FolderScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(104.dp)
-                    .singClick {
-                        navigator.push(HotScreen())
-                    },
-            )
-            {
-                AsyncImageImpl(
-                    modifier = Modifier.matchParentSize(),
-                    model = R.drawable.bg_hot_video,
-                    contentScale = ContentScale.FillBounds
-                )
-
-                Row(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(horizontal = 26.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    AsyncImageImpl(
-                        R.drawable.icon_gift,
-                        modifier = Modifier.size(65.dp,79.dp)
-                    )
-                    Spacer(Modifier.width(22.dp))
-                    Column {
-                        Text(stringResource(R.string.hot_video), fontSize = 20.sp,color = Color.White)
-                        Spacer(Modifier.height(11.dp))
-                        Text(stringResource(R.string.here_are_the_popular_videos), fontSize = 12.sp,color = Color.White)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    AsyncImageImpl(
-                        model = R.drawable.icon_arrow_right,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
             Spacer(modifier = Modifier.height(10.dp))
             NativeAdsView(
                 modifier = Modifier
@@ -146,6 +110,10 @@ fun FolderScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .singClick {
+                                    EventReportUtils.reportTDParams(
+                                        "local_click",
+                                        desc = "本地视频页面点击"
+                                    )
                                     navigator.push(LocalVideoScreen(it.second))
                                 }
                                 .padding(bottom = 16.dp)

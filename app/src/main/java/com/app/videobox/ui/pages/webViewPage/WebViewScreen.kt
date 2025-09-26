@@ -41,6 +41,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.app.videobox.FIRST_IN_HOME
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.ModalBottomSheetV3
 import com.app.videobox.ui.widgets.singClick
@@ -56,10 +57,12 @@ import com.app.videobox.ext.toDurationText
 import com.app.videobox.ext.toFileSizeText
 import com.app.videobox.ext.toHttpsUrl
 import com.app.videobox.manager.RemoteConfigManager
+import com.app.videobox.ui.MainActivity
 import com.app.videobox.ui.widgets.GradientButton
 import com.app.videobox.ui.widgets.StateAsyncImageImpl
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.VideoThumbnailExtractor
+import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
@@ -92,6 +95,7 @@ fun WebPageScreen(
     val focusManager = LocalFocusManager.current
     var currentUrl by remember { mutableStateOf(inputUrl) }
     val webViewState = rememberWebViewState(currentUrl)
+    var showGuiderMask = remember { mutableStateOf(value = SPStaticUtils.getBoolean(FIRST_IN_HOME,true)) }
 
     val backAction = {
         if (webViewState.canGoBack()) {
@@ -122,7 +126,7 @@ fun WebPageScreen(
         .singClick {}){
         Column(modifier = Modifier.fillMaxSize())
         {
-            // 显示当前URL的状态栏
+            // 显示当前URL的状态栏 - 优先渲染，不依赖WebView状态
             WebPathBar(
                 currentUrl = currentUrl,
                 onUrlChanged = { newUrl ->
@@ -158,31 +162,73 @@ fun WebPageScreen(
                 }
             )
 
-
-            // WebView组件
-            WebViewWidget(
-                viewModel = viewModel,
-                webViewState = webViewState,
-                onUrlChanged = { newUrl ->
-                    //webView浏览时候产生的新地址，修改到网址栏
-                    if (newUrl != currentUrl) {
+            // WebView容器 - 使用Box包装以避免阻塞父布局渲染
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // 占用剩余空间
+            ) {
+                // WebView组件 - 异步加载，不阻塞UI线程
+                WebViewWidget(
+                    viewModel = viewModel,
+                    webViewState = webViewState,
+                    onUrlChanged = { newUrl ->
+                        //webView浏览时候产生的新地址，修改到网址栏
+                        if (newUrl != currentUrl) {
+                            viewModel.postAction(WebViewModel.Action.ResetResolve)
+                        }
+                        currentUrl = newUrl
+                    },
+                    onProgressChanged = { newProgress ->
+                        // 可以在这里添加加载进度显示逻辑
+                    },
+                    onResolverUrl = { hlsUrl,title,imgUrl,ext->
+                        viewModel.postAction(WebViewModel.Action.ResolveUrl(hlsUrl,title,imgUrl,ext))
+                    },
+                    onResetResolve = {
                         viewModel.postAction(WebViewModel.Action.ResetResolve)
-                    }
-                    currentUrl = newUrl
-                },
-                onProgressChanged = { newProgress ->
+                    },
+                    onBack = {
+                        viewModel.postAction(WebViewModel.Action.ResetResolve)
+                    },
+                )
+            }
+        }
 
-                },
-                onResolverUrl = { hlsUrl,title,imgUrl,ext->
-                    viewModel.postAction(WebViewModel.Action.ResolveUrl(hlsUrl,title,imgUrl,ext))
-                },
-                onResetResolve = {
-                    viewModel.postAction(WebViewModel.Action.ResetResolve)
-                },
-                onBack = {
-                    viewModel.postAction(WebViewModel.Action.ResetResolve)
-                },
+        //引导蒙层
+        val clickMask = {
+            showGuiderMask.value = false
+        }
+        if (showGuiderMask.value && RemoteConfigManager.showGuider) {
+            Box(Modifier
+                .fillMaxSize()
+                .background(color = Color.Black.copy(alpha = 0.8f))
+                .singClick {
+                    clickMask.invoke()
+                }
             )
+            {
+                //引导箭头样式指向->悬浮视频按钮
+                Column(
+                    modifier = Modifier
+                        .padding(end = 90.dp, bottom = 150.dp)
+                        .align(Alignment.BottomEnd),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    GradientButton(
+                        modifier = Modifier.size(216.dp,57.dp),
+                        text = "parsing in progress!",
+                        onClick = {}
+                    )
+                    AsyncImageImpl(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .size(91.dp,132.dp),
+                        model = R.drawable.guider_arrow
+                    )
+                }
+
+            }
         }
 
         // 悬浮视频按钮
@@ -192,6 +238,9 @@ fun WebPageScreen(
                 DraggableResolveButton(
                     viewModel = viewModel,
                     currentUrl = currentUrl,
+                    onClick = {
+                        clickMask.invoke()
+                    },
                     maxWidthPx = with(LocalDensity.current) { maxWidth.toPx() },
                     maxHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
                 )
@@ -221,7 +270,13 @@ fun WebPageScreen(
                     "URL" to (host?:info.url)
                 ), desc = "视频下载弹窗点击")
 
-                //旧方法-创建下载任务
+                AdManager.getFullAdFromPool(
+                    context,
+                    adScene = "i_download",
+                    adType = AD_TYPE_INT,
+                    closeAction = {}
+                )
+                //旧方法-创F建下载任务
 //                handleVideoResourceDownload(videoUrl = "videoUrl", videoTitle = "test")
             }
         )
@@ -247,7 +302,8 @@ fun DraggableResolveButton(
     viewModel: WebViewModel,
     maxWidthPx: Float,
     maxHeightPx: Float,
-    currentUrl: String
+    currentUrl: String,
+    onClick: () -> Unit
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -280,6 +336,7 @@ fun DraggableResolveButton(
     FloatingVideoButton(
         viewModel = viewModel,
         currentUrl = currentUrl,
+        onClick = onClick,
         modifier = Modifier
             .offset {
                 IntOffset(
@@ -388,8 +445,9 @@ private fun EmptyResolveDialog(
                     Row(Modifier.fillMaxWidth()) {
                         Spacer(Modifier.weight(1f))
                         AsyncImageImpl(
-                            modifier = Modifier.size(24.dp)
-                                .singClick{
+                            modifier = Modifier
+                                .size(24.dp)
+                                .singClick {
                                     onDismissRequest.invoke()
                                 },
                             model = R.drawable.icon_cancel
@@ -678,7 +736,8 @@ private fun ResolveDialogImpl(
 private fun FloatingVideoButton(
     modifier: Modifier = Modifier,
     viewModel: WebViewModel,
-    currentUrl: String
+    currentUrl: String,
+    onClick: () -> Unit
 ) {
     //解析任务状态
     val videoInfoState = viewModel.resolveStateFlow.collectAsStateWithLifecycle().value
@@ -691,6 +750,7 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
+                        onClick.invoke()
                         if (RemoteConfigManager.checkUrlInBlackUrl(currentUrl) && UserHelper.powerUser) {
                             ToastUtils.showLong(context.getString(R.string.due_to_legal))
                             return@singClick
@@ -698,10 +758,17 @@ private fun FloatingVideoButton(
 
                         viewModel.postAction(WebViewModel.Action.ShowEmptyResolveDialog)
 
-                        EventReportUtils.reportTDParams("browser_download_click",
+                        AdManager.getFullAdFromPool(
+                            context,
+                            adType = AD_TYPE_INT,
+                            adScene = "i_video_download_none",
+                            closeAction = {})
+                        EventReportUtils.reportTDParams(
+                            "browser_download_click",
                             params = mutableMapOf(
                                 "click_type" to "none",
-                            ), desc = "下载按钮点击")
+                            ), desc = "下载按钮点击"
+                        )
                     },
                 model = R.drawable.icon_resolve_not,
                 contentDescription = null
@@ -731,6 +798,7 @@ private fun FloatingVideoButton(
                     .padding(bottom = 130.dp, end = 30.dp)
                     .size(56.dp)
                     .singClick {
+                        onClick.invoke()
                         if (RemoteConfigManager.checkUrlInBlackUrl(currentUrl) && UserHelper.powerUser) {
                             ToastUtils.showLong(context.getString(R.string.due_to_legal))
                             return@singClick
@@ -743,10 +811,12 @@ private fun FloatingVideoButton(
                             closeAction = {
                                 viewModel.postAction(WebViewModel.Action.ShowResolveDialog)
                             })
-                        EventReportUtils.reportTDParams("browser_download_click",
+                        EventReportUtils.reportTDParams(
+                            "browser_download_click",
                             params = mutableMapOf(
                                 "click_type" to "content",
-                            ), desc = "下载按钮点击")
+                            ), desc = "下载按钮点击"
+                        )
                     }
                 ,
                 contentScale = ContentScale.FillWidth
@@ -754,6 +824,7 @@ private fun FloatingVideoButton(
 
         }
     }
+
 }
 
 

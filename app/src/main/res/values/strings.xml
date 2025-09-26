@@ -89,4 +89,27 @@
     <string name="loading_video_categories">Loading video categories...</string>
     <string name="no_video_folders_found">No video folders found</string>
     <string name="scan_your_device_for_videos">Scan your device for videos</string>
+    <string name="not_now">Not Now</string>
+    <string name="exit_app">Exit  App</string>
+    <string name="thanks_for_using_steam_box">Thanks for using Steam Box</string>
+    <string name="discover_trending_short_dramas_updated_daily_for_endless_excitement">Discover trending short dramas, updated\ndaily for endless excitement.</string>
+    <string name="popular_short_dramas_library">Popular Short Dramas Library</string>
+    <string name="fast_ad_free_downloads"><![CDATA[Fast & Ad-Free Downloads]]></string>
+    <string name="download_episodes_effortlessly_with_zero_ads_and_full_hd_quality">Download episodes effortlessly, with zero\nads and full HD quality</string>
+    <string name="watch_offline_save_locally">Watch Offline, Save Locally</string>
+    <string name="enjoy_your_favorite_dramas_anytime_anywhere_even_without_internet">Enjoy your favorite dramas anytime,\nanywhere — even without internet.</string>
+    <string name="ok">OK</string>
+    <string name="stay_notified_about_your_downloads">Stay Notified About Your\nDownloads</string>
+    <string name="download_completion_alerts">Download completion alerts</string>
+    <string name="quick_link_detection">Quick link detection</string>
+    <string name="trending_video_updates">Trending video updates</string>
+    <string name="enable_notifications">Enable Notifications</string>
+    <string name="turn_on_notifications_for_stream_box_in_you_setting">Turn on notifications for stream box in you setting to get download  alerts and updates. We\'d love to keep you informed!</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="please_input_content">Please input content</string>
+    <string name="your_feedback_makes_us_better">Your feedback makes us better!</string>
+    <string name="enjoying_your_experience_so_far">Enjoying your experience so far?</string>
+    <string name="sorry_to_hear_you_didn_t_have_a_great_experience">Sorry to hear you didn’t have a great experience. Please let us know what went wrong so we can make things better.</string>
+    <string name="we_have_received_your_suggestions">We have received your suggestions and will make timely corrections in the near future.</string>
+    <string name="start">Start</string>
 </resources>

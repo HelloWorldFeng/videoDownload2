@@ -2,12 +2,17 @@ package com.app.videobox.ad
 
 import android.app.Activity
 import android.util.Log
+import com.app.videobox.NOTIFY_COUNT
 import com.app.videobox.ad.base.AD_TYPE_INT
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.app.videobox.ad.base.AD_TYPE_START
 import com.app.videobox.ad.base.AdUnitWrapper
 import com.app.videobox.ad.base.InnerAd
+import com.app.videobox.intShowCountConst
+import com.app.videobox.manager.RemoteConfigManager
+import com.app.videobox.openShowCountConst
+import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.EventReportUtils
 import java.util.TimeZone
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -57,6 +62,11 @@ object AdManager {
                         SPStaticUtils.put("${it.adScene}_show",0)
                     }
                 }
+
+                //重置通知限制
+                RemoteConfigManager.getNotifyMap().forEach {
+                    SPStaticUtils.put("${it.key}${NOTIFY_COUNT}",0)
+                }
             }
         }catch (e: Exception){
             e.printStackTrace()
@@ -94,6 +104,7 @@ object AdManager {
                     put("ad_action",11)
                     put("ad_format",adWrapper.type)
                     put("ad_unit_id",adWrapper.adNumberId)
+                    put("interType",SplashActivity.interType)
                 })
             },
             failCallBack = { code, msg, adWrapper ->
@@ -107,6 +118,7 @@ object AdManager {
                     put("ad_format",adWrapper.type)
                     put("ad_unit_id",adWrapper.adNumberId)
                     put("err_msg","$msg")
+                    put("interType",SplashActivity.interType)
                 })
             },
             showCallBack = { adWrapper ->
@@ -128,9 +140,23 @@ object AdManager {
                 //记录开屏展示的时间戳
                 if (adWrapper.type == AD_TYPE_START) {
                     openShowTime = System.currentTimeMillis()
+                    //开屏展示次数 买量点位
+                    var openShowCount = SPStaticUtils.getInt(openShowCountConst,0) + 1
+                    EventReportUtils.afEventLog(
+                        "ud_ad_action_impression_open_${openShowCount}",
+                        mutableMapOf(),
+                    )
+                    SPStaticUtils.put(openShowCountConst,openShowCount)
                 }
                 if (adWrapper.type == AD_TYPE_INT) {
                     intShowTime = System.currentTimeMillis()
+                    //插屏展示次数 买量点位
+                    var intShowCount = SPStaticUtils.getInt(intShowCountConst,0) + 1
+                    EventReportUtils.afEventLog(
+                        "ud_ad_action_impression_inters_${intShowCount}",
+                        mutableMapOf(),
+                    )
+                    SPStaticUtils.put(intShowCountConst,intShowCount)
                 }
 
                 Log.d(TAG, "${adWrapper.type} 展示成功 id:${adWrapper.getAdSourceId()}, scene:${nowShowAdScene} hashCode:${adWrapper.getAdInstance().hashCode()},展示次数:${scene?.nowShowCount},限制次数:${scene?.showCount}")
@@ -155,6 +181,7 @@ object AdManager {
                     scene?.let {
                         put("ad_scenes",scene.adScene)
                     }
+                    put("interType",SplashActivity.interType)
                 })
             },
             closeCallBack ={
@@ -168,6 +195,7 @@ object AdManager {
                     scene?.let {
                         put("ad_scenes",scene.adScene)
                     }
+                    put("interType",SplashActivity.interType)
                 })
             }
         ).loadAdInstance(*adTypeTag)
@@ -275,6 +303,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene showBool limit")
+                put("interType",SplashActivity.interType)
             })
             Log.d(TAG, "场景展示限制:${adScene}")
             closeAction.invoke()
@@ -288,6 +317,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene one day limit")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -301,6 +331,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene clickBool limit")
+                put("interType",SplashActivity.interType)
             })
             Log.d(TAG, "点击限制:${adScene}")
             closeAction.invoke()
@@ -316,6 +347,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene scene btn close")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -329,6 +361,7 @@ object AdManager {
                 put("ad_format",adType)
                 put("ad_scenes",adScene)
                 put("err_msg","$adScene interval limit")
+                put("interType",SplashActivity.interType)
             })
             closeAction.invoke()
             return
@@ -346,6 +379,7 @@ object AdManager {
                         put("ad_format",adType)
                         put("ad_scenes",adScene)
                         put("err_msg","$adType Btn Close")
+                        put("interType",SplashActivity.interType)
                     })
                     Log.d(TAG, "${adType}广告位关闭，不请求")
                     closeAction.invoke()

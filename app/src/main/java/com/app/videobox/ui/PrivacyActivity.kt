@@ -1,6 +1,7 @@
 package com.app.videobox.ui
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,11 +25,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.app.videobox.BuildConfig
 import com.app.videobox.R
 import com.app.videobox.ad.AdManager
@@ -81,42 +87,45 @@ class PrivacyActivity : BaseActivity() {
                 modifier = Modifier.align(Alignment.BottomCenter),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CoilImage(modifier = Modifier.size(100.dp), data = R.mipmap.icon_logo)
-                Spacer(modifier = Modifier.height(24.dp))
-                TextTitle(text = stringResource(id = R.string.app_name),color = Color.White, fontSize = 34.sp)
+                val lottie by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_splash_logo.json"))
+                LottieAnimation(
+                    composition = lottie,
+                    modifier = Modifier.size(100.dp),
+                    contentScale = ContentScale.None
+                )
                 Spacer(modifier = Modifier.height(50.dp))
                 Box(
                     modifier = Modifier
-
                         .fillMaxWidth(0.9f)
                         .height(57.dp)
                         .background(brush = gradientColor, shape = RoundedCornerShape(35.dp))
                         .singClick {
                             SPStaticUtils.put("firstLaunch", false)
-
                             this@PrivacyActivity.safeStartActivity(SplashActivity::class.java)
                         }
                 ){
                     Text(
-                        text = stringResource(R.string.continues), fontSize = 18.sp, color = Color.White,
+                        text = stringResource(R.string.start), fontSize = 18.sp, color = Color.White,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(23.dp))
-                Text(text = "By clicking start, you acknowledge that you've read!",
+                Text(text = "By clicking “Start,” you confirm that you have read and",
                     color = Color.White.copy(alpha = 0.9f))
                 Row {
                     Text("accept our ",color = Color.White.copy(alpha = 0.9f))
                     Text(text = stringResource(R.string.privacy_policy),
                         fontSize = 13.sp,
                         color = Color.White.copy(alpha = 0.9f),
+                        textDecoration = TextDecoration.Underline,
                         modifier = Modifier.singClick {
                             context.urlInBrowser(BuildConfig.privacyUrl)
                         })
                     Text(" and ",color = Color.White.copy(alpha = 0.9f))
                     Text(text = stringResource(R.string.terms_of_service),
                         fontSize = 13.sp,
+                        textDecoration = TextDecoration.Underline,
                         color = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.singClick {
                             context.urlInBrowser(BuildConfig.termUrl)

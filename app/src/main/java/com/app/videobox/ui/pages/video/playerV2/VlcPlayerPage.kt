@@ -47,9 +47,13 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
 import com.app.videobox.ui.widgets.AsyncImageImpl
 import com.app.videobox.ui.widgets.singClick
 import com.app.videobox.R
+import kotlinx.coroutines.launch
 
 // 媒体流协调器日志标签
 private const val MEDIA_ORCHESTRATOR_TAG = "MediaStreamOrchestrator"
@@ -215,6 +219,13 @@ private fun MediaStreamOrchestrator(
     val runtimeContext = LocalContext.current
     val executionActivity = runtimeContext as? Activity
     val lifecycleMonitor = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // === 播放进度管理器初始化 ===
+    val progressManager = remember { VideoProgressManager(runtimeContext) }
+    var hasRestoredProgress by remember { mutableStateOf(false) }          // 进度恢复状态标记
+    var lastProgressSaveTime by remember { mutableStateOf(0L) }            // 上次保存进度时间
+    val snackbarHostState = remember { SnackbarHostState() }               // 用户提示状态管理
 
     // === 播放器核心状态管理区域 ===
     var screenDisplayMode by remember { mutableStateOf(false) }          // 全屏显示模式(false=窗口模式, true=全屏模式)
@@ -393,16 +404,118 @@ private fun MediaStreamOrchestrator(
                 }
                 MediaPlayer.Event.EndReached -> {
                     Log.d(MEDIA_ORCHESTRATOR_TAG, "VLC播放事件: 播放结束")
+                    
+                    // === 播放完成后清除进度记录 ===
+                    // 当视频播放完成时，自动清除该视频的进度保存记录
+                    coroutineScope.launch {
+                        try {
+                            Log.i(MEDIA_ORCHESTRATOR_TAG, "[进度清理] 播放完成，开始清除进度记录 - 视频: ${contentEntity.video.take(50)}...")
+                            val removeResult = progressManager.removeProgress(contentEntity.video)
+                            if (removeResult) {
+                                Log.i(MEDIA_ORCHESTRATOR_TAG, "[进度清理] 播放完成清除成功 - 视频: ${contentEntity.video.take(50)}...")
+                            } else {
+                                Log.d(MEDIA_ORCHESTRATOR_TAG, "[进度清理] 播放完成清除跳过 - 无进度记录: ${contentEntity.video.take(50)}...")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(MEDIA_ORCHESTRATOR_TAG, "[进度清理] 播放完成清除异常 - 视频: ${contentEntity.video.take(50)}..., 错误: ${e.message}", e)
+                        }
+                    }
+                    
                     playbackCompletionHandler.invoke(true)
                 }
                 MediaPlayer.Event.TimeChanged -> {
                     if (!seekOperationActive) {
                         mediaCurrentPosition = event.timeChanged
+                        
+                        // 每30秒输出一次详细的播放状态日志
+                        if (mediaCurrentPosition % 30000 < 1000) {
+                            val progressPercent = if (mediaTotalDuration > 0) (mediaCurrentPosition.toFloat() / mediaTotalDuration.toFloat()) * 100 else 0f
+                            Log.d(MEDIA_ORCHESTRATOR_TAG, "[播放状态] 当前播放进度 - 位置: ${mediaCurrentPosition}ms, 总时长: ${mediaTotalDuration}ms, 进度: ${String.format("%.1f", progressPercent)}%")
+                        }
+                        
+                        // === 播放进度自动保存逻辑 ===
+                        // 当视频时长有效且播放位置有效时，异步保存播放进度
+                        if (mediaTotalDuration > 0 && mediaCurrentPosition > 0) {
+                            Log.v(MEDIA_ORCHESTRATOR_TAG, "[进度保存] 触发保存检查 - 位置: ${mediaCurrentPosition}ms, 时长: ${mediaTotalDuration}ms")
+                            
+                            coroutineScope.launch {
+                                try {
+                                    val saveResult = progressManager.saveProgress(
+                                        videoUrl = contentEntity.video,
+                                        currentPosition = mediaCurrentPosition,
+                                        totalDuration = mediaTotalDuration
+                                    )
+                                    if (saveResult) {
+                                        Log.d(MEDIA_ORCHESTRATOR_TAG, "[进度保存] 保存成功 - 位置: ${mediaCurrentPosition}ms")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(MEDIA_ORCHESTRATOR_TAG, "[进度保存] 保存异常 - 位置: ${mediaCurrentPosition}ms, 错误: ${e.message}", e)
+                                }
+                            }
+                        } else {
+                            Log.v(MEDIA_ORCHESTRATOR_TAG, "[进度保存] 跳过保存 - 无效参数: 位置=${mediaCurrentPosition}ms, 时长=${mediaTotalDuration}ms")
+                        }
+                    } else {
+                        Log.v(MEDIA_ORCHESTRATOR_TAG, "[播放状态] 跳过时间更新 - 正在执行拖拽操作")
                     }
                 }
                 MediaPlayer.Event.LengthChanged -> {
                     mediaTotalDuration = event.lengthChanged
-                    Log.d(MEDIA_ORCHESTRATOR_TAG, "VLC播放事件: 时长更新 - ${mediaTotalDuration}ms")
+                    Log.i(MEDIA_ORCHESTRATOR_TAG, "[媒体信息] 时长更新 - ${mediaTotalDuration}ms (${formatTimeDisplay(mediaTotalDuration)})")
+                    
+                    // === 播放进度恢复逻辑 ===
+                    // 当媒体时长获取成功且尚未恢复进度时，尝试恢复上次播放进度
+                    if (mediaTotalDuration > 0 && !hasRestoredProgress) {
+                        Log.d(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 开始尝试恢复播放进度 - 视频: ${contentEntity.video.take(50)}...")
+                        
+                        coroutineScope.launch {
+                            try {
+                                val savedProgress = progressManager.getProgress(contentEntity.video)
+                                
+                                if (savedProgress != null && savedProgress.position > 0) {
+                                    Log.d(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 找到保存的进度 - 位置: ${savedProgress.position}ms, 保存时长: ${savedProgress.duration}ms, 当前时长: ${mediaTotalDuration}ms")
+                                    
+                                    // 验证保存的进度是否有效（不超过当前视频时长）
+                                    if (savedProgress.position < mediaTotalDuration) {
+                                        Log.i(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 进度有效，开始恢复到位置: ${savedProgress.position}ms")
+                                        
+                                        mediaPlayer.time = savedProgress.position
+                                        mediaCurrentPosition = savedProgress.position
+                                        hasRestoredProgress = true
+                                        
+                                        val progressPercent = (savedProgress.position.toFloat() / mediaTotalDuration.toFloat()) * 100
+                                        Log.i(MEDIA_ORCHESTRATOR_TAG, 
+                                            "[进度恢复] 恢复成功 - 位置: ${formatTimeDisplay(savedProgress.position)} / ${formatTimeDisplay(mediaTotalDuration)} (${String.format("%.1f", progressPercent)}%)")
+                                        
+                                        // === 显示进度恢复提示 ===
+                                        snackbarHostState.showSnackbar(
+                                            message = "Restored to last playback position: ${formatTimeDisplay(savedProgress.position)} (${String.format("%.1f", progressPercent)}%)",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    } else {
+                                        // 如果保存的进度超过当前视频时长，清除无效进度
+                                        Log.w(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 检测到无效进度 - 保存位置: ${savedProgress.position}ms > 当前时长: ${mediaTotalDuration}ms")
+                                        
+                                        coroutineScope.launch {
+                                            try {
+                                                progressManager.removeProgress(contentEntity.video)
+                                                Log.i(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 无效进度已清除")
+                                            } catch (e: Exception) {
+                                                Log.e(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 清除无效进度失败 - 错误: ${e.message}", e)
+                                            }
+                                        }
+                                        hasRestoredProgress = true // 标记为已处理，避免重复尝试
+                                    }
+                                } else {
+                                    Log.i(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 未找到保存的进度记录")
+                                    hasRestoredProgress = true // 标记为已处理
+                                }
+                            } catch (e: Exception) {
+                                Log.e(MEDIA_ORCHESTRATOR_TAG, "[进度恢复] 恢复异常 - 视频: ${contentEntity.video.take(50)}..., 错误: ${e.message}", e)
+                                hasRestoredProgress = true // 标记为已处理，避免重复尝试
+                            }
+                        }
+                    }
                 }
                 MediaPlayer.Event.PositionChanged -> {
                     // 更新缓冲进度（VLC中用position近似表示）
@@ -672,8 +785,44 @@ private fun MediaStreamOrchestrator(
                             vlcMediaPlayerCore.pause()
                             Log.d(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_STOP - 暂停播放")
                         }
+                        
+                        // === 生命周期暂停时保存播放进度 ===
+                        if (mediaTotalDuration > 0 && mediaCurrentPosition > 0) {
+                            coroutineScope.launch {
+                                try {
+                                    val saved = progressManager.saveProgress(
+                                        videoUrl = contentEntity.video,
+                                        currentPosition = mediaCurrentPosition,
+                                        totalDuration = mediaTotalDuration
+                                    )
+                                    if (saved) {
+                                        Log.d(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_STOP - 播放进度已保存")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_STOP - 进度保存失败", e)
+                                }
+                            }
+                        }
                     }
                     Lifecycle.Event.ON_DESTROY -> {
+                        // === 生命周期销毁时最终保存播放进度 ===
+                        if (mediaTotalDuration > 0 && mediaCurrentPosition > 0) {
+                            coroutineScope.launch {
+                                try {
+                                    val saved = progressManager.saveProgress(
+                                        videoUrl = contentEntity.video,
+                                        currentPosition = mediaCurrentPosition,
+                                        totalDuration = mediaTotalDuration
+                                    )
+                                    if (saved) {
+                                        Log.d(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_DESTROY - 最终进度已保存")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_DESTROY - 最终进度保存失败", e)
+                                }
+                            }
+                        }
+                        
                         vlcMediaPlayerCore.stop()
                         vlcMediaPlayerCore.media?.release()
                         Log.d(MEDIA_ORCHESTRATOR_TAG, "生命周期: ON_DESTROY - 释放播放器资源")
@@ -694,6 +843,7 @@ private fun MediaStreamOrchestrator(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .navigationBarsPadding()
             .pointerInput(uiElementsVisible, interfaceLockState) {
                 detectTapGestures(
                     onTap = {
@@ -1175,6 +1325,12 @@ private fun MediaStreamOrchestrator(
                 }
             }
         }
+        
+        // === 进度恢复提示显示区域 ===
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
     // === 资源释放与清理 - 改进版本 ===

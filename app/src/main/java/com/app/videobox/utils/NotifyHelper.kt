@@ -92,7 +92,7 @@ object NotifyHelper {
             NotificationChannel(
                 CHANNEL_ID_FOREGROUND,
                 CHANNEL_NAME_FOREGROUND,
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "ForegroundNotification"
                 enableLights(false)
@@ -331,7 +331,9 @@ object NotifyHelper {
     }
 
     fun sendApiNotification(context: Context, scene: String){
-        EventReportUtils.reportTDParams("push_request_scene", mutableMapOf<String, Any>().apply {
+        EventReportUtils.reportTDParams(
+            "push_request_scene",
+            mutableMapOf<String, Any>().apply {
             put("push_scene", scene)
 
         }, desc = "触发通知的场景:${scene}")
@@ -342,15 +344,15 @@ object NotifyHelper {
             try {
                 //获取接口通知内容
                 val result = DataRepository.GetSceneEventPushMessageData()
-                result?.let {
+                if (result != null){
                     val notificationCount = (SPStaticUtils.getInt(NOTIFY_COUNT,0) + 1) % RemoteConfigManager.groupNotify
                     val notificationId = notificationIdList[notificationCount]
 
-                    val imgUrl = it.model.imageUrl
-                    val videoUrl = it.model.videoUrl
-                    val title = it.model.title
-                    val body = it.model.content
-                    val pageType = it.model.pageType
+                    val imgUrl = result.model.imageUrl
+                    val videoUrl = result.model.videoUrl
+                    val title = result.model.title
+                    val body = result.model.content
+                    val pageType = result.model.pageType
                     //发送通知
                     sendContentNotification(
                         context = context,
@@ -361,8 +363,15 @@ object NotifyHelper {
                         videoUrl = videoUrl,
                         scene = scene,
                         pageType = pageType
-
                     )
+                }else{
+                    EventReportUtils.reportTDParams(
+                        "push_request_fail",
+                        mutableMapOf(
+                            "push_scene" to scene,
+                            "err_reason" to "api json null"
+                        ),
+                        desc = "通知发送失败：${scene} 触发了限制条件")
                 }
 
             }catch (e: Exception){
@@ -387,12 +396,6 @@ object NotifyHelper {
         scene: String,
         pageType: Int
     ){
-        EventReportUtils.reportTDParams(
-            "push_request_scene",
-            mutableMapOf(
-                "push_scene" to scene,
-            ),
-            desc = "触发通知的场景（请求）：${scene}")
 
         // 使用自定义 PendingIntent
         val customIntent = Intent(context, SplashActivity::class.java).apply {
@@ -467,6 +470,7 @@ object NotifyHelper {
             .data(imageUrl)
             .build()
 
+
         App.coroutineScope.launch(Dispatchers.IO) {
             val bitmap = imageLoader.execute(request).drawable?.toBitmap()
             if (bitmap == null) {
@@ -487,6 +491,7 @@ object NotifyHelper {
                     bitmap,
                     notificationId,
                     pendingIntent,
+                    scene
                 )
 
                 EventReportUtils.reportTDParams("push_request", mutableMapOf<String, Any>().apply {
@@ -510,6 +515,7 @@ object NotifyHelper {
         bitmap: Bitmap?,
         notificationId: Int,
         pendingIntent: PendingIntent?,
+        scene: String,
     ) {
         try {
             // 先清除上一条相同 ID 的通知
@@ -518,6 +524,9 @@ object NotifyHelper {
             SPStaticUtils.put(NOTIFY_TIME, System.currentTimeMillis())
             //记录通知的次数
             SPStaticUtils.put(NOTIFY_COUNT, (SPStaticUtils.getInt(NOTIFY_COUNT,0) + 1))
+            //记录这个场景的次数
+            SPStaticUtils.put("${scene}${NOTIFY_COUNT}", (SPStaticUtils.getInt("${scene}${NOTIFY_COUNT}",0) + 1))
+
 
             // 创建自定义视图
             val customView = createCustomRemoteViews(context, title, content, bitmap)
@@ -575,7 +584,9 @@ object NotifyHelper {
         return RemoteViews(context.packageName, R.layout.layout_notify_custom).apply {
             setTextViewText(R.id.title_tv, title)
             setTextViewText(R.id.content_tv, content)
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                setImageViewResource(R.id.ok_btn,R.drawable.button_red_short)
+            }
             // 设置图片（如果有）
             bitmap?.let {
                 setImageViewBitmap(R.id.logo_iv, it)
@@ -595,7 +606,10 @@ object NotifyHelper {
         return RemoteViews(context.packageName, R.layout.layout_notify_custom_big).apply {
             setTextViewText(R.id.title_tv, title)
             setTextViewText(R.id.content_tv, content)
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                setImageViewResource(R.id.ok_btn,R.drawable.button_red_long)
+                setImageViewResource(R.id.iv_close,R.drawable.icon_notify_close)
+            }
             // 设置图片（如果有）
             bitmap?.let {
                 setImageViewBitmap(R.id.img_iv, it)
@@ -606,8 +620,28 @@ object NotifyHelper {
 
     fun getLimit(scene: String): Boolean {
 
-        if (BuildConfig.DEBUG) {
-            return false
+//        if (BuildConfig.DEBUG) {
+//            return false
+//        }
+
+        //从限制配置里检查对应的通知场景达到限制了没
+        RemoteConfigManager.getNotifyMap().let {
+
+            it[scene]?.openBtn?.let { btn->
+                if (btn == false) {
+                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "notify Scene Btn Close"))
+                    return true
+                }
+            }
+            //该场景的通知了多少次
+            val sceneCount = SPStaticUtils.getInt("${scene}${NOTIFY_COUNT}", 0)
+            it[scene]?.limitCount?.let { count->
+                if (sceneCount > count){
+                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "notify Scene Limit"))
+
+                    return true
+                }
+            }
         }
 
         if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) >= RemoteConfigManager.notifyCount) {

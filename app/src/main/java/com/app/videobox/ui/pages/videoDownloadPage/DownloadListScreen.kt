@@ -252,6 +252,7 @@ private fun TaskListContent(
                     modifier = Modifier.fillMaxSize(),
                     state = lazyListState,
                     verticalArrangement = Arrangement.spacedBy(12.dp), // 列表项之间的间距
+                    contentPadding = PaddingValues(bottom = 100.dp)
                 )
                 {
                     items(

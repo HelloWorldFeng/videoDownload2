@@ -93,6 +93,10 @@ fun FeedbackContent(
         // 提交按钮
         GradientButton(
             onClick = {
+                if (feedbackText.isEmpty()) {
+                    ToastUtils.showLong(context.getString(R.string.please_input_content))
+                    return@GradientButton
+                }
                 // TODO: 处理提交反馈逻辑
                 // 可以在这里添加提交反馈到服务器的逻辑
                 coroutineScope.launch {

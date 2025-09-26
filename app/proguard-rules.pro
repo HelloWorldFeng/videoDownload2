@@ -46,6 +46,10 @@
 # 混淆采用的算法
 -optimizations !code/simplification/cast,!field/*,!class/merging/*
 
+# === JaCoCo测试覆盖率工具相关规则 ===
+# 解决R8代码混淆时JaCoCo相关的缺失类警告
+-dontwarn java.lang.instrument.IllegalClassFormatException
+
 #-------------- gilde start-------------
 -keep class com.bumptech.glide.**{*;}
 -keep class github.leavesczy.matisse.**{*;}
@@ -168,6 +172,7 @@
 # R8 missing classes rules - generated automatically
 # Please add these rules to your existing keep rules in order to suppress warnings.
 # This is generated automatically by the Android Gradle plugin.
+-dontwarn com.google.android.gms.common.annotation.NoNullnessRewrite
 -dontwarn java.beans.ConstructorProperties
 -dontwarn java.beans.Transient
 -dontwarn org.tukaani.xz.ARMOptions

@@ -4,6 +4,9 @@
   "limitTime": 5,
   "notifyCount": 30,
 
+  "showGuider": true,
+  "showRate": true,
+
   "outerConfigs": [
     {
       "innerAdList": [

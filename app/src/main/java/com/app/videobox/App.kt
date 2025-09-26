@@ -19,6 +19,7 @@ import com.app.videobox.receiver.HomeKeyReceiver
 import com.app.videobox.receiver.PowerDisconnectReceiver
 import com.app.videobox.receiver.ScreenOnReceiver
 import com.app.videobox.service.DownloadVideoService
+import com.app.videobox.ui.GuiderActivity
 import com.app.videobox.ui.PrivacyActivity
 import com.app.videobox.ui.SplashActivity
 import com.app.videobox.ui.pages.homePage.HomeViewModel
@@ -33,6 +34,8 @@ import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.SPStaticUtils
 import com.blankj.utilcode.util.Utils
 import com.google.android.gms.ads.AdActivity
+import com.google.android.play.core.review.ReviewManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.uouo.start.AccountKeepsManager
@@ -45,6 +48,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.leolin.shortcutbadger.ShortcutBadger
 import org.json.JSONObject
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
@@ -71,9 +75,13 @@ class App : Application() {
         private var beatCount = 0
 
         var notLaunchHot = false
+
     }
     override fun onCreate() {
         super.onCreate()
+        AccountKeepsManager.getInstance().initialize(this, DownloadVideoService::class.java)
+
+
         val isMainProcess = packageName == getCurrentProcessName()
         if (isMainProcess){
             // 初始化语言设置（必须在其他初始化之前）
@@ -97,9 +105,10 @@ class App : Application() {
                     }
                 )
             }
-            AccountKeepsManager.getInstance().configureExternalService(DownloadVideoService::class.java)
+
 
             EventReportUtils.reportTDParams("app_open", desc = "冷启动应用")
+
         }
 
     }
@@ -152,6 +161,7 @@ class App : Application() {
                 // 处理下载成功事件
                 NotifyHelper.sendDownloadNotify(this@App)
                 Log.d("App", "视频下载成功，已发送通知")
+                ShortcutBadger.applyCount(this@App, 1)
             }
         })
     }
@@ -169,6 +179,7 @@ class App : Application() {
                 if (activity is SplashActivity || activity is PrivacyActivity
                     || activity is AdActivity || notLaunchHot
                     || activity is VlcPlayActivity
+                    || activity is GuiderActivity
                 ) {
                     notLaunchHot = false
                     return

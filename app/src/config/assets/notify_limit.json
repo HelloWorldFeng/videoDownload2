@@ -1,0 +1,25 @@
+{
+
+  "notifyScene": [
+    {
+      "openBtn": true,
+      "scene": "homekey",
+      "limitCount": 10
+    },
+    {
+      "openBtn": true,
+      "scene": "app_live",
+      "limitCount": 10
+    },
+    {
+      "openBtn": true,
+      "scene": "unlock",
+      "limitCount": 10
+    },
+    {
+      "openBtn": true,
+      "scene": "onMessageReceived",
+      "limitCount": 10
+    }
+  ]
+}

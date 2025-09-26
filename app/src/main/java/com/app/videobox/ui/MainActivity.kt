@@ -2,43 +2,37 @@ package com.app.videobox.ui
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
+import com.app.videobox.App
 import com.app.videobox.App.Companion.notLaunchHot
 import com.app.videobox.BuildConfig
+import com.app.videobox.FIRST_IN_HOME
 import com.app.videobox.MAIN_OPERATE
 import com.app.videobox.MAIN_SHOW_VIDEO
 import com.app.videobox.MAIN_SHOW_WEB
 import com.app.videobox.ad.UmpHelper
+import com.app.videobox.lastExitTimestamp
 import com.app.videobox.ui.base.BaseActivity
-import com.app.videobox.manager.FileManager.fetchPhoneVideo
 import com.app.videobox.service.DownloadVideoService
 import com.app.videobox.ui.dialogs.NotifyHomeDialog
 import com.app.videobox.ui.pages.homePage.HomeViewModel
 import com.app.videobox.ui.pages.homePage.NewHomeScreen
 import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.app.videobox.ui.pages.webViewPage.WebViewActivity
-import com.app.videobox.ui.widgets.AsyncImageImpl
+import com.app.videobox.ui.widgets.ExitDialog
 import com.app.videobox.utils.EventReportUtils
-import com.app.videobox.utils.FileUtils
 import com.app.videobox.utils.NotifyHelper
-import com.app.videobox.utils.VideoThumbnailExtractor
 import com.blankj.utilcode.util.SPStaticUtils
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
-import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import kotlin.getValue
 
@@ -73,7 +67,6 @@ class MainActivity : BaseActivity() {
         }
 
         setContent {
-            BackHandler {}
             Navigator(NewHomeScreen())
             LoadingAdDialog()
 
@@ -102,22 +95,38 @@ class MainActivity : BaseActivity() {
                     }
                 )
             }
+
+
         }
 
         DownloadVideoService.startService(this)
         UmpHelper.requestUmp(this) {}
 
 
+
+        if (SPStaticUtils.getBoolean(FIRST_IN_HOME,true)){
+            WebViewActivity.start(this,"https://www.goodshort.com/episode/will-you-be-my-love-again-31000810138/001-9294909")
+
+        }
+
+        handleIntent(intent)
+
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: Intent) {
         // 处理内部 Intent
         val flag = intent.getStringExtra(MAIN_OPERATE)
+        val mediaUrl = intent.getStringExtra("videoUrl")
+        Log.d("BugLog", "进入首页的跳转:${flag} ")
         when (flag) {
             //跳网页
             MAIN_SHOW_WEB -> {
-                intent.getStringExtra("videoUrl")?.let {
+                mediaUrl?.let {
                     if (it.startsWith("http")) {
                         WebViewActivity.start(context = this,it)
 
@@ -129,13 +138,8 @@ class MainActivity : BaseActivity() {
             }
 
             MAIN_SHOW_VIDEO -> {
-                intent.getStringExtra("videoUrl")?.let {
+                mediaUrl?.let {
                     val title = intent.getStringExtra("videoTitle")?:"title"
-//                    VlcPlayerActivity.start(
-//                        context = this,
-//                        videoPath = it,
-//                        videoTitle = title
-//                    )
                     VlcPlayActivity.start(
                         context = this,
                         videoUrl = it,

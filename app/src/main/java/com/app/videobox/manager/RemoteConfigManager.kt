@@ -26,12 +26,16 @@ import kotlin.text.format
 import kotlin.times
 
 object RemoteConfigManager {
+    private var notifyMap: MutableMap<String, NotifyWrapper> = mutableMapOf<String, NotifyWrapper>()
+
     @SuppressLint("StaticFieldLeak")
     private lateinit var remoteConfig: FirebaseRemoteConfig
     
     var groupNotify = 2
     var limitTime = 5 * 60 * 1000L
     var notifyCount = 30
+    var showGuider = true
+    var showRate = true
     private var blackUrl: UrlBlack? = null
 
     fun fetchConfig() {
@@ -70,6 +74,27 @@ object RemoteConfigManager {
 
     private fun setupConfigParams() {
         try {
+            var configJson = remoteConfig.getString("notify_config")
+            if (configJson.isEmpty()) {
+                configJson = App.appContext().assets.open("notify_limit.json").use {
+                    return@use it.readBytes().decodeToString()
+                }
+            }
+            val result = Gson().fromJson(configJson, NotifyConfig::class.java)
+
+            notifyMap = mutableMapOf<String, NotifyWrapper>()
+            result.notifyScene.forEach { out ->
+                notifyMap[out.scene] = NotifyWrapper(
+                    openBtn =  out.openBtn,
+                    limitCount = out.limitCount,
+                )
+            }
+
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+
+        try {
             var configJson = remoteConfig.getString("video_config")
             if (configJson.isEmpty()) {
                 configJson = App.appContext().assets.open("config.json").use {
@@ -96,6 +121,8 @@ object RemoteConfigManager {
 
             limitTime = if (result.limitTime == 0L) 5 * 60 *1000 else result.limitTime * 60 * 1000
             notifyCount = if (result.notifyCount == 0) 30 else result.notifyCount
+            showGuider = result.showGuider
+            showRate = result.showRate
         }catch (e:Exception){
             e.printStackTrace()
         }
@@ -127,6 +154,12 @@ object RemoteConfigManager {
         }catch (e: Exception){
             e.printStackTrace()
         }
+
+
+    }
+
+    fun getNotifyMap(): MutableMap<String, NotifyWrapper> {
+        return notifyMap
     }
 
     fun checkUrlInBlackUrl(url: String): Boolean {

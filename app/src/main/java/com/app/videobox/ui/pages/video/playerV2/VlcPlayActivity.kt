@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.app.videobox.utils.EventReportUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLDecoder
@@ -74,6 +75,11 @@ class VlcPlayActivity : ComponentActivity() {
      * 支持内部 Intent（通过 start 方法）和外部 Intent（ACTION_VIEW）
      */
     private fun handleIntent(intent: Intent): Pair<String, String> {
+        EventReportUtils.reportTDParams(
+            "video_play",
+            desc = "视频播放"
+        )
+
         Log.d(VIDEO_ACTIVITY_TAG, "处理Intent - Action: ${intent.action}")
 
         // 首先检查是否是内部 Intent

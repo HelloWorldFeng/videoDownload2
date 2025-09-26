@@ -1,5 +1,6 @@
 package com.app.videobox.ad
 
+import android.util.Log
 import cn.thinkingdata.analytics.TDAnalytics
 import com.blankj.utilcode.util.SPStaticUtils
 import org.json.JSONObject
@@ -38,26 +39,37 @@ object UserHelper {
         val firstLaunchTime = SPStaticUtils.getLong(launchTimeFirst, 0L)
         if (firstLaunchTime == 0L) {
             SPStaticUtils.put(launchTimeFirst, System.currentTimeMillis())
-        }
-        val nowTime = System.currentTimeMillis()
-
-        val isSameDay = isSameDay(nowTime, firstLaunchTime)
-
-        val isOver24h = isOver24Hours(nowTime, firstLaunchTime)
-
-        if(isSameDay){
+            //首次启动直接是新用户
             userType.put("user_type","new_user")
-        }
-        else if(isOver24h){
-            userType.put("user_type","24_user")
         }else{
-            userType.put("user_type","day_user")
+
+
+            val nowTime = System.currentTimeMillis()
+
+            val isSameDay = isSameDay(nowTime, firstLaunchTime)
+
+            val isOver24h = isOver24Hours(nowTime, firstLaunchTime)
+
+            if(isSameDay){
+                userType.put("user_type","new_user")
+            }
+            else if(isOver24h){
+                userType.put("user_type","24_user")
+            }else{
+                userType.put("user_type","day_user")
+            }
+
+            UserHelper.userType = if (isSameDay) NewUser else OldUser
         }
-        TDAnalytics.userSet(JSONObject(mapOf("user_type" to userType.get("user_type"))))
+        val user = userType.get("user_type")
+        TDAnalytics.userSet(JSONObject(mapOf("user_type" to user)))
+        Log.d("BugLog", "新老用户:${user} ")
 
-        channelUser = SPStaticUtils.getString(ChannelUser,OriginUser)
+        channelUser = SPStaticUtils.getString(
+            ChannelUser,
+            OriginUser
+        )
 
-        UserHelper.userType = if (isSameDay) NewUser else OldUser
     }
 
 }

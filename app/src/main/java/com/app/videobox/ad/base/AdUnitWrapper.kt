@@ -22,6 +22,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
 import com.google.firebase.analytics.logEvent
 import com.app.videobox.App
+import com.app.videobox.ui.SplashActivity
 import com.app.videobox.utils.EventReportUtils
 import org.json.JSONObject
 import java.math.BigDecimal
@@ -108,11 +109,11 @@ class AdUnitWrapper(
         return this.adNumberId
     }
 
-    fun showAdSmall(activity: Context, viewGroup: ViewGroup) {
+    fun showAdSmall(activity: Context, viewGroup: ViewGroup,isBigStyle: Boolean = false) {
         when (mAdInstance) {
             is NativeAd -> {
                 viewGroup.removeAllViews()
-                NavAdmobAdLoader.fillNavMaterial(activity, viewGroup, mAdInstance as NativeAd)
+                NavAdmobAdLoader.fillNavMaterial(activity, viewGroup, mAdInstance as NativeAd,isBigStyle)
             }
             else ->{}
 
@@ -174,6 +175,7 @@ class AdUnitWrapper(
             put("value",value)
             put("precision",precision)
             put("currency",currency)
+            put("interType",SplashActivity.interType)
         })
 
         EventReportUtils.afEventLog(eventName = "ud_ad_impression", mutableMapOf<String, Any>().apply {
@@ -186,6 +188,7 @@ class AdUnitWrapper(
             put("value",value)
             put("precision",precision)
             put("currency",currency)
+            put("interType",SplashActivity.interType)
         })
 
         val param = mutableMapOf<String, Any>(
