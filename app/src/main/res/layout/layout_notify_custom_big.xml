@@ -40,7 +40,6 @@
         android:gravity="center"
         tools:src="@drawable/button_red_long"
         android:layout_marginBottom="10dp"
-        android:scaleType="fitXY"
         android:layout_alignParentBottom="true"
         />
 

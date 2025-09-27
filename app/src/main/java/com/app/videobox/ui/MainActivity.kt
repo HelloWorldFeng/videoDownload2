@@ -51,7 +51,20 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
+        if (BuildConfig.DEBUG) {
+            NotifyHelper.sendApiNotification(this,"workManager")
+//
+//            NotifyHelper.sendContentNotification(
+//                context = this,
+//                notificationId = 1,
+//                title = "title",
+//                content = "body",
+//                imageUrl = "imgUrl",
+//                videoUrl = "videoUrl",
+//                scene = "onMessageReceived",
+//                pageType = 1
+//            )
+        }
         if (SPStaticUtils.getBoolean("enter_home_first",true)){
             SPStaticUtils.put("enter_home_first",false)
             EventReportUtils.reportTDParams("enter_home_first",

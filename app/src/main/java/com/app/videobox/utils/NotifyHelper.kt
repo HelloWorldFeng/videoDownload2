@@ -29,9 +29,11 @@ import com.app.videobox.R
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.ui.SplashActivity
+import com.app.videobox.ui.pages.video.playerV2.VlcPlayActivity
 import com.blankj.utilcode.util.SPStaticUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 
 object NotifyHelper {
 
@@ -246,7 +248,7 @@ object NotifyHelper {
 
 
 
-    fun sendDownloadNotify(context: Context){
+    fun sendDownloadNotify(context: Context,path: String){
         EventReportUtils.reportTDParams(
             "push_request_scene",
             mutableMapOf(
@@ -266,22 +268,24 @@ object NotifyHelper {
                 desc = "通知发送失败：download 没有权限")
             return
         }
-        if (getLimit("download")) {
-            EventReportUtils.reportTDParams(
-                "push_request_fail",
-                mutableMapOf(
-                    "push_scene" to "download",
-                    "err_reason" to "limit"
-                ),
-                desc = "通知发送失败：download 触发了限制条件")
-            return
-        }
+//        if (getLimit("download")) {
+//            EventReportUtils.reportTDParams(
+//                "push_request_fail",
+//                mutableMapOf(
+//                    "push_scene" to "download",
+//                    "err_reason" to "limit"
+//                ),
+//                desc = "通知发送失败：download 触发了限制条件")
+//            return
+//        }
 
         val customBigView = RemoteViews(context.packageName, R.layout.layout_notify_download)
         val customView = RemoteViews(context.packageName, R.layout.layout_notify_download_s)
         val notificationId = 1111
-        val intent = Intent(context, SplashActivity::class.java).apply {
+        val intent = Intent(context, VlcPlayActivity::class.java).apply {
             putExtra(NOTIFY_TYPE, NOTIFY_TYPE_DOWNLOAD)
+            putExtra("extra_video_url",path)
+            putExtra("extra_title", File(path).name)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
 
@@ -644,6 +648,23 @@ object NotifyHelper {
             }
         }
 
+        //版本限制
+        RemoteConfigManager.getVersionMap().let { map->
+            map[Build.VERSION.SDK_INT]?.let { code->
+                if (code.openBtn.not()){
+                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "${Build.VERSION.SDK_INT} Btn Close"))
+
+                    return true
+                }
+
+                if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) > code.notifyLimit) {
+                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "${Build.VERSION.SDK_INT} Limit"))
+
+                    return true
+                }
+            }
+        }
+
         if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) >= RemoteConfigManager.notifyCount) {
             //通知多少条限制
             EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf("scene" to "notifyCount"))
@@ -654,7 +675,7 @@ object NotifyHelper {
 
         //5分钟间隔
         if (notifyTime != 0L && (System.currentTimeMillis() - notifyTime <= RemoteConfigManager.limitTime)) {
-            EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf("scene" to scene))
+            EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf("scene" to "${scene} time limit-->${RemoteConfigManager.limitTime/1000/60}"))
             return true
         }
         return false

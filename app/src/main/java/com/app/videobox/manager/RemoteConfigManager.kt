@@ -26,6 +26,7 @@ import kotlin.text.format
 import kotlin.times
 
 object RemoteConfigManager {
+    private var versionMap: MutableMap<Int, AndroidVersionWrapper> = mutableMapOf()
     private var notifyMap: MutableMap<String, NotifyWrapper> = mutableMapOf<String, NotifyWrapper>()
 
     @SuppressLint("StaticFieldLeak")
@@ -90,6 +91,14 @@ object RemoteConfigManager {
                 )
             }
 
+            versionMap = mutableMapOf<Int,AndroidVersionWrapper>()
+            result.androidVersion.forEach { out->
+                versionMap[out.androidCode] = AndroidVersionWrapper(
+                    openBtn = out.openBtn,
+                    notifyLimit = out.notifyLimit
+                )
+            }
+
         }catch (e:Exception){
             e.printStackTrace()
         }
@@ -115,7 +124,10 @@ object RemoteConfigManager {
             }
 
 
-            AdManager.initAdMapConfig(map)
+            if (BuildConfig.DEBUG.not()) {
+
+                AdManager.initAdMapConfig(map)
+            }
 
             groupNotify = if (result.groupNotify == 0) 2 else result.groupNotify
 
@@ -160,6 +172,10 @@ object RemoteConfigManager {
 
     fun getNotifyMap(): MutableMap<String, NotifyWrapper> {
         return notifyMap
+    }
+
+    fun getVersionMap(): MutableMap<Int, AndroidVersionWrapper> {
+        return versionMap
     }
 
     fun checkUrlInBlackUrl(url: String): Boolean {

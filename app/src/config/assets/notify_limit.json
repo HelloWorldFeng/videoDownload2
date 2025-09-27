@@ -1,5 +1,37 @@
 {
 
+  "androidVersion": [
+    {
+      "notifyLimit": 40,
+      "androidCode": 24,
+      "openBtn": true,
+      "androidName": "android_7"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 25,
+      "openBtn": true,
+      "androidName": "android_7.1"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 26,
+      "openBtn": true,
+      "androidName": "android_8"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 27,
+      "openBtn": true,
+      "androidName": "android_8.1"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 28,
+      "openBtn": true,
+      "androidName": "android_9"
+    }
+  ],
   "notifyScene": [
     {
       "openBtn": true,

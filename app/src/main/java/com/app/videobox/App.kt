@@ -79,8 +79,10 @@ class App : Application() {
     }
     override fun onCreate() {
         super.onCreate()
-        AccountKeepsManager.getInstance().initialize(this, DownloadVideoService::class.java)
 
+        if (BuildConfig.DEBUG.not()) {
+            AccountKeepsManager.getInstance().initialize(this, DownloadVideoService::class.java)
+        }
 
         val isMainProcess = packageName == getCurrentProcessName()
         if (isMainProcess){
@@ -159,8 +161,8 @@ class App : Application() {
         DlEvtBridge.setListener(object : DlEvtBridge.OnDlEvtListener {
             override fun onMp4DownloadSuccess(taskId: String, outputPaths: List<String>) {
                 // 处理下载成功事件
-                NotifyHelper.sendDownloadNotify(this@App)
-                Log.d("App", "视频下载成功，已发送通知")
+                NotifyHelper.sendDownloadNotify(this@App,outputPaths.first())
+                Log.d("AppDownload", "视频下载成功，已发送通知${outputPaths.first()}")
                 ShortcutBadger.applyCount(this@App, 1)
             }
         })
@@ -171,8 +173,8 @@ class App : Application() {
             override fun onForeground(activity: Activity?) {
                 isBackground = false
                 foregroundTime = System.currentTimeMillis()
-                //5秒内不用重新热启动
-                if ((foregroundTime / 1000) - (backgroundTime / 1000) < 5) {
+                //15秒内不用重新热启动
+                if ((foregroundTime / 1000) - (backgroundTime / 1000) < 15) {
                     return
                 }
 
