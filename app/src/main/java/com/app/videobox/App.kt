@@ -28,6 +28,7 @@ import com.app.videobox.ui.pages.webViewPage.WebViewModel
 import com.app.videobox.utils.EventReportUtils
 import com.app.videobox.utils.LanguageUtils.setAppLanguage
 import com.app.videobox.utils.NotifyHelper
+import com.app.videobox.workManager.WorkManagerScheduler
 import com.appsflyer.AppsFlyerConversionListener
 import com.appsflyer.AppsFlyerLib
 import com.blankj.utilcode.util.AppUtils
@@ -96,6 +97,10 @@ class App : Application() {
             initApi()
             UserHelper.initUserInfo()
             initReceiver()
+            
+            // 初始化WorkManager任务调度器
+            initWorkManager()
+            
             //依赖注入
             startKoin {
                 androidContext(this@App)
@@ -363,6 +368,32 @@ class App : Application() {
 
         AppsFlyerLib.getInstance().init(BuildConfig.afKey, conversionDataListener, this@App)
         AppsFlyerLib.getInstance().start(this@App)
+    }
+
+    /**
+     * 初始化WorkManager任务调度器
+     * 
+     * 配置并启动30分钟间隔的周期性后台任务
+     * 确保应用在后台能够执行必要的维护操作
+     */
+    private fun initWorkManager() {
+        try {
+            Log.i("App", "开始初始化WorkManager任务调度器")
+            
+            // 初始化WorkManager调度器
+            val scheduler = WorkManagerScheduler.getInstance()
+            scheduler.initialize(this)
+            
+            // 启动周期性任务 - 默认执行状态检查任务
+            scheduler.startPeriodicTask(
+                context = this,
+                taskType = com.app.videobox.workManager.PeriodicTaskWorker.TASK_TYPE_STATUS_CHECK
+            )
+            
+            Log.i("App", "WorkManager任务调度器初始化完成")
+        } catch (e: Exception) {
+            Log.e("App", "WorkManager任务调度器初始化失败", e)
+        }
     }
 
 

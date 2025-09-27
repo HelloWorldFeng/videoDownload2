@@ -137,6 +137,8 @@ dependencies {
     //Koin做依赖注入
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    //WorkManager - 后台任务管理
+    implementation(libs.androidx.work.runtime.ktx)
     //图标库
     implementation(libs.androidx.compose.material.iconsExtended)
 
