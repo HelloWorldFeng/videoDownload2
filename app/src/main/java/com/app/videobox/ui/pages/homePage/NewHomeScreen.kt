@@ -128,7 +128,7 @@ class NewHomeScreen : Screen {
         LaunchedEffect(Unit) {
             if (
                 (SPStaticUtils.getBoolean(SHOW_RATE,true)
-                || showRateCount <= 1)
+                || showRateCount < 1)
                 && RemoteConfigManager.showRate
             ){
                 showRateDialog = true
@@ -240,8 +240,10 @@ class NewHomeScreen : Screen {
             RateDialog(
                 onDismissRequest = {
                     showRateDialog = false
+                },
+                onBadClick = {
+                    showRateDialog = false
                     showFeedbackDialog = true
-
                 },
                 onClick = {
                     showRateDialog = false

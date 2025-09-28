@@ -56,7 +56,7 @@
     <string name="here_are_the_popular_videos">Here are the popular videos</string>
     <string name="video">%1$d Video</string>
     <string name="there_is_no_video_please_go_to_add_it">There is no video, please go to add it</string>
-    <string name="start_download_task">start Download Task</string>
+    <string name="start_download_task">Start Download Task</string>
     <string name="play_video_before_downloading">Play video before downloading</string>
     <string name="please_play_the_video_you_want_to_download">"Please play the video you want to download. "</string>
     <string name="this_helps_us_detect_the_video_source_and_activate_the_download_button">"This helps us detect the video source and activate the download button. "</string>

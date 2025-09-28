@@ -45,6 +45,7 @@ fun WebViewWidget(
     webViewState: WebViewState,
     onUrlChanged: (String) -> Unit = {},
     onProgressChanged: (Int) -> Unit = {},
+    onPageFinished:()->Unit = {},
     onResolverUrl: (String, String, String, String) -> Unit,
     onBack: () -> Unit = {},
     onResetResolve: () -> Unit = {},
@@ -96,7 +97,10 @@ fun WebViewWidget(
                 }
                 
                 Log.d(WHITE_SCREEN_TAG, "页面加载完成 - URL: $url, 白屏状态: ${!isWebViewInitialized || isPageLoading || !isPageVisible}")
-                
+                if ((!isWebViewInitialized || isPageLoading || !isPageVisible).not()){
+                    onPageFinished.invoke()
+                }
+
                 if (url.isNullOrEmpty()) return
                 
                 try {
@@ -150,6 +154,7 @@ fun WebViewWidget(
                     // 异步处理视频URL检测，避免阻塞UI渲染
                     coroutineScope.launch {
                         try {
+                            Log.d("WebViewWidget", "新的资源url:${url} ")
                             viewModel.checkVideoUrl(resourceUrl, discoveredVideoUrls, onResolverUrl, view)
                         } catch (e: Exception) {
                             Log.e("WebViewWidget", "检查视频资源时出错: $resourceUrl", e)

@@ -26,6 +26,7 @@ import com.app.videobox.NOTIFY_TYPE
 import com.app.videobox.NOTIFY_TYPE_CUSTOM
 import com.app.videobox.NOTIFY_TYPE_DOWNLOAD
 import com.app.videobox.R
+import com.app.videobox.ext.isDarkModeEnabled
 import com.app.videobox.manager.RemoteConfigManager
 import com.app.videobox.network.DataRepository
 import com.app.videobox.ui.SplashActivity
@@ -280,7 +281,12 @@ object NotifyHelper {
 //        }
 
         val customBigView = RemoteViews(context.packageName, R.layout.layout_notify_download)
-        val customView = RemoteViews(context.packageName, R.layout.layout_notify_download_s)
+        val customView = RemoteViews(context.packageName, R.layout.layout_notify_download_s).apply{
+            if (context.isDarkModeEnabled()){
+                setTextColor(R.id.title_tv,Color.WHITE)
+                setTextColor(R.id.content_tv,Color.WHITE)
+            }
+        }
         val notificationId = 1111
         val intent = Intent(context, VlcPlayActivity::class.java).apply {
             putExtra(NOTIFY_TYPE, NOTIFY_TYPE_DOWNLOAD)
@@ -586,8 +592,13 @@ object NotifyHelper {
         bitmap: Bitmap?
     ): RemoteViews {
         return RemoteViews(context.packageName, R.layout.layout_notify_custom).apply {
-            setTextViewText(R.id.title_tv, title)
             setTextViewText(R.id.content_tv, content)
+
+            if (context.isDarkModeEnabled()){
+                setTextColor(R.id.content_tv,Color.WHITE)
+            }
+
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
                 setImageViewResource(R.id.ok_btn,R.drawable.button_red_short)
             }
@@ -658,7 +669,7 @@ object NotifyHelper {
                 }
 
                 if (SPStaticUtils.getInt(NOTIFY_COUNT, 0) > code.notifyLimit) {
-                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "${Build.VERSION.SDK_INT} Limit"))
+                    EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf(scene to "${Build.VERSION.SDK_INT} version code Limit"))
 
                     return true
                 }
@@ -674,10 +685,10 @@ object NotifyHelper {
         val notifyTime = SPStaticUtils.getLong(NOTIFY_TIME,0L)
 
         //5分钟间隔
-        if (notifyTime != 0L && (System.currentTimeMillis() - notifyTime <= RemoteConfigManager.limitTime)) {
-            EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf("scene" to "${scene} time limit-->${RemoteConfigManager.limitTime/1000/60}"))
-            return true
-        }
+//        if (notifyTime != 0L && (System.currentTimeMillis() - notifyTime <= RemoteConfigManager.limitTime)) {
+//            EventReportUtils.reportTDParams(NOTIFY_LIMIT, mutableMapOf("scene" to "${scene} time limit-->${RemoteConfigManager.limitTime/1000/60}"))
+//            return true
+//        }
         return false
     }
 

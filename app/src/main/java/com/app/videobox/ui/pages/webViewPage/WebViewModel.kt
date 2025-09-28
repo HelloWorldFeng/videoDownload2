@@ -169,9 +169,12 @@ class WebViewModel : ViewModel() {
             || url.toUri().host?.contains("pix-cdn77.phncdn.com") == true
             || url.toUri().host?.contains("etahub.com") == true
             || url.toUri().host?.contains("video.sacdnssedge.com") == true
+            || url.toUri().host?.contains("vms-videos.minutemediaservices.com") == true
+            || url.toUri().host?.contains("as-sec.casalemedia.com") == true
         ) {
             return
         }
+
         //tiktok不检查
 //        if (url.toUri().host?.contains("tiktok") == true
 //        ) {
@@ -220,7 +223,10 @@ class WebViewModel : ViewModel() {
             lowerUrl.contains("tracking") ||
             lowerUrl.contains("beacon") ||
             lowerUrl.contains("collect") ||
-            lowerUrl.contains("report")) {
+            lowerUrl.contains("report") ||
+            lowerUrl.contains("vms-videos.minutemediaservices.com") ||
+            lowerUrl.contains("as-sec.casalemedia.com")
+            ) {
             return false
         }
 

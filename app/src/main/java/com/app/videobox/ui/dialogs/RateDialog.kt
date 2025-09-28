@@ -41,6 +41,7 @@ import com.app.videobox.utils.EventReportUtils
 
 @Composable
 fun RateDialog(
+    onBadClick:()->Unit,
     onDismissRequest:()-> Unit,
     onClick:()-> Unit
 ){
@@ -88,7 +89,7 @@ fun RateDialog(
             ) {
                 Box(Modifier
                     .singClick{
-                        onDismissRequest.invoke()
+                        onBadClick.invoke()
                         EventReportUtils.reportTDParams(
                             "score_click",
                             mutableMapOf(

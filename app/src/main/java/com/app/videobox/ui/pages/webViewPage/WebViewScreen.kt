@@ -95,7 +95,7 @@ fun WebPageScreen(
     val focusManager = LocalFocusManager.current
     var currentUrl by remember { mutableStateOf(inputUrl) }
     val webViewState = rememberWebViewState(currentUrl)
-    var showGuiderMask = remember { mutableStateOf(value = SPStaticUtils.getBoolean(FIRST_IN_HOME,true)) }
+    var showGuiderMask = remember { mutableStateOf(value = false) }
 
     val backAction = {
         if (webViewState.canGoBack()) {
@@ -181,6 +181,13 @@ fun WebPageScreen(
                     },
                     onProgressChanged = { newProgress ->
                         // 可以在这里添加加载进度显示逻辑
+                    },
+                    onPageFinished = {
+                        //页面加载完成 不是白屏状态,
+                        if (SPStaticUtils.getBoolean(FIRST_IN_HOME,true)){
+                            showGuiderMask.value = true
+                            SPStaticUtils.put(FIRST_IN_HOME,false)
+                        }
                     },
                     onResolverUrl = { hlsUrl,title,imgUrl,ext->
                         viewModel.postAction(WebViewModel.Action.ResolveUrl(hlsUrl,title,imgUrl,ext))

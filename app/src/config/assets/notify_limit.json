@@ -30,28 +30,75 @@
       "androidCode": 28,
       "openBtn": true,
       "androidName": "android_9"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 29,
+      "openBtn": true,
+      "androidName": "android_10"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 30,
+      "openBtn": true,
+      "androidName": "android_11"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 31,
+      "openBtn": true,
+      "androidName": "android_12"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 32,
+      "openBtn": true,
+      "androidName": "android_12L"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 33,
+      "openBtn": true,
+      "androidName": "android_13"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 34,
+      "openBtn": true,
+      "androidName": "android_14"
+    },
+    {
+      "notifyLimit": 40,
+      "androidCode": 35,
+      "openBtn": true,
+      "androidName": "android_15"
     }
   ],
   "notifyScene": [
     {
       "openBtn": true,
       "scene": "homekey",
-      "limitCount": 10
+      "limitCount": 40
     },
     {
       "openBtn": true,
       "scene": "app_live",
-      "limitCount": 10
+      "limitCount": 40
     },
     {
       "openBtn": true,
       "scene": "unlock",
-      "limitCount": 10
+      "limitCount": 40
     },
     {
       "openBtn": true,
       "scene": "onMessageReceived",
-      "limitCount": 10
+      "limitCount": 40
+    },
+    {
+      "openBtn": true,
+      "scene": "workManager",
+      "limitCount": 40
     }
   ]
 }

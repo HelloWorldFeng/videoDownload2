@@ -3,6 +3,7 @@ package com.app.videobox.ext
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -98,4 +99,10 @@ fun Context.openGooglePlayStoreInBrowser() {
         this.startActivity(intent)
     } catch (e: Exception) {
     }
+}
+
+// 判断系统是否处于暗色模式（夜间模式）
+fun Context.isDarkModeEnabled(): Boolean {
+    val mode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+    return mode == Configuration.UI_MODE_NIGHT_YES
 }

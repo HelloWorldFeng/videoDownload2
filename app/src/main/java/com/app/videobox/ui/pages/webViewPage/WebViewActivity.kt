@@ -86,7 +86,7 @@ class WebViewActivity: BaseActivity() {
             }
         }
 
-        SPStaticUtils.put(FIRST_IN_HOME,false)
+
     }
 
 
