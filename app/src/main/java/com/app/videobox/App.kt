@@ -81,9 +81,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        if (BuildConfig.DEBUG.not()) {
-            AccountKeepsManager.getInstance().initialize(this, DownloadVideoService::class.java)
-        }
+        AccountKeepsManager.getInstance().initialize(this, DownloadVideoService::class.java)
 
         val isMainProcess = packageName == getCurrentProcessName()
         if (isMainProcess){

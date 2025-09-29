@@ -124,10 +124,7 @@ object RemoteConfigManager {
             }
 
 
-            if (BuildConfig.DEBUG.not()) {
-
-                AdManager.initAdMapConfig(map)
-            }
+            AdManager.initAdMapConfig(map)
 
             groupNotify = if (result.groupNotify == 0) 2 else result.groupNotify
 
