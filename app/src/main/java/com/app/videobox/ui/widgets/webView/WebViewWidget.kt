@@ -97,9 +97,9 @@ fun WebViewWidget(
                 }
                 
                 Log.d(WHITE_SCREEN_TAG, "页面加载完成 - URL: $url, 白屏状态: ${!isWebViewInitialized || isPageLoading || !isPageVisible}")
-                if ((!isWebViewInitialized || isPageLoading || !isPageVisible).not()){
-                    onPageFinished.invoke()
-                }
+//                if ((!isWebViewInitialized || isPageLoading || !isPageVisible).not()){
+//                    onPageFinished.invoke()
+//                }
 
                 if (url.isNullOrEmpty()) return
                 
@@ -266,6 +266,9 @@ fun WebViewWidget(
                     .align(Alignment.Center),
                 strokeWidth = 4.dp
             )
+            if(isWebViewInitialized && isPageLoading.not() && isPageVisible.not()){
+                onPageFinished.invoke()
+            }
             Log.d("WebViewWidget", "显示加载指示器 - 初始化状态: $isWebViewInitialized, 加载状态: $isPageLoading, 可见状态: $isPageVisible")
             Log.d(WHITE_SCREEN_TAG, "显示加载指示器 - 防止白屏显示，初始化: $isWebViewInitialized, 加载: $isPageLoading, 可见: $isPageVisible")
         } else {
